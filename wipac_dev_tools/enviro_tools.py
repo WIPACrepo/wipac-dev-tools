@@ -14,7 +14,7 @@ def _typecast(source: str, type_: type, legacy_bool: bool) -> RetVal:
         if legacy_bool:
             return source.lower() in ("true", "t", "1", "yes", "y")
         else:
-            return strtobool(source.lower())
+            return bool(strtobool(source.lower()))
     elif type_ == int:
         return int(source)
     elif type_ == float:
