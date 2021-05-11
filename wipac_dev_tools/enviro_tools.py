@@ -92,7 +92,7 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
             except ValueError:
                 raise ValueError(  # pylint: disable=W0707
                     f"'{type(config[key])}'-indicated value is not a legal value: "
-                    f"key: {key}, value: {config[key]}"
+                    f"key='{key}' value='{config[key]}'"
                 )
         # missing key
         elif config[key] is None:
