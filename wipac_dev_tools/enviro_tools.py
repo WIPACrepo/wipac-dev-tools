@@ -31,6 +31,7 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
         - `Error` => any other string
     `int`: normal cast (`int(str)`)
     `float`: normal cast (`float(str)`)
+    `other`: no change (`str`)
 
     Arguments:
         keys - Specify the configuration values to obtain.
@@ -86,11 +87,7 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
 
     for key in config:
         if key in os.environ:
-            if config[key] is not None:
-                config[key] = _typecast(os.environ[key], type(config[key]),)
-            else:
-                config[key] = os.environ[key]
-
+            config[key] = _typecast(os.environ[key], type(config[key]))
         elif config[key] is None:
             raise OSError(f"Missing environment variable '{key}'")
 
