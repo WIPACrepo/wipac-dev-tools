@@ -73,8 +73,7 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
                   value is provided (via a dict), to indicate that the
                   component's configuration is incomplete due to missing
                   data from the OS.
-        ValueError - If a bool-indicated value is not a legal value
-                     (see `` above)
+        ValueError - If a type-indicated value is not a legal value
     """
     if isinstance(keys, str):
         keys = {keys: None}
@@ -86,8 +85,16 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
     config = keys.copy()
 
     for key in config:
+        # grab & cast key-value
         if key in os.environ:
-            config[key] = _typecast(os.environ[key], type(config[key]))
+            try:
+                config[key] = _typecast(os.environ[key], type(config[key]))
+            except ValueError:
+                raise ValueError(  # pylint: disable=W0707
+                    f"'{type(config[key])}'-indicated value is not a legal value: "
+                    f"key: {key}, value: {config[key]}"
+                )
+        # missing key
         elif config[key] is None:
             raise OSError(f"Missing environment variable '{key}'")
 
