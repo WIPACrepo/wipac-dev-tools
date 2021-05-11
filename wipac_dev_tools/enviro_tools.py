@@ -9,12 +9,9 @@ OptionalDict = Mapping[str, Optional[RetVal]]
 KeySpec = Union[str, Sequence[str], OptionalDict]
 
 
-def _typecast(source: str, type_: type, legacy_bool: bool) -> RetVal:
+def _typecast(source: str, type_: type) -> RetVal:
     if type_ == bool:
-        if legacy_bool:
-            return source.lower() in ("true", "t", "1", "yes", "y")
-        else:
-            return bool(strtobool(source.lower()))
+        return bool(strtobool(source.lower()))
     elif type_ == int:
         return int(source)
     elif type_ == float:
@@ -23,8 +20,17 @@ def _typecast(source: str, type_: type, legacy_bool: bool) -> RetVal:
         return source
 
 
-def from_environment(keys: KeySpec, legacy_bool: bool = False) -> Dict[str, RetVal]:
+def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
     """Obtain configuration values from the OS environment.
+
+    Parsing Details:
+    Types are inferred from the default values, and casted as such:
+    `bool`: *(case-insensitive)*:
+        - `True`  => ("y", "yes", "t", "true", "on", or "1")
+        - `False` => ("n", "no", "f", "false", "off", or "0")
+        - `Error` => any other string
+    `int`: normal cast (`int(str)`)
+    `float`: normal cast (`float(str)`)
 
     Arguments:
         keys - Specify the configuration values to obtain.
@@ -58,16 +64,6 @@ def from_environment(keys: KeySpec, legacy_bool: bool = False) -> Dict[str, RetV
                that the configuration parameter MUST be sourced from the
                environment.
 
-    Keyword Arguments:
-        legacy_bool: Use the less strict bool-casting, where
-                        True  => ("y", "yes", "t", "true", or "1"),
-                        False => any other string.
-                     As opposed to utilizing distutils.util.strtobool, where
-                        True  => ("y", "yes", "t", "true", "on", or "1"),
-                        False => ("n", "no", "f", "false", "off", or "0"),
-                        Error => any other string.
-                     - ***both methods are case-insensitive***
-
     Returns:
         a dictionary mapping configuration keys to configuration values
 
@@ -77,7 +73,7 @@ def from_environment(keys: KeySpec, legacy_bool: bool = False) -> Dict[str, RetV
                   component's configuration is incomplete due to missing
                   data from the OS.
         ValueError - If a bool-indicated value is not a legal value
-                     (see `legacy_bool` above)
+                     (see `` above)
     """
     if isinstance(keys, str):
         keys = {keys: None}
@@ -91,7 +87,7 @@ def from_environment(keys: KeySpec, legacy_bool: bool = False) -> Dict[str, RetV
     for key in config:
         if key in os.environ:
             if config[key] is not None:
-                config[key] = _typecast(os.environ[key], type(config[key]), legacy_bool)
+                config[key] = _typecast(os.environ[key], type(config[key]),)
             else:
                 config[key] = os.environ[key]
 
