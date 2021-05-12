@@ -1,6 +1,5 @@
 """Init."""
 
-
 from .enviro_tools import from_environment  # noqa
 
 # version is a human-readable version number.
