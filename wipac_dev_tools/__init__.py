@@ -2,6 +2,8 @@
 
 from .enviro_tools import from_environment  # noqa
 
+__all__ = ["from_environment"]
+
 # version is a human-readable version number.
 __version__ = "1.0.1"
 
