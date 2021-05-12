@@ -3,7 +3,7 @@
 from .enviro_tools import from_environment  # noqa
 
 # version is a human-readable version number.
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 # version_info is a four-tuple for programmatic comparison. The first
 # three numbers are the components of the version number. The fourth
