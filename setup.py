@@ -100,7 +100,7 @@ def _development_status() -> str:
 setup(
     name=NAME,
     version=_get_version(),
-    description="File Catalog",
+    description="WIPAC Python Development Tools",
     long_description=open(os.path.join(HERE, "README.md")).read(),  # include new-lines
     long_description_content_type="text/markdown",
     url="https://github.com/WIPACrepo/wipac-dev-tools",

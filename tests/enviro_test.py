@@ -101,3 +101,21 @@ class EnviroToolsTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 os.environ["FOO"] = val
                 from_environment({"FOO": False})
+
+    def test_02_from_environment_convert(self) -> None:
+        """Test conversion cases."""
+        # from a string
+        os.environ["FOO"] = "BAR"
+        config = from_environment("FOO")
+        self.assertEqual(config["FOO"], "BAR")
+        # from a list
+        os.environ["FUBAR"] = "547"
+        os.environ["SNAFU"] = "557"
+        os.environ["TARFU"] = "563"
+        config = from_environment(["FUBAR", "SNAFU", "TARFU"])
+        self.assertEqual(config["FUBAR"], "547")
+        self.assertEqual(config["SNAFU"], "557")
+        self.assertEqual(config["TARFU"], "563")
+        # Expected string, list or dict
+        with self.assertRaises(TypeError):
+            from_environment(None)  # type: ignore
