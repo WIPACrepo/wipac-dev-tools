@@ -11,7 +11,17 @@ class SetupShop:
     """Programmatically construct arguments for use in `setuptools.setup()`.
 
     This class is not intended to replace `setuptools.setup()`, but
-    rather supplement more complex boilerplate code and reduce errors.
+    rather supplement more complex boilerplate code to reduce errors.
+
+    Arguments:
+        package_name -- the name of your package
+        path_to_setup_py -- use: `os.path.abspath(os.path.dirname(__file__))`
+        py_min_max -- the min and max supported py release: Ex: `((3,6), (3,8))`
+        description -- a one-line description of your package
+
+    Keyword arguments:
+        requirements_dir -- a sub-directory containing `requirements.txt` (default: {""})
+                            (if `requirements.txt` is in the root, ignore this)
     """
 
     def __init__(
@@ -22,18 +32,6 @@ class SetupShop:
         description: str,
         requirements_dir: str = "",
     ):
-        """Provide the minimum required info for using `SetupShop`.
-
-        Arguments:
-            package_name -- the name of your package
-            path_to_setup_py -- use: `os.path.abspath(os.path.dirname(__file__))`
-            py_min_max -- the min and max supported py release: Ex: `((3,6), (3,8))`
-            description -- a one-line description of your package
-
-        Keyword arguments:
-            requirements_dir -- a sub-directory containing `requirements.txt` (default: {""})
-                                (if `requirements.txt` is in the root, ignore this)
-        """
         self.name = package_name
         self.here = path_to_setup_py
         self.py_min = min(py_min_max)
@@ -53,6 +51,7 @@ class SetupShop:
             # include new-lines
             "long_description": open(os.path.join(self.here, "README.md")).read(),
             "long_description_content_type": "text/markdown",
+            "keywords": description.split() + self.name.split(),
         }
 
         self._ensure_python_competibilty()
@@ -125,13 +124,14 @@ class SetupShop:
     def _get_development_status(self) -> str:
         """Detect the development status from the package's version.
 
-        # "Development Status :: 1 - Planning",
-        # "Development Status :: 2 - Pre-Alpha",
-        # "Development Status :: 3 - Alpha",
-        # "Development Status :: 4 - Beta",
-        # "Development Status :: 5 - Production/Stable",
-        # "Development Status :: 6 - Mature",
-        # "Development Status :: 7 - Inactive",
+        Known Statuses (not all are supported by `SetupShop`):
+            `"Development Status :: 1 - Planning"`
+            `"Development Status :: 2 - Pre-Alpha"`
+            `"Development Status :: 3 - Alpha"`
+            `"Development Status :: 4 - Beta"`
+            `"Development Status :: 5 - Production/Stable"`
+            `"Development Status :: 6 - Mature"`
+            `"Development Status :: 7 - Inactive"`
         """
         if self.version.startswith("0.0.0"):
             return "Development Status :: 2 - Pre-Alpha"
@@ -149,9 +149,31 @@ class SetupShop:
     def get_classifiers(
         self, other_classifiers: Optional[List[str]] = None
     ) -> List[str]:
-        """Return an aggregated list of classifiers."""
+        """Return an aggregated list of classifiers.
+
+        Include Python Language (`Programming Language :: Python :: *`)
+        and Development Status (`Development Status :: * - *`) classifiers.
+        """
         classifiers = self._get_py_classifiers() + [self._get_development_status()]
         if other_classifiers:
             classifiers.extend(other_classifiers)
 
         return sorted(classifiers)
+
+    def get_packages(self, subpackages: Optional[List[str]] = None) -> List[str]:
+        """Return an aggregated list of packages.
+
+        Optionally, include the given sub-packages now fully-prefixed
+        with the main package's name.
+        """
+
+        def ensure_full_prefix(sub: str) -> str:
+            if sub.startswith(f"{self.name}."):
+                return sub
+            return f"{self.name}.{sub}"
+
+        pkgs = [self.name]
+        if subpackages:
+            pkgs.extend(ensure_full_prefix(p) for p in subpackages)
+
+        return pkgs
