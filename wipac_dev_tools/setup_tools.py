@@ -15,7 +15,7 @@ class SetupShop:
 
     Arguments:
         package_name -- the name of your package
-        path_to_setup_py -- use: `os.path.abspath(os.path.dirname(__file__))`
+        abspath_to_root -- use: `os.path.abspath(os.path.dirname(__file__))`
         py_min_max -- the min and max supported py release: Ex: `((3,6), (3,8))`
         description -- a one-line description of your package
 
@@ -29,14 +29,14 @@ class SetupShop:
     def __init__(
         self,
         package_name: str,
-        path_to_setup_py: str,
+        abspath_to_root: str,
         py_min_max: Tuple[Tuple[int, int], Tuple[int, int]],
         description: str,
         requirements_dir: str = "",
         init_version_dir: str = "",
     ):
         self.name = package_name
-        self.here = path_to_setup_py
+        self.here = abspath_to_root
         self.py_min = min(py_min_max)
         self.py_max = max(py_min_max)
         self.requirements_path = os.path.join(
