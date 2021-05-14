@@ -20,8 +20,10 @@ class SetupShop:
         description -- a one-line description of your package
 
     Keyword arguments:
-        requirements_dir -- a sub-directory containing `requirements.txt` (default: {""})
-                            (if `requirements.txt` is in the root, ignore this)
+        requirements_dir -- a sub-directory containing `requirements.txt`
+                            (if `requirements.txt` is in the root, ignore arg)
+        init_version_dir -- a sub-directory containing `__init__.py` which has `__version__` string
+                            (if this `__init__.py` is in the root, ignore arg)
     """
 
     def __init__(
@@ -31,6 +33,7 @@ class SetupShop:
         py_min_max: Tuple[Tuple[int, int], Tuple[int, int]],
         description: str,
         requirements_dir: str = "",
+        init_version_dir: str = "",
     ):
         self.name = package_name
         self.here = path_to_setup_py
@@ -39,7 +42,7 @@ class SetupShop:
         self.requirements_path = os.path.join(
             self.here, requirements_dir, "requirements.txt"
         )
-        self.version = self._find_version()
+        self.version = self._find_version(init_version_dir)
 
         # dicts to be used like: `**this_kwarg`
         self.author_kwargs = {
@@ -71,15 +74,16 @@ class SetupShop:
                 f"( {sys.version_info} > {self.py_max} )"
             )
 
-    def _find_version(self) -> str:
+    def _find_version(self, init_version_dir: str) -> str:
         """Grab the package's version string."""
-        with open(os.path.join(self.here, self.name, "__init__.py")) as init_f:
+        fpath = os.path.join(self.here, self.name, init_version_dir, "__init__.py")
+        with open(fpath) as init_f:
             for line in init_f.readlines():
                 if "__version__" in line:
                     # grab "X.Y.Z" from "__version__ = 'X.Y.Z'" (quote-style insensitive)
                     return line.replace('"', "'").split("=")[-1].split("'")[1]
 
-        raise Exception("cannot find __version__")
+        raise Exception(f"cannot find `__version__` string in '{fpath}'")
 
     def get_install_requires(self, allow_git_urls: bool = True) -> List[str]:
         """Get the `install_requires` list."""
