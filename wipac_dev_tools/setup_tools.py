@@ -51,7 +51,7 @@ class SetupShop:
             # include new-lines
             "long_description": open(os.path.join(self.here, "README.md")).read(),
             "long_description_content_type": "text/markdown",
-            "keywords": description.split() + self.name.split(),
+            "keywords": description.split() + self.name.split("_"),
         }
 
         self._ensure_python_competibilty()
