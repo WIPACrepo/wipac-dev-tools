@@ -16,7 +16,7 @@ class SetupShop:
     Arguments:
         package_name -- the name of your package
         abspath_to_root -- use: `os.path.abspath(os.path.dirname(__file__))`
-        py_min_max -- the min and max supported py release: Ex: `((3,6), (3,8))`
+        py_min_max -- the min and max supported python releases: Ex: `((3,6), (3,8))`
         description -- a one-line description of your package
 
     Keyword arguments:
