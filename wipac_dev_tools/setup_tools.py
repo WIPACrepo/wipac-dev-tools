@@ -57,9 +57,10 @@ class SetupShop:
             "keywords": description.split() + self.name.split("_"),
         }
 
-        self._ensure_python_competibilty()
+        self._ensure_python_compatibility()
 
-    def _ensure_python_competibilty(self) -> None:
+    def _ensure_python_compatibility(self) -> None:
+        """If current python version is not compatible, warn and/or exit."""
         if sys.version_info < self.py_min:
             print(
                 f"ERROR: {self.name} requires at least Python "
