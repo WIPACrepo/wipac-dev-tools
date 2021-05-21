@@ -3,6 +3,7 @@
 
 import importlib
 import os
+import pprint
 import re
 import sys
 from typing import List, Optional, Tuple
@@ -79,20 +80,34 @@ class SetupShop:
         self._here = abspath_to_root
 
         self._version = importlib.import_module(self.name).__version__  # type: ignore[attr-defined]
+        print(f"SetupShop --> version: {self._version}")
 
         # Make Description(s)
         self._description = description
         # include new-lines in long description
-        self._long_description = open(os.path.join(self._here, "README.md")).read()
+        readme = os.path.join(self._here, "README.md")
+        self._long_description = open(readme).read()
+        print(
+            f"SetupShop --> long_description: {len(self._long_description.splitlines())} lines "
+            f"(from {readme})"
+        )
 
         # Gather Classifiers List
         self._classifiers = SetupShop._get_py_classifiers(py_min, py_max)
         self._classifiers.append(SetupShop._get_development_status(self._version))
+        for pyc in self._classifiers:
+            print(f"SetupShop --> classifier: '{pyc}'")
 
         # Parse requirements.txt -> 'install_requires'
-        self._install_requires = SetupShop._get_install_requires(
+        self._install_requires, req_path = SetupShop._get_install_requires(
             self._here, self.name, allow_git_urls
         )
+        print(
+            f"SetupShop --> install_requires: {len(self._install_requires)} packages "
+            f"(from {req_path})"
+        )
+
+        print()
 
     @staticmethod
     def _ensure_python_compatibility(
@@ -105,30 +120,20 @@ class SetupShop:
             raise Exception(
                 f"{name} requires at least Python "
                 f"{py_min[0]}.{py_min[1]} to run "
-                f"(current-version={current})"
+                f"(current={current})"
             )
         elif current > py_max:  # ignore micro
             print(
                 f"WARNING: {name} does not officially support Python "
                 f"{current[0]}.{current[1]}+ "
-                f"(max-version={py_max})"
+                f"(max={py_max})"
             )
 
     @staticmethod
-    def _find_version(here: str, name: str, init_version_dir: str) -> str:
-        """Grab the package's version string."""
-        fpath = os.path.join(here, name, init_version_dir, "__init__.py")
-        with open(fpath) as init_f:
-            for line in init_f.readlines():
-                if "__version__" in line:
-                    # grab "X.Y.Z" from "__version__ = 'X.Y.Z'" (quote-style insensitive)
-                    return line.replace('"', "'").split("=")[-1].split("'")[1]
-
-        raise Exception(f"cannot find `__version__` string in '{fpath}'")
-
-    @staticmethod
-    def _get_install_requires(here: str, name: str, allow_git_urls: bool) -> List[str]:
-        """Get the `install_requires` list."""
+    def _get_install_requires(
+        here: str, name: str, allow_git_urls: bool
+    ) -> Tuple[List[str], str]:
+        """Get the `install_requires` list & the path to requirements.txt."""
         reqs_txt = "requirements.txt"
         if reqs_txt in os.listdir(here):
             reqs_path = os.path.join(here, reqs_txt)
@@ -139,7 +144,6 @@ class SetupShop:
                 "'requirements.txt' not found: "
                 f"it can either be in '{here}' or '{os.path.join(here, name)}'"
             )
-        print(reqs_path)
 
         def convert(req: str) -> str:
             # GitHub Packages
@@ -164,7 +168,7 @@ class SetupShop:
             else:
                 return req.replace("==", ">=")
 
-        return [convert(m) for m in open(reqs_path).read().splitlines()]
+        return [convert(m) for m in open(reqs_path).read().splitlines()], reqs_path
 
     @staticmethod
     def _get_py_classifiers(py_min: PythonVersion, py_max: PythonVersion) -> List[str]:
@@ -244,7 +248,7 @@ class SetupShop:
         if not other_classifiers:
             other_classifiers = []
 
-        return {
+        kwargs: SetupShopKwargs = {
             "name": self.name,
             "version": self._version,
             "author": "IceCube Collaboration",
@@ -257,3 +261,8 @@ class SetupShop:
             "packages": SetupShop._get_packages(self.name, subpackages),
             "install_requires": self._install_requires,
         }
+
+        print("SetupShop Kwargs...")
+        pprint.pprint(kwargs)
+        print()
+        return kwargs
