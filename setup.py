@@ -15,7 +15,7 @@ setupshop = SetupShop(
 
 setup(
     name=setupshop.name,
-    version=setupshop.version,
+    version=setupshop._version,
     **setupshop.author_kwargs,
     **setupshop.description_kwargs,
     url="https://github.com/WIPACrepo/wipac-dev-tools",

@@ -6,12 +6,42 @@ import re
 import sys
 from typing import List, Optional, Tuple
 
+try:
+    from typing import TypedDict
+except ImportError:  # pre-3.8 support
+    from typing_extensions import TypedDict
+
+PythonVersion = Tuple[int, int]
+
+
+class SetupShopKwargs(TypedDict):
+    """The auto-created kwargs for `setuptools.setup()`."""
+
+    name: str
+    version: str
+    author: str
+    author_email: str
+    description: str
+    long_description: str
+    long_description_content_type: str
+    keywords: List[str]
+    classifiers: List[str]
+    packages: List[str]
+    install_requires: List[str]
+
 
 class SetupShop:
     """Programmatically construct arguments for use in `setuptools.setup()`.
 
     This class is not intended to replace `setuptools.setup()`, but
     rather supplement more complex boilerplate code to reduce errors.
+    All computation (IO things, compatibility checks, etc.) is done
+    up-front in the constructor; so if a SetupShop instance is made,
+    you're go to go.
+
+    Example:
+        `shop = SetupShop(...)`
+        `setuptools.setup(..., **shop.get_kwargs(...))`
 
     Arguments:
         package_name -- the name of your package
@@ -24,60 +54,74 @@ class SetupShop:
                             (if `requirements.txt` is in the root, ignore arg)
         init_version_dir -- a sub-directory containing `__init__.py` which has `__version__` string
                             (if this `__init__.py` is in the root, ignore arg)
+        allow_git_urls -- whether to allow github URLs in `install_requires` list
     """
 
     def __init__(
         self,
         package_name: str,
         abspath_to_root: str,
-        py_min_max: Tuple[Tuple[int, int], Tuple[int, int]],
+        py_min_max: Tuple[PythonVersion, PythonVersion],
         description: str,
         requirements_dir: str = "",
         init_version_dir: str = "",
+        allow_git_urls: bool = True,
     ):
+        py_min, py_max = min(py_min_max), max(py_min_max)
         self.name = package_name
-        self.here = abspath_to_root
-        self.py_min = min(py_min_max)
-        self.py_max = max(py_min_max)
-        self.requirements_path = os.path.join(
-            self.here, requirements_dir, "requirements.txt"
+
+        # Before anything else, check that the current python version is okay
+        SetupShop._ensure_python_compatibility(self.name, py_min, py_max)
+
+        if not abspath_to_root.startswith("/"):
+            raise Exception(f"Path is not absolute: `{abspath_to_root}`")
+        self._here = abspath_to_root
+
+        self._version = SetupShop._find_version(self._here, self.name, init_version_dir)
+
+        # Make Description(s)
+        self._description = description
+        # include new-lines in long description
+        self._long_description = open(os.path.join(self._here, "README.md")).read()
+
+        # Gather Classifiers List
+        self._classifiers = SetupShop._get_py_classifiers(py_min, py_max)
+        self._classifiers.append(SetupShop._get_development_status(self._version))
+
+        # Parse requirements.txt -> 'install_requires'
+        if requirements_dir.startswith("/"):
+            raise Exception(
+                "Requirements directory must be relative to the package's root: "
+                f"`{requirements_dir}`"
+            )
+        _reqs_path = os.path.join(self._here, requirements_dir, "requirements.txt")
+        self._install_requires = SetupShop._get_install_requires(
+            _reqs_path, allow_git_urls
         )
-        self.version = self._find_version(init_version_dir)
 
-        # dicts to be used like: `**this_kwarg`
-        self.author_kwargs = {
-            "author": "IceCube Collaboration",
-            "author_email": "developers@icecube.wisc.edu",
-        }
-        self.description_kwargs = {
-            "description": description,
-            # include new-lines
-            "long_description": open(os.path.join(self.here, "README.md")).read(),
-            "long_description_content_type": "text/markdown",
-            "keywords": description.split() + self.name.split("_"),
-        }
-
-        self._ensure_python_compatibility()
-
-    def _ensure_python_compatibility(self) -> None:
+    @staticmethod
+    def _ensure_python_compatibility(
+        name: str, py_min: PythonVersion, py_max: PythonVersion
+    ) -> None:
         """If current python version is not compatible, warn and/or exit."""
-        if sys.version_info < self.py_min:
+        if sys.version_info < py_min:
             print(
-                f"ERROR: {self.name} requires at least Python "
-                f"{self.py_min[0]}.{self.py_min[1]} to run "
-                f"( {sys.version_info} < {self.py_min} )"
+                f"ERROR: {name} requires at least Python "
+                f"{py_min[0]}.{py_min[1]} to run "
+                f"( {sys.version_info} < {py_min} )"
             )
             sys.exit(1)
-        elif sys.version_info > self.py_max:
+        elif sys.version_info > py_max:
             print(
-                f"WARNING: {self.name} does not officially support Python "
+                f"WARNING: {name} does not officially support Python "
                 f"{sys.version_info[0]}.{sys.version_info[1]}+ "
-                f"( {sys.version_info} > {self.py_max} )"
+                f"( {sys.version_info} > {py_max} )"
             )
 
-    def _find_version(self, init_version_dir: str) -> str:
+    @staticmethod
+    def _find_version(here: str, name: str, init_version_dir: str) -> str:
         """Grab the package's version string."""
-        fpath = os.path.join(self.here, self.name, init_version_dir, "__init__.py")
+        fpath = os.path.join(here, name, init_version_dir, "__init__.py")
         with open(fpath) as init_f:
             for line in init_f.readlines():
                 if "__version__" in line:
@@ -86,7 +130,8 @@ class SetupShop:
 
         raise Exception(f"cannot find `__version__` string in '{fpath}'")
 
-    def get_install_requires(self, allow_git_urls: bool = True) -> List[str]:
+    @staticmethod
+    def _get_install_requires(reqs_path: str, allow_git_urls: bool) -> List[str]:
         """Get the `install_requires` list."""
 
         def convert(req: str) -> str:
@@ -96,13 +141,13 @@ class SetupShop:
                     raise Exception(
                         "This package cannot contain any git/github url dependencies. "
                         "This is to prevent any circular dependencies. "
-                        f"The culprit: {req} from {self.requirements_path}"
+                        f"The culprit: {req} from {reqs_path}"
                     )
                 pat = r"^git\+(?P<url>https://github\.com/[^/]+/[^/]+)@(?P<tag>(v)?\d+\.\d+\.\d+)#egg=(?P<package>\w+)$"
                 re_match = re.match(pat, req)
                 if not re_match:
                     raise Exception(
-                        f"from {self.requirements_path}: "
+                        f"from {reqs_path}: "
                         f"pip-install git-package url is not in standardized format {pat} ({req})"
                     )
                 groups = re_match.groupdict()
@@ -112,21 +157,26 @@ class SetupShop:
             else:
                 return req.replace("==", ">=")
 
-        return [convert(m) for m in open(self.requirements_path).read().splitlines()]
+        return [convert(m) for m in open(reqs_path).read().splitlines()]
 
-    def _get_py_classifiers(self) -> List[str]:
-        """NOTE: Will not work after the '3.* -> 4.0'-transition."""
-        if self.py_min[0] < 3:
+    @staticmethod
+    def _get_py_classifiers(py_min: PythonVersion, py_max: PythonVersion) -> List[str]:
+        """Get auto-detected `Programming Language :: Python :: *` list.
+
+        NOTE: Will not work after the '3.* -> 4.0'-transition.
+        """
+        if py_min[0] < 3:
             raise Exception("Python-classifier automation does not work for python <3.")
-        if self.py_max[0] >= 4:
+        if py_max[0] >= 4:
             raise Exception("Python-classifier automation does not work for python 4+.")
 
         return [
             f"Programming Language :: Python :: 3.{r}"
-            for r in range(self.py_min[1], self.py_max[1] + 1)
+            for r in range(py_min[1], py_max[1] + 1)
         ]
 
-    def _get_development_status(self) -> str:
+    @staticmethod
+    def _get_development_status(version: str) -> str:
         """Detect the development status from the package's version.
 
         Known Statuses (not all are supported by `SetupShop`):
@@ -138,34 +188,21 @@ class SetupShop:
             `"Development Status :: 6 - Mature"`
             `"Development Status :: 7 - Inactive"`
         """
-        if self.version.startswith("0.0.0"):
+        if version.startswith("0.0.0"):
             return "Development Status :: 2 - Pre-Alpha"
-        elif self.version.startswith("0.0."):
+        elif version.startswith("0.0."):
             return "Development Status :: 3 - Alpha"
-        elif self.version.startswith("0."):
+        elif version.startswith("0."):
             return "Development Status :: 4 - Beta"
-        elif int(self.version.split(".")[0]) >= 1:
+        elif int(version.split(".")[0]) >= 1:
             return "Development Status :: 5 - Production/Stable"
         else:
             raise Exception(
-                f"Could not figure Development Status for version: {self.version}"
+                f"Could not figure Development Status for version: {version}"
             )
 
-    def get_classifiers(
-        self, other_classifiers: Optional[List[str]] = None
-    ) -> List[str]:
-        """Return an aggregated list of classifiers.
-
-        Include Python Language (`Programming Language :: Python :: *`)
-        and Development Status (`Development Status :: * - *`) classifiers.
-        """
-        classifiers = self._get_py_classifiers() + [self._get_development_status()]
-        if other_classifiers:
-            classifiers.extend(other_classifiers)
-
-        return sorted(classifiers)
-
-    def get_packages(self, subpackages: Optional[List[str]] = None) -> List[str]:
+    @staticmethod
+    def _get_packages(name: str, subpackages: Optional[List[str]]) -> List[str]:
         """Return an aggregated list of packages.
 
         Optionally, include the given sub-packages now fully-prefixed
@@ -173,12 +210,43 @@ class SetupShop:
         """
 
         def ensure_full_prefix(sub: str) -> str:
-            if sub.startswith(f"{self.name}."):
+            if sub.startswith(f"{name}."):
                 return sub
-            return f"{self.name}.{sub}"
+            return f"{name}.{sub}"
 
-        pkgs = [self.name]
+        pkgs = [name]
         if subpackages:
             pkgs.extend(ensure_full_prefix(p) for p in subpackages)
 
         return pkgs
+
+    def get_kwargs(
+        self,
+        other_classifiers: Optional[List[str]] = None,
+        subpackages: Optional[List[str]] = None,
+    ) -> SetupShopKwargs:
+        """Return a dict of auto-created arguments for `setuptools.setup()`.
+
+        Simply collate already auto-created attributes with optionally
+        given keyword arguments. Apply like: `setup(..., **shop.get_kwargs())`
+
+        NOTE: There should be no exceptions raised.
+        """
+        keywords = self._description.split() + self.name.split("_")
+
+        if not other_classifiers:
+            other_classifiers = []
+
+        return {
+            "name": self.name,
+            "version": self._version,
+            "author": "IceCube Collaboration",
+            "author_email": "developers@icecube.wisc.edu",
+            "description": self._description,
+            "long_description": self._long_description,
+            "long_description_content_type": "text/markdown",
+            "keywords": keywords,
+            "classifiers": sorted(self._classifiers + other_classifiers),
+            "packages": SetupShop._get_packages(self.name, subpackages),
+            "install_requires": self._install_requires,
+        }
