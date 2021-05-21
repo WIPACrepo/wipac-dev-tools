@@ -63,6 +63,9 @@ class SetupShop:
         allow_git_urls: bool = True,
     ):
         py_min, py_max = min(py_min_max), max(py_min_max)
+
+        if not re.match(r"\w+$", package_name):
+            raise Exception(f"Package name contains illegal characters: {package_name}")
         self.name = package_name
 
         # Before anything else, check that the current python version is okay
