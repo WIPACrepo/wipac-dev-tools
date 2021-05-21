@@ -6,12 +6,12 @@ import os
 import pprint
 import re
 import sys
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from typing import TypedDict
 except ImportError:  # pre-3.8 support
-    from typing_extensions import TypedDict
+    TypedDict = Dict[str, Any]
 
 PythonVersion = Tuple[int, int]
 
