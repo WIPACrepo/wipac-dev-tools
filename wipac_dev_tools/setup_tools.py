@@ -99,18 +99,19 @@ class SetupShop:
         name: str, py_min: PythonVersion, py_max: PythonVersion
     ) -> None:
         """If current python version is not compatible, warn and/or exit."""
-        if sys.version_info < py_min:
-            print(
-                f"ERROR: {name} requires at least Python "
+        current = (sys.version_info.major, sys.version_info.minor)  # ignore micro
+
+        if current < py_min:  # Ex: 3.5.2 < 3.5
+            raise Exception(
+                f"{name} requires at least Python "
                 f"{py_min[0]}.{py_min[1]} to run "
-                f"( {sys.version_info} < {py_min} )"
+                f"(current-version={current})"
             )
-            sys.exit(1)
-        elif sys.version_info > py_max:
+        elif current > py_max:  # ignore micro
             print(
                 f"WARNING: {name} does not officially support Python "
-                f"{sys.version_info[0]}.{sys.version_info[1]}+ "
-                f"( {sys.version_info} > {py_max} )"
+                f"{current[0]}.{current[1]}+ "
+                f"(max-version={py_max})"
             )
 
     @staticmethod
