@@ -1,6 +1,7 @@
 """Module to support the `setuptools.setup` utility within `setup.py` files."""
 
 
+import importlib
 import os
 import re
 import sys
@@ -50,10 +51,6 @@ class SetupShop:
         description -- a one-line description of your package
 
     Keyword arguments:
-        requirements_dir -- a sub-directory containing `requirements.txt`
-                            (if `requirements.txt` is in the root, ignore arg)
-        init_version_dir -- a sub-directory containing `__init__.py` which has `__version__` string
-                            (if this `__init__.py` is in the root, ignore arg)
         allow_git_urls -- whether to allow github URLs in `install_requires` list
     """
 
@@ -63,8 +60,6 @@ class SetupShop:
         abspath_to_root: str,
         py_min_max: Tuple[PythonVersion, PythonVersion],
         description: str,
-        requirements_dir: str = "",
-        init_version_dir: str = "",
         allow_git_urls: bool = True,
     ):
         py_min, py_max = min(py_min_max), max(py_min_max)
@@ -74,10 +69,13 @@ class SetupShop:
         SetupShop._ensure_python_compatibility(self.name, py_min, py_max)
 
         if not abspath_to_root.startswith("/"):
-            raise Exception(f"Path is not absolute: `{abspath_to_root}`")
+            raise Exception(
+                f"Path is not absolute: `{abspath_to_root}`; "
+                "use: `os.path.abspath(os.path.dirname(__file__))`"
+            )
         self._here = abspath_to_root
 
-        self._version = SetupShop._find_version(self._here, self.name, init_version_dir)
+        self._version = importlib.import_module(self.name).__version__  # type: ignore[attr-defined]
 
         # Make Description(s)
         self._description = description
@@ -89,14 +87,8 @@ class SetupShop:
         self._classifiers.append(SetupShop._get_development_status(self._version))
 
         # Parse requirements.txt -> 'install_requires'
-        if requirements_dir.startswith("/"):
-            raise Exception(
-                "Requirements directory must be relative to the package's root: "
-                f"`{requirements_dir}`"
-            )
-        _reqs_path = os.path.join(self._here, requirements_dir, "requirements.txt")
         self._install_requires = SetupShop._get_install_requires(
-            _reqs_path, allow_git_urls
+            self._here, self.name, allow_git_urls
         )
 
     @staticmethod
@@ -131,8 +123,19 @@ class SetupShop:
         raise Exception(f"cannot find `__version__` string in '{fpath}'")
 
     @staticmethod
-    def _get_install_requires(reqs_path: str, allow_git_urls: bool) -> List[str]:
+    def _get_install_requires(here: str, name: str, allow_git_urls: bool) -> List[str]:
         """Get the `install_requires` list."""
+        reqs_txt = "requirements.txt"
+        if reqs_txt in os.listdir(here):
+            reqs_path = os.path.join(here, reqs_txt)
+        elif reqs_txt in os.listdir(os.path.join(here, name)):
+            reqs_path = os.path.join(here, name, reqs_txt)
+        else:
+            raise Exception(
+                "'requirements.txt' not found: "
+                f"it can either be in '{here}' or '{os.path.join(here, name)}'"
+            )
+        print(reqs_path)
 
         def convert(req: str) -> str:
             # GitHub Packages
