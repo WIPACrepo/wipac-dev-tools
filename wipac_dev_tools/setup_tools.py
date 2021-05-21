@@ -1,7 +1,6 @@
 """Module to support the `setuptools.setup` utility within `setup.py` files."""
 
 
-import importlib
 import os
 import pprint
 import re
@@ -79,7 +78,7 @@ class SetupShop:
             )
         self._here = abspath_to_root
 
-        self._version = importlib.import_module(self.name).__version__  # type: ignore[attr-defined]
+        self._version = SetupShop._get_version(self._here, self.name)
         print(f"SetupShop --> version: {self._version}")
 
         # Make Description(s)
@@ -130,20 +129,47 @@ class SetupShop:
             )
 
     @staticmethod
+    def _find_file(here: str, pkg_name: str, fname: str) -> str:
+        """Find the file `fname` and return its path."""
+        # check 'here'
+        if fname in os.listdir(here):
+            return os.path.join(here, fname)
+        # check 'here/pkg_name'
+        elif fname in os.listdir(os.path.join(here, pkg_name)):
+            return os.path.join(here, pkg_name, fname)
+        else:
+            raise FileNotFoundError(
+                f"'{fname}' not found: "
+                f"it can either be in '{here}' or '{os.path.join(here, pkg_name)}'"
+            )
+
+    @staticmethod
+    def _get_version(here: str, name: str) -> str:
+        """Get the package's `__version__` string.
+
+        `__version__` needs to be parsed as plain text due to potential
+        race condition, see:
+        https://stackoverflow.com/a/2073599/13156561
+        """
+        init_path = SetupShop._find_file(here, name, "__init__.py")
+
+        with open(init_path) as f:
+            for line in f.readlines():
+                if "__version__" in line:
+                    # grab "X.Y.Z" from `__version__ = 'X.Y.Z'`
+                    # - quote-style insensitive
+                    return line.replace('"', "'").split("=")[-1].split("'")[1]
+
+        raise Exception(
+            f"cannot find __version__ in lowest-level __init__.py ({init_path})"
+        )
+
+    @staticmethod
     def _get_install_requires(
         here: str, name: str, allow_git_urls: bool
     ) -> Tuple[List[str], str]:
         """Get the `install_requires` list & the path to requirements.txt."""
-        reqs_txt = "requirements.txt"
-        if reqs_txt in os.listdir(here):
-            reqs_path = os.path.join(here, reqs_txt)
-        elif reqs_txt in os.listdir(os.path.join(here, name)):
-            reqs_path = os.path.join(here, name, reqs_txt)
-        else:
-            raise Exception(
-                "'requirements.txt' not found: "
-                f"it can either be in '{here}' or '{os.path.join(here, name)}'"
-            )
+        reqs_path = SetupShop._find_file(here, name, "requirements.txt")
 
         def convert(req: str) -> str:
             # GitHub Packages
