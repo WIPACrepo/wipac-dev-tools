@@ -27,6 +27,7 @@ class SetupShopKwargs(TypedDict):
     long_description_content_type: str
     keywords: List[str]
     classifiers: List[str]
+    license: str
     packages: List[str]
     install_requires: List[str]
 
@@ -283,7 +284,12 @@ class SetupShop:
             "long_description": self._long_description,
             "long_description_content_type": "text/markdown",
             "keywords": keywords,
-            "classifiers": sorted(self._classifiers + other_classifiers),
+            "classifiers": sorted(
+                self._classifiers
+                + other_classifiers
+                + ["License :: OSI Approved :: MIT License"]
+            ),
+            "license": "MIT",
             "packages": SetupShop._get_packages(self.name, subpackages),
             "install_requires": self._install_requires,
         }

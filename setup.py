@@ -15,8 +15,7 @@ shop = SetupShop(
 )
 
 setup(
-    **shop.get_kwargs(other_classifiers=["License :: OSI Approved :: MIT License"]),
+    **shop.get_kwargs(),
     url="https://github.com/WIPACrepo/wipac-dev-tools",
-    license="MIT",
     package_data={shop.name: ["data/www/*", "data/www_templates/*", "py.typed"]},
 )
