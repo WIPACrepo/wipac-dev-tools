@@ -1,4 +1,4 @@
 pycycle
-pytest
+pytest==6.2.4
 pytest-flake8
 pytest-mypy
