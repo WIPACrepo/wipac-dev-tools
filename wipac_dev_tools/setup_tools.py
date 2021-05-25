@@ -70,7 +70,7 @@ class SetupShop:
         description: str,
         allow_git_urls: bool = True,
     ):
-        py_min, py_max = min(py_min_max), max(py_min_max)
+        py_min, py_max = SetupShop._get_py_min_max(py_min_max)
 
         if not re.match(r"\w+$", package_name):
             raise Exception(f"Package name contains illegal characters: {package_name}")
@@ -115,6 +115,22 @@ class SetupShop:
         )
 
         print()
+
+    @staticmethod
+    def _get_py_min_max(
+        py_min_max: Tuple[PythonVersion, PythonVersion]
+    ) -> Tuple[PythonVersion, PythonVersion]:
+        """Check that the given `get_py_min_max` is valid, then return."""
+        if (
+            len(py_min_max) != 2
+            or py_min_max[0] > py_min_max[1]
+            or any(len(p) != 2 for p in py_min_max)
+        ):
+            raise Exception(
+                "'py_min_max' must be a 2-tuple of non-decreasing 2-tuples; "
+                "examples: `((3,6),(3,8))` or `((3,6),(3,6))`"
+            )
+        return py_min_max
 
     @staticmethod
     def _ensure_python_compatibility(
