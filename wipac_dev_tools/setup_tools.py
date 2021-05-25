@@ -41,6 +41,13 @@ class SetupShop:
     up-front in the constructor; so if a SetupShop instance is made,
     you're go to go.
 
+    All required packages (`install_requires` list) are found by parsing
+    `requirements.txt`. PyPI packages are assumed to be backwards-
+    compatible, so these use the indicated version as a MINIMAL
+    requirement (`==` is replaced with `>=`). Conversely, GitHub-URL
+    packages ARE pinned to their indicated version/tag. These packages
+    are re-parsed to point to the standard `.zip` file/url.
+
     Example:
         `shop = SetupShop(...)`
         `setuptools.setup(..., **shop.get_kwargs(...))`
@@ -191,7 +198,7 @@ class SetupShop:
                 groups = re_match.groupdict()
                 # point right to .zip (https://stackoverflow.com/a/56635563/13156561)
                 return f'{groups["package"]} @ {groups["url"]}/archive/refs/tags/{groups["tag"]}.zip'
-            # PyPI Packages
+            # PyPI Packages: my-package==5.6.7
             else:
                 return req.replace("==", ">=")
 
