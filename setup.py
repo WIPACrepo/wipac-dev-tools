@@ -9,7 +9,7 @@ from wipac_dev_tools import SetupShop
 shop = SetupShop(
     "wipac_dev_tools",
     os.path.abspath(os.path.dirname(__file__)),
-    ((3, 6), (3, 11)),
+    ((3, 6), (3, 8)),
     "WIPAC Python Development Tools",
     allow_git_urls=False,
 )
