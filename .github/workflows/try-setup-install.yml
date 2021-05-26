@@ -34,6 +34,11 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
 
+    strategy:
+      max-parallel: 4
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+
     # strategy:
     #   matrix:
     #     python-version: ['3.6', '3.7', '3.8']
