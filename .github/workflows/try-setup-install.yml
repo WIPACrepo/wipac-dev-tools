@@ -3,35 +3,46 @@ name: Try Setup Install
 on: [push]
 
 jobs:
-  confirm-all-py-versions:
+  # confirm-all-py-versions:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - run: |
+  #         echo "searching for supported python range in in setup.py..."
+  #         grep -P "\(\(\d+, ?\d+\), ?\(\d+, ?\d+\)\)" -oh setup.py | sed 's/ //g' | sed 's/,/./g' | grep -o -P "\d+\.\d+" > tmp.txt
+  #         echo "setup.py-indicated python range: $(head -n1 tmp.txt) - $(tail -n1 tmp.txt)"
+  #         echo "confirming min version in this GH Workflow..."
+  #         grep "python-version: \['$(head -n1 tmp.txt)" .github/workflows/try-setup-install.yml
+  #         echo "confirming max version in this GH Workflow..."
+  #         grep "python-version: .*'$(tail -n1 tmp.txt)'\]" .github/workflows/try-setup-install.yml
+  #         echo "all good, time for tests!"
+
+  setup:
     runs-on: ubuntu-latest
-
+    outputs:
+      matrix: ${{ steps.py_versions.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v2
-      - run: |
-          echo "searching for supported python range in in setup.py..."
-          grep -P "\(\(\d+, ?\d+\), ?\(\d+, ?\d+\)\)" -oh setup.py | sed 's/ //g' | sed 's/,/./g' | grep -o -P "\d+\.\d+" > tmp.txt
-          echo "setup.py-indicated python range: $(head -n1 tmp.txt) - $(tail -n1 tmp.txt)"
-          echo "confirming min version in this GH Workflow..."
-          grep "python-version: \['$(head -n1 tmp.txt)" .github/workflows/try-setup-install.yml
-          echo "confirming max version in this GH Workflow..."
-          grep "python-version: .*'$(tail -n1 tmp.txt)'\]" .github/workflows/try-setup-install.yml
-          echo "all good, time for tests!"
-
+      - name: Python Versions
+      id: py_versions
+      run: |
+        versions=$(echo "3.6,3.7,3.8" |awk -F, '{for(i=1;i<=NF-1;i++) printf "\"" $i "\","; print "\"" $(NF) "\""}')
+        echo ::set-output name=matrix::{\"py_versions\":[$(echo $versions)]}\"
 
   setup-py-install:
-    needs: confirm-all-py-versions
+    # needs: confirm-all-py-versions
+    needs: setup
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        python-version: ['3.6', '3.7', '3.8']
+    # strategy:
+    #   matrix:
+    #     python-version: ['3.6', '3.7', '3.8']
 
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.py_versions }}
       - run: |
-          echo ${{ matrix.python-version }}
+          echo ${{ matrix.py_versions }}
           python setup.py install
