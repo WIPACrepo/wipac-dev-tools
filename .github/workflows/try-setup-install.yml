@@ -24,10 +24,10 @@ jobs:
       matrix: ${{ steps.py_versions.outputs.matrix }}
     steps:
       - name: Python Versions
-      id: py_versions
-      run: |
-        versions=$(echo "3.6,3.7,3.8" |awk -F, '{for(i=1;i<=NF-1;i++) printf "\"" $i "\","; print "\"" $(NF) "\""}')
-        echo ::set-output name=matrix::{\"py_versions\":[$(echo $versions)]}\"
+        id: py_versions
+        run: |
+          versions=$(echo "3.6,3.7,3.8" |awk -F, '{for(i=1;i<=NF-1;i++) printf "\"" $i "\","; print "\"" $(NF) "\""}')
+          echo ::set-output name=matrix::{\"py_versions\":[$(echo $versions)]}\"
 
   setup-py-install:
     # needs: confirm-all-py-versions
