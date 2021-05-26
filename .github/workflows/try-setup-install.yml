@@ -9,6 +9,7 @@ jobs:
     outputs:
       matrix: ${{ steps.py3_versions.outputs.matrix }}
     steps:
+      - uses: actions/checkout@v2
       - name: Python Versions
         id: py3_versions
         run: |
