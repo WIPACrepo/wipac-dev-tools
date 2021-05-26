@@ -18,7 +18,7 @@ jobs:
   #         grep "python-version: .*'$(tail -n1 tmp.txt)'\]" .github/workflows/try-setup-install.yml
   #         echo "all good, time for tests!"
 
-  setup:
+  gather-py-versions:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.py_versions.outputs.matrix }}
@@ -30,18 +30,13 @@ jobs:
           echo ::set-output name=matrix::{\"py_versions\":[$(echo $versions)]}\"
 
   setup-py-install:
-    # needs: confirm-all-py-versions
-    needs: setup
+    needs: gather-py-versions
     runs-on: ubuntu-latest
 
     strategy:
       max-parallel: 4
       fail-fast: false
-      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
-
-    # strategy:
-    #   matrix:
-    #     python-version: ['3.6', '3.7', '3.8']
+      matrix: ${{ fromJSON(needs.gather-py-versions.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v2
