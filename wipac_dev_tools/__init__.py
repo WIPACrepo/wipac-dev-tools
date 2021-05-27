@@ -6,7 +6,7 @@ from .setup_tools import SetupShop  # noqa
 __all__ = ["from_environment", "SetupShop"]
 
 # version is a human-readable version number.
-__version__ = "1.0.9"
+__version__ = "1.0.10"
 
 # version_info is a four-tuple for programmatic comparison. The first
 # three numbers are the components of the version number. The fourth
