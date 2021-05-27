@@ -92,11 +92,15 @@ class SetupShop:
         # Make Description(s)
         self._description = description
         # include new-lines in long description
-        readme = os.path.join(self._here, "README.md")
-        self._long_description = open(readme).read()
+        try:
+            self._readme = os.path.join(self._here, "README.md")
+            self._long_description = open(self._readme).read()
+        except FileNotFoundError:
+            self._readme = os.path.join(self._here, "README.rst")
+            self._long_description = open(self._readme).read()
         print(
             f"SetupShop --> long_description: {len(self._long_description.splitlines())} lines "
-            f"(from {readme})"
+            f"(from {self._readme})"
         )
 
         # Gather Classifiers List
@@ -298,6 +302,13 @@ class SetupShop:
         if not other_classifiers:
             other_classifiers = []
 
+        if self._readme.endswith(".md"):
+            long_description_content_type = "text/markdown"
+        elif self._readme.endswith(".rst"):
+            long_description_content_type = "text/x-rst"
+        else:
+            long_description_content_type = "text/plain"
+
         kwargs: SetupShopKwargs = {
             "name": self.name,
             "version": self._version,
@@ -305,7 +316,7 @@ class SetupShop:
             "author_email": "developers@icecube.wisc.edu",
             "description": self._description,
             "long_description": self._long_description,
-            "long_description_content_type": "text/markdown",
+            "long_description_content_type": long_description_content_type,
             "keywords": keywords,
             "classifiers": sorted(
                 self._classifiers
