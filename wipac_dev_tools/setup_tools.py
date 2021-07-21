@@ -314,6 +314,12 @@ class SetupShop:
         keywords: List[str] = []
         keywords.extend(name.split("_"))
 
+        def remove_parens(string: str) -> str:
+            string = string.strip()
+            if string[0] == "(" and string[-1] == ")":
+                string = string[1:-1]
+            return string
+
         if all(not c.isupper() for c in description):
             strs = []
             for word in description.split():
@@ -328,9 +334,9 @@ class SetupShop:
                     keywords.append(string.strip())
                     string = ""
                 continue
-            # upper or non-alpha character
+            # capitalized or non-alpha-starting word
             string = f"{string} {word}"
-            keywords.append(word)
+            keywords.append(remove_parens(word))
         # get leftovers
         if string:
             keywords.append(string.strip())

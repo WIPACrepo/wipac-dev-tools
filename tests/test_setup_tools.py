@@ -96,6 +96,24 @@ def test_00_make_keywords() -> None:
                 "wipac",
             ],
         },
+        {
+            "description": "Message Queue Client API with Google Cloud Platform (GCP)",
+            "name": "mqclient_gcp",
+            "keywords": [
+                "mqclient",
+                "gcp",
+                "Message Queue Client API",
+                "Google Cloud Platform (GCP)",
+                "Message",
+                "Queue",
+                "Client",
+                "API",
+                "Google",
+                "Cloud",
+                "Platform",
+                "GCP",
+            ],
+        },
     ]
 
     for args in test_args:
