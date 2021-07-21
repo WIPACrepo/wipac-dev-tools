@@ -287,9 +287,38 @@ class SetupShop:
 
     @staticmethod
     def _make_keywords(description: str, name: str) -> List[str]:
-        """Make a list of keywords by parsing the description and name."""
+        """Make a list of keywords by parsing the description and name.
+
+        Multi-word sub-strings are made by tokenizing the description's
+        lowercase filler words. Each capitalized word in the description
+        is also an individual keyword. The package name is also used,
+        but split by underscores. (If the entire description is lower
+        case, initialize each word first, then process like normal.)
+
+        Example:
+            `description`: "Module for Parsing Setup Utilities"
+            `name`: "wipac_dev_tools"
+            *returns ->* [
+                "Module",
+                "Parsing",
+                "Parsing Setup Utilities",
+                "Setup",
+                "Utilities",
+                "dev",
+                "tools",
+                "wipac",
+            ]
+
+        NOTE: See tests for more examples.
+        """
         keywords: List[str] = []
         keywords.extend(name.split("_"))
+
+        if all(not c.isupper() for c in description):
+            strs = []
+            for word in description.split():
+                strs.append(word[0].upper() + word[1:])
+            description = " ".join(strs)
 
         string = ""
         for word in description.split():
@@ -302,8 +331,11 @@ class SetupShop:
             # upper or non-alpha character
             string = f"{string} {word}"
             keywords.append(word)
+        # get leftovers
+        if string:
+            keywords.append(string.strip())
 
-        return keywords
+        return sorted(set(keywords))
 
     def get_kwargs(
         self,

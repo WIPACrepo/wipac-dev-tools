@@ -17,39 +17,88 @@ def test_00_make_keywords() -> None:
         keywords: List[str]
 
     test_args: List[_Args] = [
+        # TEST BASIC DESCRIPTION PARSING
         {
-            "description": "description",
+            "description": "Upper Description",
             "name": "name",
-            "keywords": ["description", "name"],
+            "keywords": ["Upper", "Description", "Upper Description", "name"],
         },
-        {
-            "description": "all lower case description",
+        {  # removes unimportant words
+            "description": "not all lower case Description",
             "name": "name",
-            "keywords": ["all_lower_case_description", "name"],
+            "keywords": ["Description", "name"],
         },
+        #
+        # TEST DESCRIPTION UPPER'ING
+        {  # if the entire description is lower case, initialize each word first
+            "description": "all lower description for 5",
+            "name": "name",
+            "keywords": [
+                "All Lower Description For 5",
+                "All",
+                "Lower",
+                "Description",
+                "For",
+                "5",
+                "name",
+            ],
+        },
+        #
+        # TEST NAME SPLITTING
         {
             "description": "description",
             "name": "name_split_by_underscores",
-            "keywords": ["description", "name", "split", "by", "underscores"],
+            "keywords": ["name", "split", "by", "underscores", "Description"],
+        },
+        #
+        # TEST DESCRIPTION SUB-STRING SPLITTING
+        {  # removes unimportant words
+            "description": "Description Sub-string and Green 5am",
+            "name": "name",
+            "keywords": [
+                "Description",
+                "Sub-string",
+                "Green",
+                "5am",
+                "Description Sub-string",
+                "Green 5am",
+                "name",
+            ],
+        },
+        #
+        #
+        # REALISTIC EXAMPLES
+        {
+            "description": "Module for Parsing Setup Utilities",
+            "name": "wipac_dev_tools",
+            "keywords": [
+                "Module",
+                "Parsing",
+                "Parsing Setup Utilities",
+                "Setup",
+                "Utilities",
+                "dev",
+                "tools",
+                "wipac",
+            ],
         },
         {
-            "description": "description",
-            "name": "name",
-            "keywords": ["description", "name"],
-        },
-        {
-            "description": "description",
-            "name": "name",
-            "keywords": ["description", "name"],
-        },
-        {
-            "description": "description",
-            "name": "name",
-            "keywords": ["description", "name"],
+            "description": "WIPAC Python Development Tools",
+            "name": "wipac_dev_tools",
+            "keywords": [
+                "WIPAC",
+                "Python",
+                "WIPAC Python Development Tools",
+                "Development",
+                "Tools",
+                "dev",
+                "tools",
+                "wipac",
+            ],
         },
     ]
 
     for args in test_args:
         print(args)
         out = setup_tools.SetupShop._make_keywords(args["description"], args["name"])
-        assert out == args["keywords"]
+        assert out == sorted(args["keywords"])
