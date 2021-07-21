@@ -3,10 +3,12 @@ version: 2
 jobs:
     test:
         docker:
-          - image: circleci/python:3.8
+            - image: circleci/python:3.8
         steps:
-          - checkout
-          - run: pip install -r requirements.txt && pytest -vvvv --mypy --flake8 tests
+            - checkout
+            - run: |
+                pip install --user tox
+                tox -vv
 
 workflows:
     version: 2
