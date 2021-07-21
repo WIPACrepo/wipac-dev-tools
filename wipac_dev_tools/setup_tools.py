@@ -285,6 +285,26 @@ class SetupShop:
 
         return pkgs
 
+    @staticmethod
+    def _make_keywords(description: str, name: str) -> List[str]:
+        """Make a list of keywords by parsing the description and name."""
+        keywords: List[str] = []
+        keywords.extend(name.split("_"))
+
+        string = ""
+        for word in description.split():
+            # break up sub-strings by lowercase words
+            if word[0].islower():
+                if string:
+                    keywords.append(string.strip())
+                    string = ""
+                continue
+            # upper or non-alpha character
+            string = f"{string} {word}"
+            keywords.append(word)
+
+        return keywords
+
     def get_kwargs(
         self,
         other_classifiers: Optional[List[str]] = None,
@@ -297,7 +317,7 @@ class SetupShop:
 
         NOTE: There should be no exceptions raised.
         """
-        keywords = self._description.split() + self.name.split("_")
+        keywords = SetupShop._make_keywords(self._description, self.name)
 
         if not other_classifiers:
             other_classifiers = []
