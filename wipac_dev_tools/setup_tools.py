@@ -43,8 +43,9 @@ class SetupShop:
 
     All required packages (`install_requires` list) are found by parsing
     `requirements.txt`. PyPI packages are assumed to be backwards-
-    compatible, so these use the indicated version as a MINIMAL
-    requirement (`==` is replaced with `>=`). Conversely, GitHub-URL
+    compatible, so these use the indicated version as a *MINIMAL*
+    requirement (`==` is replaced with `>=`; this can be turned off by
+    adding each package to `pinned_packages`). Conversely, GitHub-URL
     packages ARE pinned to their indicated version/tag. These packages
     are re-parsed to point to the standard `.zip` file/url.
 
@@ -60,6 +61,8 @@ class SetupShop:
 
     Keyword arguments:
         allow_git_urls -- whether to allow github URLs in `install_requires` list
+        pinned_packages -- packages to pin with version indicated in `requirements.txt`
+                             (does not auto-upgrade package version)
     """
 
     def __init__(
@@ -69,6 +72,7 @@ class SetupShop:
         py_min_max: Tuple[PythonVersion, PythonVersion],
         description: str,
         allow_git_urls: bool = True,
+        pinned_packages: Optional[List[str]] = None,
     ):
         py_min, py_max = SetupShop._get_py_min_max(py_min_max)
 
@@ -111,7 +115,10 @@ class SetupShop:
 
         # Parse requirements.txt -> 'install_requires'
         self._install_requires, req_path = SetupShop._get_install_requires(
-            self._here, self.name, allow_git_urls
+            self._here,
+            self.name,
+            allow_git_urls,
+            pinned_packages if pinned_packages else [],
         )
         print(
             f"SetupShop --> install_requires: {len(self._install_requires)} packages "
@@ -194,10 +201,17 @@ class SetupShop:
 
     @staticmethod
     def _get_install_requires(
-        here: str, name: str, allow_git_urls: bool
+        here: str, name: str, allow_git_urls: bool, pinned_packages: List[str]
     ) -> Tuple[List[str], str]:
         """Get the `install_requires` list & the path to requirements.txt."""
         reqs_path = SetupShop._find_file(here, name, "requirements.txt")
+
+        def parse_package_name(req: str) -> str:
+            # https://www.python.org/dev/peps/pep-0508/#names
+            rematch = re.match(r"^[A-Za-z0-9._-]+", req)
+            if not rematch:
+                raise Exception(f"Malformed package requirement line: {req}")
+            return rematch.group(0)
 
         def convert(req: str) -> str:
             # GitHub Packages
@@ -220,6 +234,8 @@ class SetupShop:
                 return f'{groups["package"]} @ {groups["url"]}/archive/refs/tags/{groups["tag"]}.zip'
             # PyPI Packages: my-package==5.6.7
             else:
+                if parse_package_name(req) in pinned_packages:
+                    return req
                 return req.replace("==", ">=")
 
         return [convert(m) for m in open(reqs_path).read().splitlines()], reqs_path
