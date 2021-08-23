@@ -210,7 +210,7 @@ class SetupShop:
             # https://www.python.org/dev/peps/pep-0508/#names
             rematch = re.match(r"^[A-Za-z0-9._-]+", req)
             if not rematch:
-                raise Exception(f"Malformed package requirement line: {req}")
+                raise Exception(f"Malformed package requirement line: '{req}'")
             return rematch.group(0)
 
         def convert(req: str) -> str:
