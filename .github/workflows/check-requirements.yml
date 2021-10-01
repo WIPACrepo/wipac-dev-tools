@@ -22,5 +22,5 @@ jobs:
 
     - name: Check requirements
       run: |
-        (test -f requirements.txt && python tools/check-requirements.py requirements.txt) || echo "Skipping requirements.txt"
-        (test -f requirements-dev.txt && python tools/check-requirements.py requirements-dev.txt) || echo "Skipping requirements-dev.txt"
+        python tools/check-requirements.py requirements.txt
+        python tools/check-requirements.py requirements-dev.txt
