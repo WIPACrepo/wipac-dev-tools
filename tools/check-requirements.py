@@ -34,5 +34,5 @@ def do_check_task(req_file: str) -> bool:
 
 
 if __name__ == "__main__":
-    if do_check_task(sys.argv[0]):
+    if do_check_task(sys.argv[1]):
         sys.exit(1)
