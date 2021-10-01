@@ -1,4 +1,4 @@
-name: Check Dependencies
+name: Check Requirements
 
 on: [push]
 
