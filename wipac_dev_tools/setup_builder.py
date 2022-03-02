@@ -29,7 +29,7 @@ class BuilderSection:
     url: str
     python_range: str  # python_requires
     main_or_master: str = "main"
-    keywords: str = ""  # comes as raw "A, B, C" or "A\nB\nC"
+    keywords_spaced: str = ""  # comes as "A B C"
 
     def _python_min_max(self) -> PythonMinMax:
         """Get the `PythonMinMax` version of `self.python_range`."""
@@ -68,6 +68,10 @@ class BuilderSection:
             for r in range(py_min_max[0][1], py_min_max[1][1] + 1)
         ]
 
+    def keywords_list(self) -> List[str]:
+        """Get the user-defined keywords as a list."""
+        return self.keywords_spaced.strip().split()
+
 
 def list_to_dangling(lines: List[str]) -> str:
     """Create a "dangling"-lines formatted list."""
@@ -91,7 +95,7 @@ def _build_out_sections(cfg: configparser.RawConfigParser) -> None:
         # TODO -- how can we get a readme without being told where it is?
         "long_description": "file: README.md, CHANGELOG.md, LICENSE.md, README.rst, CHANGELOG.rst, LICENSE.rst",
         "long_description_content_type": "",  # TODO
-        "keywords": list_to_dangling(DEFAULT_KEYWORDS),  # TODO
+        "keywords": list_to_dangling(bsec.keywords_list() + DEFAULT_KEYWORDS),  # TODO
         "license": LICENSE,
         # TODO: add "Development Status :: *", any way to do this without knowing abspath?
         "classifiers": list_to_dangling(bsec.python_classifiers()),
@@ -109,13 +113,12 @@ def _build_out_sections(cfg: configparser.RawConfigParser) -> None:
     }
 
     # [options] -- override specific options
-    # TODO: check that this commenting works -- otherwise, get smart with adding after `write()`
     cfg["options"]["python_requires"] = f"{bsec.python_requires()}  {GENERATED_COMMENT}"
     cfg["options"]["packages"] = f"find:  {GENERATED_COMMENT}"  # TODO: 'find:' working?
 
 
 def build(setup_cfg: str) -> None:
-    """Build the `setup.cfg` sections according to `[wipac:cicd_setup_builder]`."""
+    """Build the `setup.cfg` sections according to `BUIDLER_SECTION_NAME`."""
     cfg = configparser.RawConfigParser(allow_no_value=True, comment_prefixes="/")
     cfg.read(setup_cfg)
     assert cfg.has_section(BUIDLER_SECTION_NAME)  # TODO
