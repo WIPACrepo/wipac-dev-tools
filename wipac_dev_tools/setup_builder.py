@@ -73,9 +73,9 @@ class BuilderSection:
         return self.keywords_spaced.strip().split()
 
 
-def list_to_dangling(lines: List[str]) -> str:
+def list_to_dangling(lines: List[str], sort: bool = False) -> str:
     """Create a "dangling"-lines formatted list."""
-    return "\n" + "\n".join(lines)
+    return "\n" + "\n".join(sorted(lines) if sort else lines)
 
 
 def long_description_content_type(extension: str) -> str:
@@ -97,6 +97,8 @@ class FromFiles:
         self.pkg_path = self._get_package()
         self.package = os.path.basename(self.pkg_path)
         self.readme_ext = self._get_readme_ext()
+        self.version = self._get_version()
+        self.development_status = self._get_development_status()
 
     def _get_package(self) -> str:
         """Find the package."""
@@ -128,6 +130,49 @@ class FromFiles:
                 return fname.split("README.")[1]
         raise Exception(f"No README file found in '{self.root}'")
 
+    def _get_version(self) -> str:
+        """Get the package's `__version__` string.
+
+        This is essentially [metadata]'s `version = attr: <module-path to __version__>`.
+
+        `__version__` needs to be parsed as plain text due to potential
+        race condition, see:
+        https://stackoverflow.com/a/2073599/13156561
+        """
+        with open(self.pkg_path + "/__init__.py") as f:
+            for line in f.readlines():
+                if "__version__" in line:
+                    # grab "X.Y.Z" from `__version__ = 'X.Y.Z'`
+                    # - quote-style insensitive
+                    return line.replace('"', "'").split("=")[-1].split("'")[1]
+
+        raise Exception(f"cannot find __version__ in {self.pkg_path}/__init__.py")
+
+    def _get_development_status(self) -> str:
+        """Detect the development status from the package's version.
+
+        Known Statuses (**not all are supported**):
+            `"Development Status :: 1 - Planning"`
+            `"Development Status :: 2 - Pre-Alpha"`
+            `"Development Status :: 3 - Alpha"`
+            `"Development Status :: 4 - Beta"`
+            `"Development Status :: 5 - Production/Stable"`
+            `"Development Status :: 6 - Mature"`
+            `"Development Status :: 7 - Inactive"`
+        """
+        if self.version.startswith("0.0.0"):
+            return "Development Status :: 2 - Pre-Alpha"
+        elif self.version.startswith("0.0."):
+            return "Development Status :: 3 - Alpha"
+        elif self.version.startswith("0."):
+            return "Development Status :: 4 - Beta"
+        elif int(self.version.split(".")[0]) >= 1:
+            return "Development Status :: 5 - Production/Stable"
+        else:
+            raise Exception(
+                f"Could not figure Development Status for version: {self.version}"
+            )
+
 
 def _build_out_sections(cfg: configparser.RawConfigParser, root_path: str) -> None:
     """Build out the `[metadata]`, `[semantic_release]`, and `[options]` sections."""
@@ -149,13 +194,17 @@ def _build_out_sections(cfg: configparser.RawConfigParser, root_path: str) -> No
         ),
         "keywords": list_to_dangling(bsec.keywords_list() + DEFAULT_KEYWORDS),
         "license": LICENSE,
-        # TODO: add "Development Status :: *", any way to do this without knowing abspath?
-        "classifiers": list_to_dangling(bsec.python_classifiers()),
+        "classifiers": list_to_dangling(
+            bsec.python_classifiers()
+            + [ffile.development_status]
+            + ["License :: OSI Approved :: MIT License"],
+            sort=True,
+        ),
     }
 
     # [semantic_release]
     cfg["semantic_release"] = {
-        "version_variable": f"attr: {ffile.package}/__init__.py:__version__",  # "wipac_dev_tools/__init__.py:__version__"
+        "version_variable": f"{ffile.package}/__init__.py:__version__",  # "wipac_dev_tools/__init__.py:__version__"
         "upload_to_pypi": "True",
         "patch_without_tag": "True",
         "commit_parser": "semantic_release.history.tag_parser",
