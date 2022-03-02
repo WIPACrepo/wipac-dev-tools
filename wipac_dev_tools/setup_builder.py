@@ -143,11 +143,12 @@ def build(setup_cfg: str) -> None:
             cfg_new[sec] = cfg[sec]
     cfg_new.write(open(setup_cfg, "w"))
 
-    # Comment generated sections w/ comments saying so
+    # Comment generated sections w/ comments saying so & clean up whitespace
     with open(setup_cfg) as f:
         c = f.read()
         c = c.replace("[metadata]", f"[metadata]  {GENERATED_COMMENT}")
         c = c.replace("[semantic_release]", f"[semantic_release]  {GENERATED_COMMENT}")
+        c = re.sub(r"(\t| )+\n", "\n", c)  # remove trailing whitespace
         print(c)
     with open(setup_cfg, "w") as f:
         f.write(c)
