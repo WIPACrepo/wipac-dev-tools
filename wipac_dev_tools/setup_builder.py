@@ -102,6 +102,7 @@ class FromFiles:
         """Find the package."""
 
         def _get_packages() -> Iterator[str]:
+            """This is essentially [options]'s `packages = find:`."""
             for directory in os.listdir(self.root):
                 directory = os.path.join(self.root, directory)
                 if not os.path.isdir(directory):
@@ -165,7 +166,15 @@ def _build_out_sections(cfg: configparser.RawConfigParser, root_path: str) -> No
 
     # [options] -- override specific options
     cfg["options"]["python_requires"] = bsec.python_requires()
-    cfg["options"]["packages"] = "find:"
+    cfg["options"]["packages"] = "find:"  # NOTE: this finds all packages & sub-packages
+
+    # [options.package_data] -- add 'py.typed'
+    if "py.typed" not in cfg["options.package_data"].get("*", fallback=""):
+        if not cfg["options.package_data"].get("*"):
+            star_data = "py.typed"
+        else:  # append to existing list
+            star_data = f"py.typed, {cfg['options.package_data']['*']}"
+        cfg["options.package_data"]["*"] = star_data
 
 
 def build(setup_cfg: str) -> None:
@@ -177,18 +186,26 @@ def build(setup_cfg: str) -> None:
     assert cfg.has_section(BUIDLER_SECTION_NAME)  # TODO
     cfg.remove_section("metadata")  # will be overridden
     cfg.remove_section("semantic_release")  # will be overridden
-    if not cfg.has_section("options"):  # will only override some options (fields)
+    if not cfg.has_section("options"):  # will only override some fields
         cfg["options"] = {}
+    if not cfg.has_section("options.package_data"):  # will only override some fields
+        cfg["options.package_data"] = {}
 
     # NOTE: 'install_requires' (& 'extras_require') are important and shouldn't be overridden
+    # NOTE: 'entry_points' is to the user's discretion and isn't touched
 
     _build_out_sections(cfg, os.path.dirname(setup_cfg))
 
     # Re-order some sections to the top
-    tops = [BUIDLER_SECTION_NAME, "metadata", "semantic_release", "options"]
-    for sec in cfg.sections():  # and any 'options.*', if present
-        if sec.startswith("options."):
-            tops.append(sec)
+    tops = [
+        BUIDLER_SECTION_NAME,
+        "metadata",
+        "semantic_release",
+        "options",
+        "options.package_data",
+    ]
+    # and any 'options.*', if present
+    tops.extend(s for s in cfg.sections() if s.startswith("options.") and s not in tops)
 
     # Build new 'setup.cfg'
     cfg_new = configparser.RawConfigParser()
@@ -206,6 +223,9 @@ def build(setup_cfg: str) -> None:
         c = c.replace("[semantic_release]", f"[semantic_release]  # {GENERATED_STR}")
         c = c.replace(
             "[options]", f"[options]  # {GENERATED_STR}: 'python_requires', 'packages'"
+        )
+        c = c.replace(
+            "[options.package_data]", f"[options.package_data]  # {GENERATED_STR}: '*'"
         )
         c = re.sub(r"(\t| )+\n", "\n", c)  # remove trailing whitespace
         print(c)
