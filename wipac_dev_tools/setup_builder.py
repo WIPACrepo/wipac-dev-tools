@@ -5,7 +5,8 @@ Used in CI/CD, used by GH Action.
 
 import configparser
 import re
-from typing import Any, Dict, List, Tuple, cast
+from dataclasses import dataclass
+from typing import List, Tuple, cast
 
 SETUP_CFG = "setup.cfg"
 BUIDLER_SECTION_NAME = "wipac:cicd_setup_builder"
@@ -15,103 +16,101 @@ AUTHOR_EMAIL = "developers@icecube.wisc.edu"
 DEFAULT_KEYWORDS = ["WIPAC", "IceCube"]
 LICENSE = "MIT"
 
-
 PythonMinMax = Tuple[Tuple[int, int], Tuple[int, int]]
 
 
-def _python_range(python_range: str) -> PythonMinMax:
-    m = re.match(
-        r"(?P<lo_maj>\d+)\.(?P<lo_min>\d+) *- *(?P<hi_maj>\d+)\.(?P<hi_min>\d+).*",
-        python_range,
-    )
-    assert m  # TODO
-    versions = (
-        (int(m.groupdict()["lo_maj"]), int(m.groupdict()["lo_min"])),
-        (int(m.groupdict()["hi_maj"]), int(m.groupdict()["hi_min"])),
-    )
-    return cast(PythonMinMax, tuple(sorted(versions)))
+@dataclass
+class BuilderSection:
+    """Encapsulates the `BUIDLER_SECTION_NAME` section & checks for required/invalid fields."""
+
+    pypi_name: str
+    version_location: str
+    description: str
+    url: str
+    python_range: str  # python_requires
+    main_or_master: str = "main"
+    keywords: str = ""  # comes as raw "A, B, C" or "A\nB\nC"
+
+    def _python_min_max(self) -> PythonMinMax:
+        """Get the `PythonMinMax` version of `self.python_range`."""
+        m = re.match(
+            r"(?P<lo_maj>\d+)\.(?P<lo_min>\d+) *- *(?P<hi_maj>\d+)\.(?P<hi_min>\d+).*",
+            self.python_range,
+        )
+        assert m  # TODO
+        versions = (
+            (int(m.groupdict()["lo_maj"]), int(m.groupdict()["lo_min"])),
+            (int(m.groupdict()["hi_maj"]), int(m.groupdict()["hi_min"])),
+        )
+        return cast(PythonMinMax, tuple(sorted(versions)))
+
+    def python_requires(self) -> str:
+        """Get a `[metadata]/python_requires` string from `self.python_range`.
+
+        Ex: "">=3.6, <=3.10"
+        """
+        py_min_max = self._python_min_max()
+        return f">={py_min_max[0][0]}.{py_min_max[0][1]}, <={py_min_max[1][0]}.{py_min_max[1][1]}"
+
+    def python_classifiers(self) -> List[str]:
+        """Get auto-detected `Programming Language :: Python :: *` list.
+
+        NOTE: Will not work after the '3.* -> 4.0'-transition.
+        """
+        py_min_max = self._python_min_max()
+        if py_min_max[0][0] < 3:
+            raise Exception("Python-classifier automation does not work for python <3.")
+        if py_min_max[1][0] >= 4:
+            raise Exception("Python-classifier automation does not work for python 4+.")
+
+        return [
+            f"Programming Language :: Python :: 3.{r}"
+            for r in range(py_min_max[0][1], py_min_max[1][1] + 1)
+        ]
 
 
-def _get_py_classifiers(py_min_max: PythonMinMax) -> List[str]:
-    """Get auto-detected `Programming Language :: Python :: *` list.
-
-    NOTE: Will not work after the '3.* -> 4.0'-transition.
-    """
-    if py_min_max[0][0] < 3:
-        raise Exception("Python-classifier automation does not work for python <3.")
-    if py_min_max[1][0] >= 4:
-        raise Exception("Python-classifier automation does not work for python 4+.")
-
-    return [
-        f"Programming Language :: Python :: 3.{r}"
-        for r in range(py_min_max[0][1], py_min_max[1][1] + 1)
-    ]
+def list_to_dangling(lines: List[str]) -> str:
+    """Create a "dangling"-lines formatted list."""
+    return "\n" + "\n".join(lines)
 
 
-def _metadata(
-    pypi_name: str, py_min_max: PythonMinMax, version_location: str, description: str
-) -> Dict[str, Any]:
-    """Build the [metadata] section"""
+def _build_out_sections(cfg: configparser.RawConfigParser) -> None:
+    """Build out the `[metadata]`, `[semantic_release]`, and `[options]` sections."""
 
-    def list_to_dangling(lines: List[str]) -> str:
-        """Create a "dangling"-lines formatted list."""
-        return "\n" + "\n".join(lines)
+    # cast to dataclass (which also checks for fields)
+    bsec = BuilderSection(**dict(cfg[BUIDLER_SECTION_NAME]))
 
-    sec = {
-        "name": pypi_name,
+    # [metadata]
+    cfg["metadata"] = {
+        "name": bsec.pypi_name,
         # "wipac_dev_tools/__init__.py:__version__" -> wipac_dev_tools.__version__
-        "version": f"attr: {version_location.replace('/__init__.py:', '.')}",  # TODO working?
+        "version": f"attr: {bsec.version_location.replace('/__init__.py:', '.')}",  # TODO working?
         "author": AUTHOR,
         "author_email": AUTHOR_EMAIL,
-        "description": description,
+        "description": bsec.description,
         # TODO -- how can we get a readme without being told where it is?
         "long_description": "file: README.md, CHANGELOG.md, LICENSE.md, README.rst, CHANGELOG.rst, LICENSE.rst",
         "long_description_content_type": "",  # TODO
         "keywords": list_to_dangling(DEFAULT_KEYWORDS),  # TODO
         "license": LICENSE,
         # TODO: add "Development Status :: *", any way to do this without knowing abspath?
-        "classifiers": list_to_dangling(_get_py_classifiers(py_min_max)),
+        "classifiers": list_to_dangling(bsec.python_classifiers()),
     }
-    return sec
 
-
-def _semantic_release(version_location: str, main_or_master: str) -> Dict[str, Any]:
-    """Build the [semantic_release] section"""
-    sec = {
-        "version_variable": version_location,  # "wipac_dev_tools/__init__.py:__version__"
+    # [semantic_release]
+    cfg["semantic_release"] = {
+        "version_variable": bsec.version_location,  # "wipac_dev_tools/__init__.py:__version__"
         "upload_to_pypi": "True",
         "patch_without_tag": "True",
         "commit_parser": "semantic_release.history.tag_parser",
         "minor_tag": "[minor]",
         "fix_tag": "[fix]",
-        "branch": main_or_master,
+        "branch": bsec.main_or_master,
     }
 
-    return sec
-
-
-def _build_out_sections(cfg: configparser.RawConfigParser) -> None:
-    buidler_section = cfg[BUIDLER_SECTION_NAME]
-    py_min_max = _python_range(buidler_section["python_range"])
-
-    # [metadata]
-    cfg["metadata"] = _metadata(
-        buidler_section["pypi_name"],
-        py_min_max,
-        buidler_section["version_location"],
-        buidler_section["description"],
-    )
-
-    # [semantic_release]
-    cfg["semantic_release"] = _semantic_release(
-        buidler_section["version_location"],
-        buidler_section["main_or_master"],
-    )
-
     # [options] -- override specific options
-    py_reqs = f">={py_min_max[0][0]}.{py_min_max[0][1]}, <={py_min_max[1][0]}.{py_min_max[1][1]}"
     # TODO: check that this commenting works -- otherwise, get smart with adding after `write()`
-    cfg["options"]["python_requires"] = f"{py_reqs}  {GENERATED_COMMENT}"
+    cfg["options"]["python_requires"] = f"{bsec.python_requires()}  {GENERATED_COMMENT}"
     cfg["options"]["packages"] = f"find:  {GENERATED_COMMENT}"  # TODO: 'find:' working?
 
 
@@ -122,7 +121,7 @@ def build() -> None:
     assert cfg.has_section(BUIDLER_SECTION_NAME)  # TODO
     cfg.remove_section("metadata")  # will be overridden
     cfg.remove_section("semantic_release")  # will be overridden
-    if not cfg.has_section("options"):  # will only override some options
+    if not cfg.has_section("options"):  # will only override some options (fields)
         cfg["options"] = {}
 
     # NOTE: 'install_requires' (& 'extras_require') are important and shouldn't be overridden
