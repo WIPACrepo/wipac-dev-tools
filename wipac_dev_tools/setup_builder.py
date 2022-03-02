@@ -154,7 +154,11 @@ def build(setup_cfg: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("setup-cfg-path", nargs=1)
+    parser = argparse.ArgumentParser(
+        description=f"Read and transform 'setup.cfg' file. "
+        f"Builds out sections according to [{BUIDLER_SECTION_NAME}].",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("setup_cfg_file")
     args = parser.parse_args()
-    build(args.setup_cfg_path)
+    build(args.setup_cfg_file)
