@@ -1,4 +1,4 @@
-"""Module to support the `setuptools.setup` utility within `setup.py` files."""
+"""DEPRECATED: Module to support the `setuptools.setup` utility within `setup.py` files."""
 
 
 import os
@@ -74,6 +74,13 @@ class SetupShop:
         allow_git_urls: bool = True,
         pinned_packages: Optional[List[str]] = None,
     ):
+        print(  # DEPRECATION WARNING
+            "\033[93m"
+            + "\033[1m"
+            + "SetupShop is deprecated. Use the CICD Setup Builder GH Action"
+            + "\033[0m"
+        )
+
         py_min, py_max = SetupShop._get_py_min_max(py_min_max)
 
         if not re.match(r"\w+$", package_name):
