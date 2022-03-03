@@ -40,7 +40,7 @@ class BuilderSection:
     description: str
     url: str
     python_min: str  # python_requires
-    main_or_master: str = "main"
+    branch: str = "main"
     keywords_spaced: str = ""  # comes as "A B C"
 
     def _python3_min_max(self) -> PythonMinMax:
@@ -220,7 +220,7 @@ def _build_out_sections(cfg: configparser.RawConfigParser, root_path: str) -> No
         "commit_parser": "semantic_release.history.tag_parser",
         "minor_tag": "[minor]",
         "fix_tag": "[fix]",
-        "branch": bsec.main_or_master,
+        "branch": bsec.branch,
     }
 
     # [options] -- override specific options
