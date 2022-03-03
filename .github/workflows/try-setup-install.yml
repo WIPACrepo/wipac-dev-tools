@@ -13,7 +13,7 @@ jobs:
       - name: Python Versions
         id: py3_versions
         run: |
-          minmin_maxmax=$(grep -P "\(\(\d+, ?\d+\), ?\(\d+, ?\d+\)\)" -oh setup.py | sed 's/[^0-9]/ /g')
+          minmin_maxmax=$(grep -P "python_requires = >=\d+.\d+, <\d+.\d+" -oh setup.py | sed 's/[^0-9]/ /g')
           IFS=', ' read -r -a array <<< "$minmin_maxmax"
           min_thru_max_series=$(for i in `seq ${array[1]} ${array[3]}`; do printf "'3.$i',"; done | rev | cut -c 2- | rev)
           echo ::set-output name=matrix::{\"py3_versions\":[$(echo $min_thru_max_series)]}\"
