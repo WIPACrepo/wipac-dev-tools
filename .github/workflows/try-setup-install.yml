@@ -13,7 +13,7 @@ jobs:
       - name: Python Versions
         id: py3_versions
         run: |
-          ls -a
+          cat .git/config
           minmin_maxmax=$(grep -P "python_requires = >=\d+.\d+, <\d+.\d+" -oh setup.cfg | sed 's/[^0-9]/ /g')
           IFS=', ' read -r -a array <<< "$minmin_maxmax"
           min_thru_max_series=$(for i in `seq ${array[1]} $((array[3]-1))`; do printf "'3.$i',"; done | rev | cut -c 2- | rev)
