@@ -34,5 +34,24 @@ jobs:
           if [ -z "$(git status --porcelain)" ]; then
             exit 0
           fi
-          git commit -m "Update setup & requirements"
+          git commit -m "<Bot> Update setup & requirements"
           git push
+
+  release:
+    runs-on: ubuntu-latest
+    concurrency: release
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Python Semantic Release
+      if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
+      run: |
+        echo "Test"
+      # uses: relekang/python-semantic-release@master
+      # with:
+      #   github_token: ${{ secrets.GITHUB_TOKEN }}
+      #   repository_username: __token__
+      #   repository_password: ${{ secrets.PYPI_TOKEN }}
