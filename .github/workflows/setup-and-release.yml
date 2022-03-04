@@ -20,7 +20,7 @@ jobs:
         run: |
           pip3 install requests
           echo $GITHUB_REPOSITORY
-          python3 setup.cfg $GITHUB_REPOSITORY
+          python3 wipac_dev_tools/setup_builder.py setup.cfg $GITHUB_REPOSITORY
 
       - name: Build requirements.txt
         run: |
