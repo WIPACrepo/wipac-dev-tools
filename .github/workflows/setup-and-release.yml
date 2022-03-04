@@ -1,0 +1,38 @@
+# For most recent version see:
+# https://github.com/WIPACrepo/wipac-dev-tools/blob/main/.github/workflows/setup-and-release.yml
+# Copy any updates to wipac-dev-tools.
+
+name: Setup and Release
+
+on: [push]
+
+jobs:
+
+  build-setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Build setup.cfg
+        run: |
+          pip3 install requests
+          echo $GITHUB_REPOSITORY
+          python3 setup.cfg $GITHUB_REPOSITORY
+
+      - name: Build requirements.txt
+        run: |
+          echo "TBD"
+
+      - name: Commit changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          if [ -z "$(git status --porcelain)" ]; then
+            exit 0
+          fi
+          git commit -m "Update setup & requirements"
+          git push
