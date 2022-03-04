@@ -2,13 +2,13 @@
 # https://github.com/WIPACrepo/wipac-dev-tools/blob/main/.github/workflows/setup-and-release.yml
 # Copy any updates to wipac-dev-tools.
 
-name: Setup and Release
+name: Update Setup/Requirements, Try-Install, and Release
 
 on: [push]
 
 jobs:
 
-  build-setup:
+  update-setup-and-requirements:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,7 +37,42 @@ jobs:
           git commit -m "<Bot> Update setup & requirements"
           git push
 
+  gather-py3-versions:
+    needs: update-setup-and-requirements
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.py3_versions.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Python Versions
+        id: py3_versions
+        run: |
+          minmin_maxmax=$(grep -P "python_requires = >=\d+.\d+, <\d+.\d+" -oh setup.cfg | sed 's/[^0-9]/ /g')
+          IFS=', ' read -r -a array <<< "$minmin_maxmax"
+          min_thru_max_series=$(for i in `seq ${array[1]} $((array[3]-1))`; do printf "'3.$i',"; done | rev | cut -c 2- | rev)
+          echo ::set-output name=matrix::{\"py3_versions\":[$(echo $min_thru_max_series)]}\"
+          echo $min_thru_max_series
+
+  try-install:
+    needs: [update-setup-and-requirements, gather-py3-versions]
+    runs-on: ubuntu-latest
+
+    strategy:
+      max-parallel: 4
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.gather-py3-versions.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py3_versions }}
+      - run: |
+          pip install --upgrade pip wheel setuptools
+          pip install --editable .
+
   release:
+    needs: try-install
     runs-on: ubuntu-latest
     concurrency: release
 
