@@ -39,8 +39,8 @@ jobs:
           fi
           git commit -m "<bot> update setup.cfg and/or requirements.txt"
           git push
-          exit 1  # prevent dependent job(s) since there's changes to the code
           echo "changes pushed (rest of workflow canceled)"
+          exit 1  # prevent dependent job(s) since there's changes to the code
 
   release:
     needs: build-setup
