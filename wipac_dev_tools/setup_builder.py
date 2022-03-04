@@ -93,7 +93,7 @@ class BuilderSection:
 
 
 def list_to_dangling(lines: List[str], sort: bool = False) -> str:
-    """Create a "dangling"-lines formatted list."""
+    """Create a "dangling" multi-line formatted list."""
     return "\n" + "\n".join(sorted(lines) if sort else lines)
 
 
@@ -235,9 +235,16 @@ def _build_out_sections(
         "branch": gh_api.default_branch,
     }
 
-    # [options] -- override specific options
+    # [options] -- override/augment specific options
     cfg["options"]["python_requires"] = bsec.python_requires()
     cfg["options"]["packages"] = "find:"  # NOTE: this finds all packages & sub-packages
+    if cfg["options"].get("install_requires", fallback=""):
+        # sort requirements if they're dangling
+        if "\n" in cfg["options"]["install_requires"].strip():
+            as_lines = cfg["options"]["install_requires"].strip().split("\n")
+            cfg["options"]["install_requires"] = list_to_dangling(as_lines, sort=True)
+    else:
+        cfg["options"]["install_requires"] = ""
 
     # [options.package_data] -- add 'py.typed'
     if "py.typed" not in cfg["options.package_data"].get("*", fallback=""):
