@@ -32,15 +32,24 @@ def get_latest_py3_release() -> Tuple[int, int]:
         minor += 1
 
 
+class GitHubAPI:
+    """Relay info from the GitHub API."""
+
+    def __init__(self, github_full_repo: str) -> None:
+        assert re.match(r"(\w|-)+/(\w|-)+$", github_full_repo)  # TODO
+        self.url = f"https://github.com/{github_full_repo}"
+
+        _json = requests.get(f"https://api.github.com/repos/{github_full_repo}").json()
+        self.default_branch = cast(str, _json["default_branch"])  # main/master/etc.
+        self.description = cast(str, _json["description"])
+
+
 @dataclass
 class BuilderSection:
     """Encapsulates the `BUIDLER_SECTION_NAME` section & checks for required/invalid fields."""
 
     pypi_name: str
-    description: str
-    url: str
     python_min: str  # python_requires
-    branch: str = "main"
     keywords_spaced: str = ""  # comes as "A B C"
 
     def _python3_min_max(self) -> PythonMinMax:
@@ -185,19 +194,23 @@ class FromFiles:
             )
 
 
-def _build_out_sections(cfg: configparser.RawConfigParser, root_path: str) -> None:
+def _build_out_sections(
+    cfg: configparser.RawConfigParser, root_path: str, github_full_repo: str
+) -> None:
     """Build out the `[metadata]`, `[semantic_release]`, and `[options]` sections."""
 
     bsec = BuilderSection(**dict(cfg[BUIDLER_SECTION_NAME]))  # checks req/extra fields
     ffile = FromFiles(root_path)  # get things that require reading files
+    gh_api = GitHubAPI(github_full_repo)
 
     # [metadata]
     cfg["metadata"] = {
         "name": bsec.pypi_name,
         "version": f"attr: {ffile.package}.__version__",  # "wipac_dev_tools.__version__"
+        "url": gh_api.url,
         "author": AUTHOR,
         "author_email": AUTHOR_EMAIL,
-        "description": bsec.description,
+        "description": gh_api.description,
         # any of these files that don't exist are simply ignored, so list everything that could be
         "long_description": f"file: README.{ffile.readme_ext}, CHANGELOG.{ffile.readme_ext}, LICENSE.{ffile.readme_ext}",
         "long_description_content_type": long_description_content_type(
@@ -220,7 +233,7 @@ def _build_out_sections(cfg: configparser.RawConfigParser, root_path: str) -> No
         "commit_parser": "semantic_release.history.tag_parser",
         "minor_tag": "[minor]",
         "fix_tag": "[fix]",
-        "branch": bsec.branch,
+        "branch": gh_api.default_branch,
     }
 
     # [options] -- override specific options
@@ -236,7 +249,7 @@ def _build_out_sections(cfg: configparser.RawConfigParser, root_path: str) -> No
         cfg["options.package_data"]["*"] = star_data
 
 
-def build(setup_cfg: str) -> None:
+def build(setup_cfg: str, github_full_repo: str) -> None:
     """Build the `setup.cfg` sections according to `BUIDLER_SECTION_NAME`."""
     setup_cfg = os.path.abspath(setup_cfg)
 
@@ -253,7 +266,7 @@ def build(setup_cfg: str) -> None:
     # NOTE: 'install_requires' (& 'extras_require') are important and shouldn't be overridden
     # NOTE: 'entry_points' is to the user's discretion and isn't touched
 
-    _build_out_sections(cfg, os.path.dirname(setup_cfg))
+    _build_out_sections(cfg, os.path.dirname(setup_cfg), github_full_repo)
 
     # Re-order some sections to the top
     tops = [
@@ -298,6 +311,9 @@ if __name__ == "__main__":
         f"Builds out sections according to [{BUIDLER_SECTION_NAME}].",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("setup_cfg_file")
+    parser.add_argument("setup_cfg_file", help="path to the setup.cfg file")
+    parser.add_argument(
+        "github_full_repo", help="GitHub repo path, ex: WIPACrepo/wipac-dev-tools"
+    )
     args = parser.parse_args()
-    build(args.setup_cfg_file)
+    build(args.setup_cfg_file, args.github_full_repo)
