@@ -26,7 +26,8 @@ jobs:
 
       - name: Build requirements.txt
         run: |
-          echo "TBD"
+          pip3 install pip-tools
+          pip-compile --upgrade
 
       - name: Commit changes
         run: |
