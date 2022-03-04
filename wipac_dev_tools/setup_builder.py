@@ -36,7 +36,6 @@ class GitHubAPI:
     """Relay info from the GitHub API."""
 
     def __init__(self, github_full_repo: str) -> None:
-        assert re.match(r"(\w|-)+/(\w|-)+$", github_full_repo)  # TODO
         self.url = f"https://github.com/{github_full_repo}"
 
         _json = requests.get(f"https://api.github.com/repos/{github_full_repo}").json()
@@ -306,14 +305,33 @@ def build(setup_cfg: str, github_full_repo: str) -> None:
 
 
 if __name__ == "__main__":
+
+    def _assert_setup_cfg(arg: str) -> str:
+        if not (arg.endswith("/setup.cfg") or arg == "setup.cfg"):
+            raise ValueError()  # excepted by argparse & formatted nicely
+        if not os.path.exists(arg):
+            raise FileNotFoundError(arg)
+        return arg
+
+    def _assert_github_full_repo(arg: str) -> str:
+        if not re.match(r"(\w|-)+/(\w|-)+$", arg):
+            raise ValueError()  # excepted by argparse & formatted nicely
+        return arg
+
     parser = argparse.ArgumentParser(
         description=f"Read and transform 'setup.cfg' file. "
         f"Builds out sections according to [{BUIDLER_SECTION_NAME}].",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("setup_cfg_file", help="path to the setup.cfg file")
     parser.add_argument(
-        "github_full_repo", help="GitHub repo path, ex: WIPACrepo/wipac-dev-tools"
+        "setup_cfg_file",
+        type=_assert_setup_cfg,
+        help="path to the 'setup.cfg' file",
+    )
+    parser.add_argument(
+        "github_full_repo",
+        type=_assert_github_full_repo,
+        help="Fully-named GitHub repo, ex: WIPACrepo/wipac-dev-tools",
     )
     args = parser.parse_args()
     build(args.setup_cfg_file, args.github_full_repo)
