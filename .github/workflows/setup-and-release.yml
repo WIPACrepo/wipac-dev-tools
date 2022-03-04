@@ -33,11 +33,23 @@ jobs:
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add .
+
+          git add setup.cfg
           if [ -z "$(git status --porcelain)" ]; then
-            echo "no changes needed"
+            echo "setup.cfg: no changes needed"
+          fi
+
+          git add requirements.txt
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "requirements.txt: no changes needed"
+          fi
+
+          # for future dev: add other commits here
+
+          if [ -z "$(git status --porcelain)" ]; then
             exit 0
           fi
+
           git commit -m "<bot> update setup.cfg and/or requirements.txt"
           git push
           echo "changes pushed (rest of workflow canceled)"
