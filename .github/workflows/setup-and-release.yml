@@ -18,39 +18,32 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
-      - name: Build setup.cfg
-        run: |
-          pip3 install requests
-          echo $GITHUB_REPOSITORY
-          python3 wipac_dev_tools/setup_builder.py setup.cfg $GITHUB_REPOSITORY
-
-      - name: Build requirements.txt
-        run: |
-          pip3 install pip-tools
-          pip-compile --upgrade
-
-      - name: Commit changes
+      - name: Git config
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
 
+      - name: Build setup.cfg (and commit)
+        run: |
+          pip3 install requests
+          echo $GITHUB_REPOSITORY
+          python3 wipac_dev_tools/setup_builder.py setup.cfg $GITHUB_REPOSITORY
           git add setup.cfg
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "setup.cfg: no changes needed"
-          fi
+          git commit -m "<bot> update setup.cfg" || true
 
+      - name: Build requirements.txt (and commit)
+        run: |
+          pip3 install pip-tools
+          pip-compile --upgrade
           git add requirements.txt
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "requirements.txt: no changes needed"
-          fi
+          git commit -m "<bot> update requirements.txt" || true
 
-          # for future dev: add other commits here
-
+      - name: Push changes
+        run: |
           if [ -z "$(git status --porcelain)" ]; then
+            echo "no changes needed"
             exit 0
           fi
-
-          git commit -m "<bot> update setup.cfg and/or requirements.txt"
           git push
           echo "changes pushed (rest of workflow canceled)"
           exit 1  # prevent dependent job(s) since there's changes to the code
