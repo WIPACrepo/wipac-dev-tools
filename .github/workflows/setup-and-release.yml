@@ -40,7 +40,8 @@ jobs:
 
       - name: Push changes
         run: |
-          if [ -z "$(git status --porcelain)" ]; then
+          ahead=`echo -n "${status}" 2> /dev/null | grep "Your branch is ahead of" &> /dev/null; echo "$?"`
+          if [ "$ahead" -eq "1" ]; then
             echo "no changes needed"
             exit 0
           fi
