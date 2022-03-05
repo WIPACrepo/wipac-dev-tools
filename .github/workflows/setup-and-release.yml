@@ -28,14 +28,14 @@ jobs:
           pip3 install requests
           echo $GITHUB_REPOSITORY
           python3 wipac_dev_tools/setup_builder.py setup.cfg $GITHUB_REPOSITORY
-          git add setup.cfg
+          git add .
           git commit -m "<bot> update setup.cfg" || true
 
       - name: Build requirements.txt (and commit)
         run: |
           pip3 install pip-tools
           pip-compile --upgrade
-          git add requirements.txt
+          git add .
           git commit -m "<bot> update requirements.txt" || true
 
       - name: Push changes
