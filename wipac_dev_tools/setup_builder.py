@@ -19,6 +19,8 @@ AUTHOR_EMAIL = "developers@icecube.wisc.edu"
 DEFAULT_KEYWORDS = ["WIPAC", "IceCube"]
 LICENSE = "MIT"
 
+_PYTHON_MINOR_RELEASE_MAX = 50
+
 PythonMinMax = Tuple[Tuple[int, int], Tuple[int, int]]
 
 
@@ -27,8 +29,12 @@ def get_latest_py3_release() -> Tuple[int, int]:
     minor = 10  # start with 3.10
     while True:
         url = f"https://docs.python.org/release/3.{minor}.0/"
-        if requests.get(url).status_code == 404:
+        if requests.get(url).status_code >= 300:  # not a success (404 likely)
             return (3, minor - 1)
+        if minor == _PYTHON_MINOR_RELEASE_MAX:
+            raise Exception(
+                "Latest python-release detection failed (unless python 3.50 is real?)"
+            )
         minor += 1
 
 
