@@ -216,8 +216,7 @@ def _build_out_sections(
         "author": AUTHOR,
         "author_email": AUTHOR_EMAIL,
         "description": gh_api.description,
-        # any of these files that don't exist are simply ignored, so list everything that could be
-        "long_description": f"file: README.{ffile.readme_ext}, CHANGELOG.{ffile.readme_ext}, LICENSE.{ffile.readme_ext}",
+        "long_description": f"file: README.{ffile.readme_ext}",
         "long_description_content_type": long_description_content_type(
             ffile.readme_ext
         ),
