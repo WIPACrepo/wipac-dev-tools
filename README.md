@@ -1,6 +1,6 @@
-# wipac-dev-tools
-Common, basic, and reusable development tools
-
 ![CircleCI](https://img.shields.io/circleci/build/github/WIPACrepo/wipac-dev-tools) ![PyPI](https://img.shields.io/pypi/v/wipac-dev-tools) ![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/WIPACRepo/wipac-dev-tools?include_prereleases) ![PyPI - License](https://img.shields.io/pypi/l/wipac-dev-tools) ![Lines of code](https://img.shields.io/tokei/lines/github/WIPACrepo/wipac-dev-tools)
 
 ![GitHub issues](https://img.shields.io/github/issues/WIPACrepo/wipac-dev-tools) ![GitHub closed issues](https://img.shields.io/github/issues-closed/WIPACrepo/wipac-dev-tools) ![GitHub pull requests](https://img.shields.io/github/issues-pr/WIPACrepo/wipac-dev-tools) ![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/WIPACrepo/wipac-dev-tools)
+
+# wipac-dev-tools
+Common, basic, and reusable development tools
