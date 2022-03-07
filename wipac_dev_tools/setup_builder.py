@@ -194,7 +194,7 @@ class FromFiles:
 
 
 def _build_out_sections(
-    cfg: configparser.RawConfigParser, root_path: str, github_full_repo: str
+    cfg: configparser.ConfigParser, root_path: str, github_full_repo: str
 ) -> None:
     """Build out the `[metadata]`, `[semantic_release]`, and `[options]` sections."""
 
@@ -259,7 +259,7 @@ def build(setup_cfg: str, github_full_repo: str) -> None:
     """Build the `setup.cfg` sections according to `BUIDLER_SECTION_NAME`."""
     setup_cfg = os.path.abspath(setup_cfg)
 
-    cfg = configparser.RawConfigParser(allow_no_value=True, comment_prefixes="/")
+    cfg = configparser.ConfigParser(allow_no_value=True, comment_prefixes="/")
     cfg.read(setup_cfg)
     assert cfg.has_section(BUIDLER_SECTION_NAME)  # TODO
     cfg.remove_section("metadata")  # will be overridden
@@ -286,7 +286,7 @@ def build(setup_cfg: str, github_full_repo: str) -> None:
     tops.extend(s for s in cfg.sections() if s.startswith("options.") and s not in tops)
 
     # Build new 'setup.cfg'
-    cfg_new = configparser.RawConfigParser()
+    cfg_new = configparser.ConfigParser(allow_no_value=True)
     for sec in tops:
         cfg_new[sec] = cfg[sec]
     for sec in cfg.sections():  # add rest of existing sections
