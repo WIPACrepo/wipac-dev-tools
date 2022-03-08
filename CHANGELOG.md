@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.1 (2022-03-08)
+
+
 ## v1.1.0 (2022-03-07)
 ### Feature
 * PyPI Readiness ([#22](https://github.com/WIPACrepo/wipac-dev-tools/issues/22)) ([`af42b27`](https://github.com/WIPACrepo/wipac-dev-tools/commit/af42b273b97c774e21abd0b6dbedd74e2aaae8e5))
