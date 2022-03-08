@@ -283,7 +283,7 @@ def _build_out_sections(
         "download_url": f"https://pypi.org/project/{bsec.pypi_name}/",
         "project_urls": list_to_dangling(
             [
-                f"Tracker = {gh_api.url}/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aopen",
+                f"Tracker = {gh_api.url}/issues",
                 f"Source = {gh_api.url}",
                 # f"Documentation = {}",
             ],
