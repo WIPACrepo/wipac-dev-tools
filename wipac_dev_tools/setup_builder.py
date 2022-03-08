@@ -236,7 +236,7 @@ class READMEMarkdownManager:
         return [
             REAMDE_BADGES_START_DELIMITER,
             "\n",
-            f"[![CircleCI](https://img.shields.io/circleci/build/github/{self.github_full_repo}) ",
+            f"[![CircleCI](https://img.shields.io/circleci/build/github/{self.github_full_repo})](https://app.circleci.com/pipelines/github/{self.github_full_repo}) ",
             f"[![PyPI](https://img.shields.io/pypi/v/{self.bsec.pypi_name})](https://pypi.org/project/{self.bsec.pypi_name}/) ",
             f"[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/{self.github_full_repo}?include_prereleases)]({self.gh_api.url}/) ",
             f"[![PyPI - License](https://img.shields.io/pypi/l/{self.bsec.pypi_name})]({self.gh_api.url}/blob/{self.gh_api.default_branch}/LICENSE) ",
