@@ -23,13 +23,15 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
 
-      - name: Build setup.cfg (and commit)
+      - name: Build setup.cfg + README.md (and commit)
         run: |
           pip3 install requests
           echo $GITHUB_REPOSITORY
           python3 wipac_dev_tools/setup_builder.py setup.cfg $GITHUB_REPOSITORY
-          git add .
+          git add setup.cfg
           git commit -m "<bot> update setup.cfg" || true
+          git add README.md || true
+          git commit -m "<bot> update README.md" || true
 
       - name: Build requirements.txt (and commit)
         run: |
