@@ -8,7 +8,7 @@ import configparser
 import os
 import re
 from dataclasses import dataclass
-from typing import Iterator, List, Tuple, cast
+from typing import Iterator, List, Optional, Tuple, cast
 
 import requests
 
@@ -18,6 +18,9 @@ AUTHOR = "WIPAC Developers"
 AUTHOR_EMAIL = "developers@icecube.wisc.edu"
 DEFAULT_KEYWORDS = ["WIPAC", "IceCube"]
 LICENSE = "MIT"
+
+REAMDE_BADGES_START_DELIMITER = "<!--- Top of README Badges (automated) --->"
+REAMDE_BADGES_END_DELIMITER = "<!--- End of README Badges (automated) --->"
 
 _PYTHON_MINOR_RELEASE_MAX = 50
 
@@ -121,7 +124,7 @@ class FromFiles:
         self.root = os.path.abspath(root)
         self.pkg_path = self._get_package()
         self.package = os.path.basename(self.pkg_path)
-        self.readme_ext = self._get_readme_ext()
+        self.readme, self.readme_ext = self._get_readme_ext()
         self.version = self._get_version()
         self.development_status = self._get_development_status()
 
@@ -148,11 +151,11 @@ class FromFiles:
             )
         return pkgs[0]
 
-    def _get_readme_ext(self) -> str:
-        """Return the file extension of the 'README' file."""
+    def _get_readme_ext(self) -> Tuple[str, str]:
+        """Return the 'README' file and its extension."""
         for fname in os.listdir(self.root):
             if fname.startswith("README."):
-                return fname.split("README.")[1]
+                return fname, fname.split("README.")[1]
         raise Exception(f"No README file found in '{self.root}'")
 
     def _get_version(self) -> str:
@@ -199,10 +202,60 @@ class FromFiles:
             )
 
 
+class READMEMarkdownManager:
+    """Add some automation to README.md."""
+
+    def __init__(
+        self,
+        readme: str,
+        github_full_repo: str,
+        bsec: BuilderSection,
+        gh_api: GitHubAPI,
+    ) -> None:
+        self.readme = readme
+        self.github_full_repo = github_full_repo
+        self.bsec = bsec
+        self.gh_api = gh_api
+        with open(readme, "r") as f:
+            lines_to_keep = []
+            in_badges = False
+            for line in f.readlines():
+                if line.strip() == REAMDE_BADGES_START_DELIMITER:
+                    in_badges = True
+                    continue
+                if line.strip() == REAMDE_BADGES_END_DELIMITER:
+                    in_badges = False
+                    continue
+                if in_badges:
+                    continue
+                lines_to_keep.append(line)
+        self.lines = self.badges_lines() + lines_to_keep
+
+    def badges_lines(self) -> List[str]:
+        """Create and return the lines used to append to a README.md containing various linked-badges."""
+        return [
+            REAMDE_BADGES_START_DELIMITER,
+            "\n",
+            f"[![CircleCI](https://img.shields.io/circleci/build/github/{self.github_full_repo}) ",
+            f"[![PyPI](https://img.shields.io/pypi/v/{self.bsec.pypi_name})](https://pypi.org/project/{self.bsec.pypi_name}/) ",
+            f"[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/{self.github_full_repo}?include_prereleases)]({self.gh_api.url}/) ",
+            f"[![PyPI - License](https://img.shields.io/pypi/l/{self.bsec.pypi_name})]({self.gh_api.url}/blob/{self.gh_api.default_branch}/LICENSE) ",
+            f"[![Lines of code](https://img.shields.io/tokei/lines/github/{self.github_full_repo})]({self.gh_api.url}/) ",
+            f"[![GitHub issues](https://img.shields.io/github/issues/{self.github_full_repo})]({self.gh_api.url}/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aopen) ",
+            f"[![GitHub pull requests](https://img.shields.io/github/issues-pr/{self.github_full_repo})]({self.gh_api.url}/pulls?q=is%3Apr+sort%3Aupdated-desc+is%3Aopen) ",
+            "\n",
+            REAMDE_BADGES_END_DELIMITER,
+            "\n",
+        ]
+
+
 def _build_out_sections(
     cfg: configparser.ConfigParser, root_path: str, github_full_repo: str
-) -> None:
-    """Build out the `[metadata]`, `[semantic_release]`, and `[options]` sections."""
+) -> Optional[READMEMarkdownManager]:
+    """Build out the `[metadata]`, `[semantic_release]`, and `[options]` sections.
+
+    Return a 'READMEMarkdownManager' instance to write out. If, necessary.
+    """
 
     bsec = BuilderSection(**dict(cfg[BUILDER_SECTION_NAME]))  # checks req/extra fields
     ffile = FromFiles(root_path)  # get things that require reading files
@@ -259,9 +312,19 @@ def _build_out_sections(
             star_data = f"py.typed, {cfg['options.package_data']['*']}"
         cfg["options.package_data"]["*"] = star_data
 
+    # Automate some README stuff
+    if ffile.readme_ext == "md":
+        return READMEMarkdownManager(ffile.readme, github_full_repo, bsec, gh_api)
+    return None
 
-def build(setup_cfg: str, github_full_repo: str) -> None:
-    """Build the `setup.cfg` sections according to `BUILDER_SECTION_NAME`."""
+
+def write_setup_cfg(
+    setup_cfg: str, github_full_repo: str
+) -> Optional[READMEMarkdownManager]:
+    """Build/write the `setup.cfg` sections according to `BUILDER_SECTION_NAME`.
+
+    Return a 'READMEMarkdownManager' instance to write out. If, necessary.
+    """
     setup_cfg = os.path.abspath(setup_cfg)
 
     cfg = configparser.ConfigParser(allow_no_value=True, comment_prefixes="/")
@@ -277,7 +340,7 @@ def build(setup_cfg: str, github_full_repo: str) -> None:
     # NOTE: 'install_requires' (& 'extras_require') are important and shouldn't be overridden
     # NOTE: 'entry_points' is to the user's discretion and isn't touched
 
-    _build_out_sections(cfg, os.path.dirname(setup_cfg), github_full_repo)
+    readme_mgr = _build_out_sections(cfg, os.path.dirname(setup_cfg), github_full_repo)
 
     # Re-order some sections to the top
     tops = [
@@ -315,6 +378,20 @@ def build(setup_cfg: str, github_full_repo: str) -> None:
     with open(setup_cfg, "w") as f:
         f.write(c)
 
+    return readme_mgr
+
+
+def main(setup_cfg: str, github_full_repo: str) -> None:
+    """Read and write all necessary files."""
+    # build & write the setup.cfg
+    readme_mgr = write_setup_cfg(setup_cfg, github_full_repo)
+
+    # also, write the readme, if necessary
+    if readme_mgr:
+        with open(readme_mgr.readme, "w") as f:
+            for line in readme_mgr.lines:
+                f.write(line)
+
 
 if __name__ == "__main__":
 
@@ -331,8 +408,8 @@ if __name__ == "__main__":
         return arg
 
     parser = argparse.ArgumentParser(
-        description=f"Read and transform 'setup.cfg' file. "
-        f"Builds out sections according to [{BUILDER_SECTION_NAME}].",
+        description=f"Read/transform 'setup.cfg' and 'README.md' files. "
+        f"Builds out 'setup.cfg' sections according to [{BUILDER_SECTION_NAME}].",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -346,4 +423,4 @@ if __name__ == "__main__":
         help="Fully-named GitHub repo, ex: WIPACrepo/wipac-dev-tools",
     )
     args = parser.parse_args()
-    build(args.setup_cfg_file, args.github_full_repo)
+    main(args.setup_cfg_file, args.github_full_repo)
