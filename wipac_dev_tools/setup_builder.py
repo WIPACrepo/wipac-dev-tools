@@ -250,7 +250,7 @@ class READMEMarkdownManager:
 
 
 def _build_out_sections(
-    cfg: configparser.RawConfigParser, root_path: str, github_full_repo: str
+    cfg: configparser.ConfigParser, root_path: str, github_full_repo: str
 ) -> Optional[READMEMarkdownManager]:
     """Build out the `[metadata]`, `[semantic_release]`, and `[options]` sections.
 
@@ -335,7 +335,9 @@ def write_setup_cfg(
     """
     setup_cfg = os.path.abspath(setup_cfg)
 
-    cfg = configparser.RawConfigParser(allow_no_value=True, comment_prefixes="/")
+    cfg = configparser.ConfigParser(
+        allow_no_value=True, comment_prefixes="/", interpolation=None
+    )
     cfg.read(setup_cfg)
     assert cfg.has_section(BUILDER_SECTION_NAME)  # TODO
     cfg.remove_section("metadata")  # will be overridden
@@ -362,7 +364,7 @@ def write_setup_cfg(
     tops.extend(s for s in cfg.sections() if s.startswith("options.") and s not in tops)
 
     # Build new 'setup.cfg'
-    cfg_new = configparser.RawConfigParser(allow_no_value=True)  # no interpolation
+    cfg_new = configparser.ConfigParser(allow_no_value=True, interpolation=None)
     for sec in tops:
         cfg_new[sec] = cfg[sec]
     for sec in cfg.sections():  # add rest of existing sections
