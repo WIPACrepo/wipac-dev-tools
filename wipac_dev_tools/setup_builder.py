@@ -245,7 +245,7 @@ class READMEMarkdownManager:
             f"[![GitHub pull requests](https://img.shields.io/github/issues-pr/{self.github_full_repo})]({self.gh_api.url}/pulls?q=is%3Apr+sort%3Aupdated-desc+is%3Aopen) ",
             "\n",
             REAMDE_BADGES_END_DELIMITER,
-            "\n\n",
+            "\n",  # only one newline here, otherwise we get an infinite commit-loop
         ]
 
 
