@@ -233,10 +233,15 @@ class READMEMarkdownManager:
 
     def badges_lines(self) -> List[str]:
         """Create and return the lines used to append to a README.md containing various linked-badges."""
-        return [
-            REAMDE_BADGES_START_DELIMITER,
-            "\n",
-            f"[![CircleCI](https://img.shields.io/circleci/build/github/{self.github_full_repo})](https://app.circleci.com/pipelines/github/{self.github_full_repo}?branch={self.gh_api.default_branch}&filter=all) ",
+        badges = [REAMDE_BADGES_START_DELIMITER, "\n"]
+
+        circleci = f"https://app.circleci.com/pipelines/github/{self.github_full_repo}?branch={self.gh_api.default_branch}&filter=all"
+        if requests.get(circleci).status_code == 200:
+            badges.append(
+                f"[![CircleCI](https://img.shields.io/circleci/build/github/{self.github_full_repo})]({circleci}) "
+            )
+
+        badges += [
             f"[![PyPI](https://img.shields.io/pypi/v/{self.bsec.pypi_name})](https://pypi.org/project/{self.bsec.pypi_name}/) ",
             f"[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/{self.github_full_repo}?include_prereleases)]({self.gh_api.url}/) ",
             f"[![PyPI - License](https://img.shields.io/pypi/l/{self.bsec.pypi_name})]({self.gh_api.url}/blob/{self.gh_api.default_branch}/LICENSE) ",
@@ -247,6 +252,8 @@ class READMEMarkdownManager:
             REAMDE_BADGES_END_DELIMITER,
             "\n",  # only one newline here, otherwise we get an infinite commit-loop
         ]
+
+        return badges
 
 
 def _build_out_sections(
