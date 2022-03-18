@@ -44,16 +44,15 @@ jobs:
           pip install .
 
   release:
+    if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
     needs: [flake8, mypy, py-setup, pip-install]
     runs-on: ubuntu-latest
     concurrency: release
     steps:
     - uses: actions/checkout@v2
-      if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
       with:
         fetch-depth: 0
     - name: Python Semantic Release
-      if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
       uses: relekang/python-semantic-release@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
