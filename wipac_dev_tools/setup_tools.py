@@ -77,7 +77,7 @@ class SetupShop:
         print(  # DEPRECATION WARNING
             "\033[93m"
             + "\033[1m"
-            + "SetupShop is deprecated. Use the CICD Setup Builder GH Action"
+            + "SetupShop is deprecated. Use GH Action: WIPACrepo/wipac-dev-py-setup-action"
             + "\033[0m"
         )
 
