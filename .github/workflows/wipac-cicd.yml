@@ -11,15 +11,15 @@ jobs:
   flake8:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
       - uses: WIPACrepo/wipac-dev-flake8-action@v1
 
   mypy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
       - uses: WIPACrepo/wipac-dev-mypy-action@v1
 
   py-setup:
@@ -39,7 +39,7 @@ jobs:
     outputs:
       matrix: ${{ steps.versions.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: versions
         uses: WIPACrepo/wipac-dev-py-versions-action@v1
 
@@ -52,8 +52,8 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.py3_versions }}
       - run: |
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     concurrency: release
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Python Semantic Release
