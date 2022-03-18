@@ -1,14 +1,29 @@
 # For most recent version see:
-# https://github.com/WIPACrepo/wipac-dev-tools/blob/main/.github/workflows/setup-and-release.yml
+# https://github.com/WIPACrepo/wipac-dev-tools/blob/main/.github/workflows/wipac-cicd.yml
 # Copy any updates to wipac-dev-tools.
 
-name: Setup and Release
+name: WIPAC CI/CD
 
 on: [push]
 
 jobs:
 
-  build-setup:
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: WIPACrepo/wipac-dev-flake8-action@v1
+
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: WIPACrepo/wipac-dev-mypy-action@v1
+
+  py-setup:
+    needs: [flake8, mypy]
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -18,17 +33,25 @@ jobs:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - uses: WIPACrepo/wipac-dev-py-setup-action@v1
 
+  pip-install:
+    needs: [flake8, mypy, py-setup]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: |
+          pip install --upgrade pip wheel setuptools
+          pip install .
+
   release:
-    needs: build-setup
+    needs: [flake8, mypy, py-setup, pip-install]
     runs-on: ubuntu-latest
     concurrency: release
-
     steps:
     - uses: actions/checkout@v2
       if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
       with:
         fetch-depth: 0
-
     - name: Python Semantic Release
       if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
       uses: relekang/python-semantic-release@master
