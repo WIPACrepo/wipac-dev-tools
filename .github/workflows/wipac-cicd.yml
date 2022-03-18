@@ -23,7 +23,6 @@ jobs:
       - uses: WIPACrepo/wipac-dev-mypy-action@v1
 
   py-setup:
-    needs: [flake8, mypy]
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
