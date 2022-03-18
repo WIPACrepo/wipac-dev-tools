@@ -20,12 +20,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - run: pip install mypy
-      - run: |
-          ([ -e "requirements-dev.txt" ] && pip install -r requirements-dev.txt) || echo "no dev reqs"
-      - run: |
-          ([ -e "setup.py" ] && pip install .) || pip install `find . -name 'requirements.txt' | rev | sed -z 's/\n/ r- /g' | rev`
-      - run: |
-          flags="--namespace-packages --exclude build/"
-          it_flags="--install-types --non-interactive"
-          (mypy $it_flags $flags . 2>/dev/null) || (echo "no type-packages to install" && mypy $flags .)
+      - uses: WIPACrepo/wipac-dev-mypy-action@main
