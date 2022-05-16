@@ -12,6 +12,8 @@ def set_level(
 ) -> None:
     """Set the level of the root logger, first-party loggers, and third-party loggers.
 
+    The root logger and first-party logger(s) are set to the same level (`level`).
+
     Passing `use_coloredlogs=True` will import and use the `coloredlogs`
     package. This will set the logger format and use colored text.
     """
