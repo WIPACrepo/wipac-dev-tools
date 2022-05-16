@@ -1,9 +1,10 @@
 """Init."""
 
+from . import logging_tools
 from .enviro_tools import from_environment  # noqa
 from .setup_tools import SetupShop  # noqa
 
-__all__ = ["from_environment", "SetupShop"]
+__all__ = ["from_environment", "SetupShop", "logging_tools"]
 
 # version is a human-readable version number.
 __version__ = "1.1.5"
