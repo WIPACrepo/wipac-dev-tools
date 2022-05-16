@@ -12,5 +12,7 @@ idna==3.3
     # via requests
 requests==2.27.1
     # via wipac-dev-tools (setup.py)
+typing-extensions==4.2.0
+    # via wipac-dev-tools (setup.py)
 urllib3==1.26.9
     # via requests
