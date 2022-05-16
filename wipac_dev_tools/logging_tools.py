@@ -10,7 +10,11 @@ def set_level(
     third_party_level: str = "WARNING",
     use_coloredlogs: bool = False,
 ) -> None:
-    """Set the level of the root logger, first-party loggers, and third-party loggers."""
+    """Set the level of the root logger, first-party loggers, and third-party loggers.
+
+    Passing `use_coloredlogs=True` will import and use the `coloredlogs`
+    package. This will set the logger format and use colored text.
+    """
     if not first_party_loggers:
         first_party_loggers = []
 
