@@ -1,7 +1,37 @@
 """Common tools to supplement/assist the standard logging package."""
 
+import argparse
 import logging
 from typing import List, Optional, Union
+
+
+def log_argparse_args(
+    args: argparse.Namespace,
+    logger: Optional[Union[str, logging.Logger]] = None,
+    level: str = "warning",
+) -> argparse.Namespace:
+    """Log the argparse args and their values at the given level.
+
+    Return the args (Namespace) unchanged.
+
+    Example:
+        2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING in_file: in_msg.pkl
+        2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING out_file: out_msg.pkl
+        2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING log: DEBUG
+        2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING log_third_party: WARNING
+    """
+    if not logger:
+        _logger = logging.getLogger()
+    elif isinstance(logger, logging.Logger):
+        _logger = logger
+    else:
+        _logger = logging.getLogger(logger)
+
+    log = getattr(_logger, level.lower())  # ..., info, warning, critical, ...
+    for arg, val in vars(args).items():
+        log(f"{arg}: {val}")
+
+    return args
 
 
 def set_level(
