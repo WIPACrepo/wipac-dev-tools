@@ -31,6 +31,8 @@ def log_argparse_args(
     else:
         _logger = logging.getLogger(logger)
 
+    if level not in ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]:
+        raise ValueError(f"Invalid logging level: {level}")
     log = getattr(_logger, level.lower())  # ..., info, warning, critical, ...
     for arg, val in vars(args).items():
         log(f"{arg}: {val}")
@@ -46,7 +48,11 @@ def set_level(
 ) -> None:
     """Set the level of the root logger, first-party loggers, and third-party loggers.
 
-    The root logger and first-party logger(s) are set to the same level (`level`).
+    The root logger and first-party logger(s) are set to the same level
+    (`level`). The third-party loggers are non-root and non-first-party
+    loggers that are defined at the time of invocation. If a logger is
+    created after this function call, then its level defaults to its
+    parent (that's the root logger for non-child loggers).
 
     Passing `use_coloredlogs=True` will import and use the `coloredlogs`
     package. This will set the logger format and use colored text.
@@ -56,9 +62,16 @@ def set_level(
 
     # root
     if use_coloredlogs:
-        import coloredlogs  # type: ignore[import]  # pylint: disable=import-outside-toplevel
+        try:
+            import coloredlogs  # type: ignore[import]  # pylint: disable=import-outside-toplevel
 
-        coloredlogs.install(level=level)  # root
+            coloredlogs.install(level=level)  # root
+        except ImportError:
+            logging.getLogger("wipac_dev_tools.logging_tools").warning(
+                "set_level()'s `use_coloredlogs` was set to `True`, "
+                "but coloredlogs is not installed. Proceeding with only logging package."
+            )
+            logging.getLogger().setLevel(level)
     else:
         logging.getLogger().setLevel(level)
 
