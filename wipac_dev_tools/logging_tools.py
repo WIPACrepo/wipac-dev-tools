@@ -4,11 +4,15 @@ import argparse
 import logging
 from typing import List, Optional, Union
 
+from typing_extensions import Literal  # will redirect to Typing for 3.8+
+
+LoggerLevel = Literal["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
+
 
 def log_argparse_args(
     args: argparse.Namespace,
     logger: Optional[Union[str, logging.Logger]] = None,
-    level: str = "warning",
+    level: LoggerLevel = "WARNING",
 ) -> argparse.Namespace:
     """Log the argparse args and their values at the given level.
 
@@ -37,7 +41,7 @@ def log_argparse_args(
 def set_level(
     level: str,
     first_party_loggers: Optional[List[Union[str, logging.Logger]]] = None,
-    third_party_level: str = "WARNING",
+    third_party_level: LoggerLevel = "WARNING",
     use_coloredlogs: bool = False,
 ) -> None:
     """Set the level of the root logger, first-party loggers, and third-party loggers.
