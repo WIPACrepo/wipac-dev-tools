@@ -48,7 +48,11 @@ def set_level(
 ) -> None:
     """Set the level of the root logger, first-party loggers, and third-party loggers.
 
-    The root logger and first-party logger(s) are set to the same level (`level`).
+    The root logger and first-party logger(s) are set to the same level
+    (`level`). The third-party loggers are non-root and non-first-party
+    loggers that are defined at the time of invocation. If a logger is
+    created after this function call, then its level defaults to its
+    parent (that's the root logger for non-child loggers).
 
     Passing `use_coloredlogs=True` will import and use the `coloredlogs`
     package. This will set the logger format and use colored text.
