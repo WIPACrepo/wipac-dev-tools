@@ -31,6 +31,8 @@ def log_argparse_args(
     else:
         _logger = logging.getLogger(logger)
 
+    if level not in ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]:
+        raise ValueError(f"Invalid logging level: {level}")
     log = getattr(_logger, level.lower())  # ..., info, warning, critical, ...
     for arg, val in vars(args).items():
         log(f"{arg}: {val}")
