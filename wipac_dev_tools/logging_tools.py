@@ -63,7 +63,7 @@ def set_level(
         except ImportError:
             logging.getLogger("wipac_dev_tools.logging_tools").warning(
                 "set_level()'s `use_coloredlogs` was set to `True`, "
-                "but coloredlogs is not installed. Now, only using logging package."
+                "but coloredlogs is not installed. Proceeding with only logging package."
             )
             logging.getLogger().setLevel(level)
     else:
