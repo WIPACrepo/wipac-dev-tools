@@ -31,6 +31,10 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - uses: WIPACrepo/wipac-dev-py-setup-action@constants
+        with:
+          author: "WIPAC Developers"
+          author-email: "developers@icecube.wisc.edu"
+          base-keywords: "WIPAC IceCube"
 
   py-versions:
     needs: [py-setup]
