@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.1 (2022-05-31)
+
+
 ## v1.2.0 (2022-05-16)
 ### Feature
 * Logging Tools: Production Ready ([#33](https://github.com/WIPACrepo/wipac-dev-tools/issues/33)) ([`8cad3eb`](https://github.com/WIPACrepo/wipac-dev-tools/commit/8cad3eb24f765ab11c02b2f9f27d4db000731ade))
