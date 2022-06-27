@@ -6,7 +6,18 @@ from typing import List, Optional, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
-LoggerLevel = Literal["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
+LoggerLevel = Literal[
+    "CRITICAL",
+    "ERROR",
+    "WARNING",
+    "INFO",
+    "DEBUG",
+    "critical",
+    "error",
+    "warning",
+    "info",
+    "debug",
+]
 
 
 def log_argparse_args(
@@ -24,6 +35,8 @@ def log_argparse_args(
         2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING log: DEBUG
         2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING log_third_party: WARNING
     """
+    level = level.upper()  # type: ignore[assignment]
+
     if not logger:
         _logger = logging.getLogger()
     elif isinstance(logger, logging.Logger):
@@ -41,7 +54,7 @@ def log_argparse_args(
 
 
 def set_level(
-    level: str,
+    level: LoggerLevel,
     first_party_loggers: Optional[List[Union[str, logging.Logger]]] = None,
     third_party_level: LoggerLevel = "WARNING",
     use_coloredlogs: bool = False,
@@ -57,6 +70,9 @@ def set_level(
     Passing `use_coloredlogs=True` will import and use the `coloredlogs`
     package. This will set the logger format and use colored text.
     """
+    level = level.upper()  # type: ignore[assignment]
+    third_party_level = third_party_level.upper()  # type: ignore[assignment]
+
     if not first_party_loggers:
         first_party_loggers = []
 
