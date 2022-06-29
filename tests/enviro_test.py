@@ -6,7 +6,7 @@ import shutil
 import tempfile
 import unittest
 
-from wipac_dev_tools import from_environment  # noqa # pylint: disable=E0401,C0413
+from wipac_dev_tools import from_environment
 
 
 class EnviroToolsTest(unittest.TestCase):
