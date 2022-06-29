@@ -6,7 +6,18 @@ from typing import List, Optional, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
-LoggerLevel = Literal["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
+LoggerLevel = Literal[
+    "CRITICAL",
+    "ERROR",
+    "WARNING",
+    "INFO",
+    "DEBUG",
+    "critical",
+    "error",
+    "warning",
+    "info",
+    "debug",
+]
 
 
 def log_argparse_args(
@@ -24,6 +35,8 @@ def log_argparse_args(
         2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING log: DEBUG
         2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING log_third_party: WARNING
     """
+    level = level.upper()  # type: ignore[assignment]
+
     if not logger:
         _logger = logging.getLogger()
     elif isinstance(logger, logging.Logger):
@@ -42,23 +55,34 @@ def log_argparse_args(
 
 def set_level(
     level: str,
-    first_party_loggers: Optional[List[Union[str, logging.Logger]]] = None,
+    first_party_loggers: Optional[
+        Union[str, logging.Logger, List[Union[str, logging.Logger]]]
+    ] = None,
     third_party_level: LoggerLevel = "WARNING",
     use_coloredlogs: bool = False,
 ) -> None:
     """Set the level of the root logger, first-party loggers, and third-party loggers.
 
-    The root logger and first-party logger(s) are set to the same level
-    (`level`). The third-party loggers are non-root and non-first-party
-    loggers that are defined at the time of invocation. If a logger is
-    created after this function call, then its level defaults to its
-    parent (that's the root logger for non-child loggers).
+    The root logger and first-party logger(s) are set to the same level (`level`).
 
-    Passing `use_coloredlogs=True` will import and use the `coloredlogs`
-    package. This will set the logger format and use colored text.
+    Args:
+        `level`
+            the desired logging level (first-party), case-insensitive
+        `first_party_loggers`
+            a list (or a single instance) of `logging.Logger` or the loggers' names
+        `third_party_level`
+            the desired logging level for any other (currently) available loggers, case-insensitive
+        `use_coloredlogs`
+            if True, will import and use the `coloredlogs` package.
+            This will set the logger format and use colored text.
     """
+    level = level.upper()
+    third_party_level = third_party_level.upper()  # type: ignore[assignment]
+
     if not first_party_loggers:
         first_party_loggers = []
+    elif isinstance(first_party_loggers, (str, logging.Logger)):
+        first_party_loggers = [first_party_loggers]
 
     # root
     if use_coloredlogs:
