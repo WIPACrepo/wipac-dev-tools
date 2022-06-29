@@ -56,7 +56,7 @@ def log_argparse_args(
 def set_level(
     level: str,
     first_party_loggers: Optional[
-        Union[Union[str, logging.Logger, List[Union[str, logging.Logger]]]]
+        Union[str, logging.Logger, List[Union[str, logging.Logger]]]
     ] = None,
     third_party_level: LoggerLevel = "WARNING",
     use_coloredlogs: bool = False,
