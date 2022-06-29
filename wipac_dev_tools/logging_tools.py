@@ -81,6 +81,8 @@ def set_level(
 
     if not first_party_loggers:
         first_party_loggers = []
+    elif isinstance(first_party_loggers, (str, logging.Logger)):
+        first_party_loggers = [first_party_loggers]
 
     # root
     if use_coloredlogs:
