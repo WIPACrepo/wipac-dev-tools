@@ -55,7 +55,8 @@ jobs:
       - uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.py3_versions }}
-      - run: |
+      - name: Pytest
+        run: |
           pip install --upgrade pip wheel setuptools pytest
           pip install .
           pytest -vvvv tests
