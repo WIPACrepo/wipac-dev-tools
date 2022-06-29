@@ -22,5 +22,4 @@ jobs:
 
     - name: Check requirements
       run: |
-        python tools/check-requirements.py requirements.txt
         python tools/check-requirements.py requirements-dev.txt
