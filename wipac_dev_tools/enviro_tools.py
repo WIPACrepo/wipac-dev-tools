@@ -21,10 +21,10 @@ from typing import (
 if sys.version_info >= (3, 7):
     import dataclasses
 
-try:
-    from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
-except ImportError:
-    from typing import GenericAlias  # type: ignore[attr-defined]
+    try:
+        from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
+    except ImportError:
+        from typing import GenericAlias  # type: ignore[attr-defined]
 
 
 RetVal = Union[str, int, float, bool]
