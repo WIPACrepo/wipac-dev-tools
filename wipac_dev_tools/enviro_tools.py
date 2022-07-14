@@ -140,7 +140,7 @@ def _typecast_for_dataclass(
 
     elif typ == dict:
         _dict = {
-            x.split(dict_kv_joiner)[0]: int(x.split(dict_kv_joiner)[1])
+            x.split(dict_kv_joiner)[0]: x.split(dict_kv_joiner)[1]
             for x in env_val.split(collection_sep)
         }
         if arg_typs:
