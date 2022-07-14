@@ -149,6 +149,9 @@ class FromEnvironmentTest(unittest.TestCase):
             from_environment(None)  # type: ignore
 
 
+###############################################################################
+# PYTHON 3.7+
+###############################################################################
 if sys.version_info >= (3, 7):
 
     class FromEnvironmentAsDataclassTest(unittest.TestCase):
@@ -541,3 +544,17 @@ if sys.version_info >= (3, 7):
             os.environ["FOO"] = "-123456"
             with self.assertRaises(ValueError):
                 from_environment_as_dataclass(Config)
+
+
+###############################################################################
+# PYTHON <3.7
+###############################################################################
+else:
+
+    class FromEnvironmentAsDataclassTest(unittest.TestCase):
+        """Test from_environment_as_dataclass()."""
+
+        def test_000(self) -> None:
+            """Test normal use case."""
+            with self.assertRaises(NotImplementedError):
+                from_environment_as_dataclass()
