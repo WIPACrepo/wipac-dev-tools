@@ -396,7 +396,9 @@ if sys.version_info >= (3, 7):
                 foo: Dict[OneArgClass, int]
 
             os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
-            config = from_environment_as_dataclass(Config, dict_kv_joiner=" = ")
+            config = from_environment_as_dataclass(
+                Config, dict_kv_joiner=" = ", collection_sep=" | "
+            )
             self.assertEqual(
                 config.foo, {OneArgClass("this-is-my-extra-cool-string"): 2}
             )
@@ -479,6 +481,38 @@ if sys.version_info >= (3, 7):
                 "'typing.List[typing.Dict[str, int]]'-indicated type is not a legal type: "
                 "field='foo' (the typing module's alias "
                 "types must resolved to 'type' within 1 nesting)"
+            )
+
+        def test_106__dict_delims(self) -> None:
+            """Test error use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                foo: Dict[str, int]
+
+            os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
+            with self.assertRaises(RuntimeError) as cm:
+                from_environment_as_dataclass(Config, dict_kv_joiner=" = ")
+            assert str(cm.exception) == (
+                r"'collection_sep' ('None'='\s+') cannot overlap with "
+                "'dict_kv_joiner': 'None' & ' = '"
+            )
+
+        def test_107__dict_delims(self) -> None:
+            """Test error use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                foo: Dict[str, int]
+
+            os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
+            with self.assertRaises(RuntimeError) as cm:
+                from_environment_as_dataclass(
+                    Config, dict_kv_joiner=" = ", collection_sep=" "
+                )
+            assert str(cm.exception) == (
+                r"'collection_sep' ('None'='\s+') cannot overlap with "
+                "'dict_kv_joiner': 'None' & ' = '"
             )
 
         def test_200_convert(self) -> None:
