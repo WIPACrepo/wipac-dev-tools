@@ -129,7 +129,7 @@ def _typecast_for_dataclass(
     typ: type,
     arg_typs: Optional[Tuple[type, ...]],
     collection_sep: Optional[str],
-    dict_key_val_joiner: str,
+    dict_kv_joiner: str,
 ) -> Any:
     """Collect the typecast value"""
     if typ == list:
@@ -140,7 +140,7 @@ def _typecast_for_dataclass(
 
     elif typ == dict:
         _dict = {
-            x.split(dict_key_val_joiner)[0]: int(x.split(dict_key_val_joiner)[1])
+            x.split(dict_kv_joiner)[0]: int(x.split(dict_kv_joiner)[1])
             for x in env_val.split()
         }
         if arg_typs:
@@ -172,7 +172,7 @@ T = TypeVar("T")
 def _from_environment_as_dataclass(
     dclass: Type[T],
     collection_sep: Optional[str] = None,
-    dict_key_val_joiner: str = "=",
+    dict_kv_joiner: str = "=",
 ) -> T:
     """Obtain configuration values from the OS environment formatted in a dataclass.
 
@@ -186,7 +186,7 @@ def _from_environment_as_dataclass(
 
     If a field's type is a `list`, `dict`, `set`, `frozenset`, or
     an analogous type alias from the 'typing' module, then a conversion
-    is made (see `collection_sep` and `dict_key_val_joiner`). Sub-types
+    is made (see `collection_sep` and `dict_kv_joiner`). Sub-types
     are cast if using a typing-module type alias. The typing module's
     alias types must resolve to `type` within 1 nesting (eg: List[bool]
     and Dict[int, float] are okay; List[Dict[int, float]] is not).
@@ -194,7 +194,7 @@ def _from_environment_as_dataclass(
     Arguments:
         dclass - a (non-instantiated) dataclass, aka a type
         collection_sep - the delimiter to split collections on ("1 2 5")
-        dict_key_val_joiner - the delimiter that joins key-value pairs ("a=1 b=2 c=1")
+        dict_kv_joiner - the delimiter that joins key-value pairs ("a=1 b=2 c=1")
 
     Returns:
         a dataclass instance mapping configuration keys to configuration values
@@ -215,9 +215,14 @@ def _from_environment_as_dataclass(
                   data from the OS.
         ValueError - If a type-indicated value is not a legal value
     """
-    if dict_key_val_joiner == collection_sep:
+    if (
+        (dict_kv_joiner == collection_sep)
+        or (not collection_sep and " " in dict_kv_joiner)  # collection_sep=None is \w+
+        or (collection_sep and collection_sep in dict_kv_joiner)
+    ):
         raise RuntimeError(
-            f"'dict_key_val_joiner' cannot be the same as 'collection_sep': {collection_sep}"
+            f"'collection_sep' cannot overlap with 'dict_kv_joiner': "
+            f"'{collection_sep}' & '{dict_kv_joiner}'"
         )
 
     if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
@@ -247,7 +252,7 @@ def _from_environment_as_dataclass(
 
         try:
             kwargs[field.name] = _typecast_for_dataclass(
-                env_val, typ, arg_typs, collection_sep, dict_key_val_joiner
+                env_val, typ, arg_typs, collection_sep, dict_kv_joiner
             )
         except ValueError as e:
             raise ValueError(
