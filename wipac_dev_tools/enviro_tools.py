@@ -1,8 +1,9 @@
 """Module to support parsing environment variables."""
 
-import dataclasses
+
 import os
 import re
+import sys
 from distutils.util import strtobool
 from typing import (
     Any,
@@ -16,6 +17,9 @@ from typing import (
     Union,
     cast,
 )
+
+if sys.version_info >= (3, 7):
+    import dataclasses
 
 try:
     from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
@@ -165,7 +169,7 @@ def _typecast_for_dataclass(
 T = TypeVar("T")
 
 
-def from_environment_as_dataclass(
+def _from_environment_as_dataclass(
     dclass: Type[T],
     collection_sep: Optional[str] = None,
     dict_key_val_joiner: str = "=",
@@ -264,3 +268,15 @@ def from_environment_as_dataclass(
                 f"{m.groupdict()['args'].upper().replace(' AND ', ' and ')}"
             ) from e
         raise  # some other kind of TypeError
+
+
+if sys.version_info >= (3, 7):
+    from_environment_as_dataclass = _from_environment_as_dataclass
+else:
+
+    def _pseudo_from_environment_as_dataclass():
+        raise NotImplementedError(
+            "Sorry, from_environment_as_dataclass() is only available for 3.7+"
+        )
+
+    from_environment_as_dataclass = _pseudo_from_environment_as_dataclass
