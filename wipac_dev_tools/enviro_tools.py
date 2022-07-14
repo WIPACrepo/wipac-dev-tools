@@ -217,11 +217,11 @@ def _from_environment_as_dataclass(
     """
     if (
         (dict_kv_joiner == collection_sep)
-        or (not collection_sep and " " in dict_kv_joiner)  # collection_sep=None is \w+
+        or (not collection_sep and " " in dict_kv_joiner)  # collection_sep=None is \s+
         or (collection_sep and collection_sep in dict_kv_joiner)
     ):
         raise RuntimeError(
-            f"'collection_sep' cannot overlap with 'dict_kv_joiner': "
+            r"'collection_sep' ('None'='\s+') cannot overlap with 'dict_kv_joiner': "
             f"'{collection_sep}' & '{dict_kv_joiner}'"
         )
 
