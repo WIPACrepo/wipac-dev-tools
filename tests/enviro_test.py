@@ -370,7 +370,7 @@ class FromEnvironmentAsDataclassTest(unittest.TestCase):
             foo: Dict[OneArgClass, int]
 
         os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
-        config = from_environment_as_dataclass(Config, collection_sep=" = ")
+        config = from_environment_as_dataclass(Config, dict_kv_joiner=" = ")
         self.assertEqual(config.foo, {OneArgClass("this-is-my-extra-cool-string"): 2})
 
     def test_100_error__missing_required(self) -> None:
