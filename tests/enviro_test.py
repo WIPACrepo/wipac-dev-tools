@@ -560,4 +560,4 @@ else:
         def test_000(self) -> None:
             """Test normal use case."""
             with self.assertRaises(NotImplementedError):
-                from_environment_as_dataclass()
+                from_environment_as_dataclass(object)  # arg doesn't matter
