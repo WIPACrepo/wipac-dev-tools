@@ -512,7 +512,7 @@ if sys.version_info >= (3, 7):
                 )
             assert str(cm.exception) == (
                 r"'collection_sep' ('None'='\s+') cannot overlap with "
-                "'dict_kv_joiner': 'None' & ' = '"
+                "'dict_kv_joiner': ' ' & ' = '"
             )
 
         def test_200_convert(self) -> None:
