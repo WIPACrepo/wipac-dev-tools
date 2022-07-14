@@ -279,9 +279,9 @@ def _from_environment_as_dataclass(
         return dclass(**kwargs)
     except TypeError as e:
         m = re.fullmatch(
-            r"__init__\(\) missing \d+ required positional argument(?P<s>s?): (?P<args>.+)",
+            r".*__init__\(\) missing \d+ required positional argument(?P<s>s?): (?P<args>.+)",
             str(e),
-        )
+        )  # in 3.10 the class's qualname is used before "__init__()..."
         if m:
             raise OSError(
                 f"Missing required environment variable{m.groupdict()['s']}: "
