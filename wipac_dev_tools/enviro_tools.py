@@ -169,7 +169,7 @@ def _typecast_for_dataclass(
 T = TypeVar("T")
 
 
-def _from_environment_as_dataclass(
+def from_environment_as_dataclass(
     dclass: Type[T],
     collection_sep: Optional[str] = None,
     dict_kv_joiner: str = "=",
@@ -215,6 +215,21 @@ def _from_environment_as_dataclass(
                   data from the OS.
         ValueError - If a type-indicated value is not a legal value
     """
+
+    if sys.version_info >= (3, 7):
+        return _from_environment_as_dataclass(dclass, collection_sep, dict_kv_joiner)
+    else:
+        raise NotImplementedError(
+            "Sorry, from_environment_as_dataclass() is only available for 3.7+"
+        )
+
+
+def _from_environment_as_dataclass(
+    dclass: Type[T],
+    collection_sep: Optional[str],
+    dict_kv_joiner: str,
+) -> T:
+
     if (
         (dict_kv_joiner == collection_sep)
         or (not collection_sep and " " in dict_kv_joiner)  # collection_sep=None is \s+
@@ -273,15 +288,3 @@ def _from_environment_as_dataclass(
                 f"{m.groupdict()['args'].upper().replace(' AND ', ' and ')}"
             ) from e
         raise  # some other kind of TypeError
-
-
-if sys.version_info >= (3, 7):
-    from_environment_as_dataclass = _from_environment_as_dataclass
-else:
-
-    def _pseudo_from_environment_as_dataclass():
-        raise NotImplementedError(
-            "Sorry, from_environment_as_dataclass() is only available for 3.7+"
-        )
-
-    from_environment_as_dataclass = _pseudo_from_environment_as_dataclass

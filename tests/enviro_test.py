@@ -369,7 +369,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.foo, frozenset({123, 456, 789}))
 
-        def test_015__class(self) -> None:
+        def test_016__class(self) -> None:
             """Test normal use case."""
 
             class OneArgClass:
@@ -384,7 +384,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.foo.arg, "this is my extra cool string")
 
-        def test_016__dict_class_int(self) -> None:
+        def test_017__dict_class_int(self) -> None:
             """Test normal use case."""
 
             class OneArgClass:
@@ -393,6 +393,9 @@ if sys.version_info >= (3, 7):
 
                 def __eq__(self, other: object) -> bool:
                     return isinstance(other, OneArgClass) and self.arg == other.arg
+
+                def __hash__(self) -> int:
+                    return hash(self.arg)
 
             @dc.dataclass(frozen=True)
             class Config:
