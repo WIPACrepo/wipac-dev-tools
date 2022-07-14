@@ -4,7 +4,6 @@ import dataclasses
 import os
 import re
 from distutils.util import strtobool
-from typing import _GenericAlias  # noqa: F401
 from typing import (
     Any,
     Dict,
@@ -17,6 +16,12 @@ from typing import (
     Union,
     cast,
 )
+
+try:
+    from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
+except ImportError:
+    from typing import GenericAlias  # type: ignore[attr-defined]
+
 
 RetVal = Union[str, int, float, bool]
 OptionalDict = Mapping[str, Optional[RetVal]]
@@ -224,8 +229,8 @@ def from_environment_as_dataclass(
         except KeyError:
             continue
 
-        # take care of '_GenericAlias' types
-        if isinstance(field.type, _GenericAlias):
+        # take care of 'GenericAlias' types
+        if isinstance(field.type, GenericAlias):
             typ, arg_typs = field.type.__origin__, field.type.__args__
             if not all(isinstance(x, type) for x in [typ] + list(arg_typs)):
                 raise ValueError(
