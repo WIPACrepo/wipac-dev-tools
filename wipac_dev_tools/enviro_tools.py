@@ -4,7 +4,19 @@ import dataclasses
 import os
 import re
 from distutils.util import strtobool
-from typing import Any, Dict, Mapping, Optional, Sequence, Type, TypeVar, Union, cast
+from typing import _GenericAlias  # noqa: F401
+from typing import (
+    Any,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 RetVal = Union[str, int, float, bool]
 OptionalDict = Mapping[str, Optional[RetVal]]
@@ -103,10 +115,56 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
     return cast(Dict[str, RetVal], config)
 
 
+def _typecast_for_dataclass(
+    env_val: str,
+    typ: type,
+    arg_typs: Optional[Tuple[type, ...]],
+    collection_sep: Optional[str],
+    dict_key_val_joiner: str,
+) -> Any:
+    """Collect the typecast value"""
+    if typ == list:
+        _list = env_val.split(collection_sep)
+        if arg_typs:
+            return [arg_typs[0](x) for x in _list]
+        return _list
+
+    elif typ == dict:
+        _dict = {
+            x.split(dict_key_val_joiner)[0]: int(x.split(dict_key_val_joiner)[1])
+            for x in env_val.split()
+        }
+        if arg_typs:
+            return {arg_typs[0](k): arg_typs[1](v) for k, v in _dict.items()}
+        return _dict
+
+    elif typ == set:
+        _set = set(env_val.split(collection_sep))
+        if arg_typs:
+            return {arg_typs[0](x) for x in _set}
+        return _set
+
+    elif typ == frozenset:
+        _frozenset = frozenset(env_val.split(collection_sep))
+        if arg_typs:
+            return {arg_typs[0](x) for x in _frozenset}
+        return _frozenset
+
+    elif typ == bool:
+        return strtobool(env_val)
+
+    else:
+        return typ(env_val)
+
+
 T = TypeVar("T")
 
 
-def from_environment_as_dataclass(dclass: Type[T]) -> T:
+def from_environment_as_dataclass(
+    dclass: Type[T],
+    collection_sep: Optional[str] = None,
+    dict_key_val_joiner: str = "=",
+) -> T:
     """Obtain configuration values from the OS environment formatted in a dataclass.
 
     Environment variables are matched by using `upper()` on their
@@ -117,12 +175,17 @@ def from_environment_as_dataclass(dclass: Type[T]) -> T:
     (positional arguments), optional fields with defaults, default
     factories, post-init processing, etc.
 
-    If a field uses a `typing._GenericAlias` type-hint
-    (eg: `List[int]`), then the raw environment variable str is used
-    (hint: use `__post_init__()`).
+    If a field's type is a `list`, `dict`, `set`, `frozenset`, or
+    an analogous type alias from the 'typing' module, then a conversion
+    is made (see `collection_sep` and `dict_key_val_joiner`). Sub-types
+    are cast if using a typing-module type alias. The typing module's
+    alias types must resolve to `type` within 1 nesting (eg: List[bool]
+    and Dict[int, float] are okay; List[Dict[int, float]] is not).
 
     Arguments:
         dclass - a (non-instantiated) dataclass, aka a type
+        collection_sep - the delimiter to split collections on ("1 2 5")
+        dict_key_val_joiner - the delimiter that joins key-value pairs ("a=1 b=2 c=1")
 
     Returns:
         a dataclass instance mapping configuration keys to configuration values
@@ -143,6 +206,10 @@ def from_environment_as_dataclass(dclass: Type[T]) -> T:
                   data from the OS.
         ValueError - If a type-indicated value is not a legal value
     """
+    if dict_key_val_joiner == collection_sep:
+        raise RuntimeError(
+            f"'dict_key_val_joiner' cannot be the same as 'collection_sep': {collection_sep}"
+        )
 
     if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
         raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
@@ -156,19 +223,28 @@ def from_environment_as_dataclass(dclass: Type[T]) -> T:
             env_val = os.environ[field.name.upper()]
         except KeyError:
             continue
-        # collect the typecast value
-        if not isinstance(field.type, type):  # field is a 'typing._GenericAlias'
-            kwargs[field.name] = env_val
-        elif field.type == bool:
-            kwargs[field.name] = strtobool(env_val)
-        else:
-            try:
-                kwargs[field.name] = field.type(env_val)
-            except ValueError:
-                raise ValueError(  # pylint: disable=raise-missing-from
-                    f"'{field.type}'-indicated value is not a legal value: "
-                    f"var='{field.name.upper()}' value='{env_val}'"
+
+        # take care of '_GenericAlias' types
+        if isinstance(field.type, _GenericAlias):
+            typ, arg_typs = field.type.__origin__, field.type.__args__
+            if not all(isinstance(x, type) for x in [typ] + list(arg_typs)):
+                raise ValueError(
+                    f"'{field.type}'-indicated type is not a legal type: "
+                    f"field='{field.name}' (the typing module's alias "
+                    f"types must resolved to 'type' within 1 nesting)"
                 )
+        else:
+            typ, arg_typs = field.type, None
+
+        try:
+            kwargs[field.name] = _typecast_for_dataclass(
+                env_val, typ, arg_typs, collection_sep, dict_key_val_joiner
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"'{field.type}'-indicated value is not a legal value: "
+                f"var='{field.name.upper()}' value='{env_val}'"
+            ) from e
 
     try:
         return dclass(**kwargs)
