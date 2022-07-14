@@ -1,9 +1,9 @@
 """Test enviro_tools.py."""
 
 
-import dataclasses as dc
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 from typing import Dict, FrozenSet, List, Set
@@ -12,6 +12,10 @@ from wipac_dev_tools import (  # noqa # pylint: disable=E0401,C0413
     from_environment,
     from_environment_as_dataclass,
 )
+
+if sys.version_info >= (3, 7):
+    import dataclasses as dc
+
 
 # pylint:disable=missing-class-docstring,disallowed-name
 
