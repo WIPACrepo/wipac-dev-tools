@@ -179,66 +179,66 @@ if sys.version_info >= (3, 7):
             # str
             @dc.dataclass(frozen=True)
             class Config:
-                foo: str
+                FOO: str
 
             os.environ["FOO"] = "foobar"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, "foobar")
+            self.assertEqual(config.FOO, "foobar")
 
         def test_002__int(self) -> None:
             """Test normal use case."""
             # int
             @dc.dataclass(frozen=True)
             class Config:
-                foo: int
+                FOO: int
 
             os.environ["FOO"] = "543"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, 543)
-            assert isinstance(config.foo, int)
+            self.assertEqual(config.FOO, 543)
+            assert isinstance(config.FOO, int)
 
         def test_003__float(self) -> None:
             """Test normal use case."""
             # float
             @dc.dataclass(frozen=True)
             class Config:
-                foo: float
+                FOO: float
 
             os.environ["FOO"] = "543."
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, 543.0)
-            assert isinstance(config.foo, float)
+            self.assertEqual(config.FOO, 543.0)
+            assert isinstance(config.FOO, float)
 
         def test_004__float_from_int(self) -> None:
             """Test normal use case."""
             # float - from int
             @dc.dataclass(frozen=True)
             class Config:
-                foo: float
+                FOO: float
 
             os.environ["FOO"] = "543"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, 543.0)
-            assert isinstance(config.foo, float)
+            self.assertEqual(config.FOO, 543.0)
+            assert isinstance(config.FOO, float)
 
         def test_005__float_engineering(self) -> None:
             """Test normal use case."""
             # float - engineering notation
             @dc.dataclass(frozen=True)
             class Config:
-                foo: float
+                FOO: float
 
             os.environ["FOO"] = "2e-48"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, 2e-48)
-            assert isinstance(config.foo, float)
+            self.assertEqual(config.FOO, 2e-48)
+            assert isinstance(config.FOO, float)
 
         def test_006__bool_true(self) -> None:
             """Test normal use case."""
             # bool - true
             @dc.dataclass(frozen=True)
             class Config:
-                foo: bool
+                FOO: bool
 
             for t in (
                 "y",
@@ -255,14 +255,14 @@ if sys.version_info >= (3, 7):
             ):
                 os.environ["FOO"] = t
                 config = from_environment_as_dataclass(Config)
-                self.assertEqual(config.foo, True)
+                self.assertEqual(config.FOO, True)
 
         def test_007__bool_false(self) -> None:
             """Test normal use case."""
             # bool - false
             @dc.dataclass(frozen=True)
             class Config:
-                foo: bool
+                FOO: bool
 
             for f in (
                 "n",
@@ -279,95 +279,95 @@ if sys.version_info >= (3, 7):
             ):
                 os.environ["FOO"] = f
                 config = from_environment_as_dataclass(Config)
-                self.assertEqual(config.foo, False)
+                self.assertEqual(config.FOO, False)
 
         def test_008__list(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: list
+                FOO: list
 
             os.environ["FOO"] = "foo bar baz"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, ["foo", "bar", "baz"])
+            self.assertEqual(config.FOO, ["foo", "bar", "baz"])
 
         def test_009__list_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: List[int]
+                FOO: List[int]
 
             os.environ["FOO"] = "123 456 789"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, [123, 456, 789])
+            self.assertEqual(config.FOO, [123, 456, 789])
 
         def test_010__set(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: set
+                FOO: set
 
             os.environ["FOO"] = "foo bar baz foo"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, {"bar", "baz", "foo"})
+            self.assertEqual(config.FOO, {"bar", "baz", "foo"})
 
         def test_011__set_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: Set[int]
+                FOO: Set[int]
 
             os.environ["FOO"] = "123 456 789 123"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, {123, 456, 789})
+            self.assertEqual(config.FOO, {123, 456, 789})
 
         def test_012__dict(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: dict
+                FOO: dict
 
             os.environ["FOO"] = "foo=1 bar=2 baz=3"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, {"bar": "2", "baz": "3", "foo": "1"})
+            self.assertEqual(config.FOO, {"bar": "2", "baz": "3", "foo": "1"})
 
         def test_013__dict_str_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: Dict[str, int]
+                FOO: Dict[str, int]
 
             os.environ["FOO"] = "foo=1 bar=2 baz=3"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, {"bar": 2, "baz": 3, "foo": 1})
+            self.assertEqual(config.FOO, {"bar": 2, "baz": 3, "foo": 1})
 
         def test_014__frozen_set(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: frozenset
+                FOO: frozenset
 
             os.environ["FOO"] = "foo bar baz foo"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, frozenset({"bar", "baz", "foo"}))
+            self.assertEqual(config.FOO, frozenset({"bar", "baz", "foo"}))
 
         def test_015__frozen_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: FrozenSet[int]
+                FOO: FrozenSet[int]
 
             os.environ["FOO"] = "123 456 789 123"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo, frozenset({123, 456, 789}))
+            self.assertEqual(config.FOO, frozenset({123, 456, 789}))
 
         def test_016__class(self) -> None:
             """Test normal use case."""
@@ -378,11 +378,11 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: OneArgClass
+                FOO: OneArgClass
 
             os.environ["FOO"] = "this is my extra cool string"
             config = from_environment_as_dataclass(Config)
-            self.assertEqual(config.foo.arg, "this is my extra cool string")
+            self.assertEqual(config.FOO.arg, "this is my extra cool string")
 
         def test_017__dict_class_int(self) -> None:
             """Test normal use case."""
@@ -399,14 +399,14 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: Dict[OneArgClass, int]
+                FOO: Dict[OneArgClass, int]
 
             os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
             config = from_environment_as_dataclass(
                 Config, dict_kv_joiner=" = ", collection_sep=" | "
             )
             self.assertEqual(
-                config.foo, {OneArgClass("this-is-my-extra-cool-string"): 2}
+                config.FOO, {OneArgClass("this-is-my-extra-cool-string"): 2}
             )
 
         def test_100_error__missing_required(self) -> None:
@@ -414,7 +414,7 @@ if sys.version_info >= (3, 7):
             # Missing
             @dc.dataclass(frozen=True)
             class Config:
-                foo: bool
+                FOO: bool
 
             with self.assertRaises(OSError):
                 from_environment_as_dataclass(Config)
@@ -424,7 +424,7 @@ if sys.version_info >= (3, 7):
             # Bad Type - int
             @dc.dataclass(frozen=True)
             class Config:
-                foo: int
+                FOO: int
 
             os.environ["FOO"] = "123.5"
             with self.assertRaises(ValueError):
@@ -435,7 +435,7 @@ if sys.version_info >= (3, 7):
             # Bad Type - float
             @dc.dataclass(frozen=True)
             class Config:
-                foo: float
+                FOO: float
 
             os.environ["FOO"] = "1x10^-1"
             with self.assertRaises(ValueError):
@@ -446,7 +446,7 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: bool
+                FOO: bool
 
             # Bad Type - bool
             for val in (
@@ -467,7 +467,7 @@ if sys.version_info >= (3, 7):
             # using a bytes, this is similar to any multi-arg built-in type
             @dc.dataclass(frozen=True)
             class Config:
-                foo: bytes = bytes()
+                FOO: bytes = bytes()
 
             os.environ["FOO"] = "foo bar baz"
             with self.assertRaises(TypeError):
@@ -478,14 +478,14 @@ if sys.version_info >= (3, 7):
             # using a bytes, this is similar to any multi-arg built-in type
             @dc.dataclass(frozen=True)
             class Config:
-                foo: List[Dict[str, int]]
+                FOO: List[Dict[str, int]]
 
             os.environ["FOO"] = "doesn't matter, this won't get read before error"
             with self.assertRaises(ValueError) as cm:
                 from_environment_as_dataclass(Config)
             assert str(cm.exception) == (
                 "'typing.List[typing.Dict[str, int]]'-indicated type is not a legal type: "
-                "field='foo' (the typing module's alias "
+                "field='FOO' (the typing module's alias "
                 "types must resolved to 'type' within 1 nesting)"
             )
 
@@ -494,7 +494,7 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: Dict[str, int]
+                FOO: Dict[str, int]
 
             os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
             with self.assertRaises(RuntimeError) as cm:
@@ -509,7 +509,7 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: Dict[str, int]
+                FOO: Dict[str, int]
 
             os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
             with self.assertRaises(RuntimeError) as cm:
@@ -528,7 +528,7 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: bool = True
+                FOO: bool = True
 
             with self.assertRaises(TypeError):
                 from_environment_as_dataclass(Config())  # type: ignore
@@ -538,10 +538,10 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                foo: int
+                FOO: int
 
                 def __post_init__(self) -> None:
-                    if self.foo <= 0:
+                    if self.FOO <= 0:
                         raise ValueError("'FOO' is non-positive")
 
             os.environ["FOO"] = "-123456"

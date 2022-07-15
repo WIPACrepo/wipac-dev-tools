@@ -176,13 +176,15 @@ def from_environment_as_dataclass(
 ) -> T:
     """Obtain configuration values from the OS environment formatted in a dataclass.
 
-    Environment variables are matched by using `upper()` on their
-    dataclass field's name. The matching environment string is cast
-    using the dataclass field's has a type (`strtobool` for bools).
-    Then, the values are used to create a dataclass instance. All normal
+    Environment variables are matched to a dataclass field's name. The
+    matching environment string is cast using the dataclass field's type
+    (there are some special cases for built-in types, see below). Then,
+    the values are used to create a dataclass instance. All normal
     dataclass init-behavior is expected, like required fields
     (positional arguments), optional fields with defaults, default
     factories, post-init processing, etc.
+
+    If a field's type is a bool, `strtobool` is used for typecasting.
 
     If a field's type is a `list`, `dict`, `set`, `frozenset`, or
     an analogous type alias from the 'typing' module, then a conversion
@@ -202,9 +204,9 @@ def from_environment_as_dataclass(
     Example:
         @dataclasses.dataclass(frozen=True)
         class Config:
-           required_from_environment: str  # matches REQUIRED_FROM_ENVIRONMENT
-           host: str = "localhost"  # matches HOST
-           port: int = 8080  # matches PORT
+           REQUIRED_FROM_ENVIRONMENT: str
+           HOST: str = "localhost"
+           PORT: int = 8080
        }
        config_dclass = from_environment_as_dataclass(Config)
 
@@ -249,7 +251,7 @@ def _from_environment_as_dataclass(
             continue  # don't try to get a field that can't be set via __init__
         # get value
         try:
-            env_val = os.environ[field.name.upper()]
+            env_val = os.environ[field.name]
         except KeyError:
             continue
 
@@ -272,7 +274,7 @@ def _from_environment_as_dataclass(
         except ValueError as e:
             raise ValueError(
                 f"'{field.type}'-indicated value is not a legal value: "
-                f"var='{field.name.upper()}' value='{env_val}'"
+                f"var='{field.name}' value='{env_val}'"
             ) from e
 
     try:
@@ -285,6 +287,6 @@ def _from_environment_as_dataclass(
         if m:
             raise OSError(
                 f"Missing required environment variable{m.groupdict()['s']}: "
-                f"{m.groupdict()['args'].upper().replace(' AND ', ' and ')}"
+                f"{m.groupdict()['args']}"
             ) from e
         raise  # some other kind of TypeError
