@@ -67,7 +67,7 @@ class FromEnvironmentTest(unittest.TestCase):
         os.environ["USE_EVEN"] = "22"
         config = from_environment_as_dataclass(Config)
         assert config.FPATH == pathlib.Path("/home/example/path")
-        assert config.PORT == 999
+        assert config.PORT == 9999
         assert config.HOST == "localhost"
         assert config.MSGS_PER_CLIENTS == {"alpha": 0, "beta": 55, "delta": 3}
         assert config.USE_EVEN.is_even
