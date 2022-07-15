@@ -193,6 +193,9 @@ def from_environment_as_dataclass(
     alias types must resolve to `type` within 1 nesting (eg: List[bool]
     and Dict[int, float] are okay; List[Dict[int, float]] is not).
 
+    If a field's type is a callable that accepts 1 argument, it is
+    invoked as such.
+
     Arguments:
         dclass - a (non-instantiated) dataclass, aka a type
         collection_sep - the delimiter to split collections on ("1 2 5")
