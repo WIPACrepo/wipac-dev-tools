@@ -2,6 +2,7 @@
 
 
 import os
+import pathlib
 import shutil
 import sys
 import tempfile
@@ -39,6 +40,37 @@ class FromEnvironmentTest(unittest.TestCase):
                     del os.environ[k]
 
         self.addCleanup(clean_env)
+
+    def test__real_life_example(self) -> None:
+        """An example of a realistic, robust usage."""
+
+        class EvenState:
+            def __init__(self, arg: str):
+                self.is_even = not bool(int(arg) % 2)  # 1%2 -> 1 -> T -> F
+
+        @dc.dataclass(frozen=True)
+        class Config:
+            FPATH: pathlib.Path
+            PORT: int
+            HOST: str
+            MSGS_PER_CLIENTS: Dict[str, int]
+            USE_EVEN: EvenState
+
+            def __post_init__(self) -> None:
+                if self.PORT <= 0:
+                    raise ValueError("'PORT' is non-positive")
+
+        os.environ["FPATH"] = "/home/example/path"
+        os.environ["PORT"] = "9999"
+        os.environ["HOST"] = "localhost"
+        os.environ["MSGS_PER_CLIENTS"] = "alpha=0 beta=55 delta=3"
+        os.environ["USE_EVEN"] = "22"
+        config = from_environment_as_dataclass(Config)
+        assert config.FPATH == pathlib.Path("/home/example/path")
+        assert config.PORT == 999
+        assert config.HOST == "localhost"
+        assert config.MSGS_PER_CLIENTS == {"alpha": 0, "beta": 55, "delta": 3}
+        assert config.USE_EVEN.is_even
 
     def test_000(self) -> None:
         """Test normal use cases."""
