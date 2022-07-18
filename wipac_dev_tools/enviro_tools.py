@@ -213,20 +213,56 @@ def from_environment_as_dataclass(
         a dataclass instance mapping configuration keys to configuration values
 
     Example:
-        @dataclasses.dataclass(frozen=True)
-        class Config:
-           REQUIRED_FROM_ENVIRONMENT: str
-           HOST: str = "localhost"
-           PORT: int = 8080
-       }
-       config_dclass = from_environment_as_dataclass(Config)
+        env:
+            FPATH=/home/example/path
+            PORT=9999
+            HOST=localhost
+            MSGS_PER_CLIENTS=alpha=0 beta=55 delta=3
+            USE_EVEN=22
+            RETRIES=3
+
+        python:
+            @dataclasses.dataclass(frozen=True)
+            class Config:
+                FPATH: pathlib.Path
+                PORT: int
+                HOST: str
+                MSGS_PER_CLIENTS: Dict[str, int]
+                USE_EVEN: EvenState
+                RETRIES: Optional[int] = None
+                TIMEOUT: int = 30
+
+                def __post_init__(self) -> None:
+                    if self.PORT <= 0:
+                        raise ValueError("'PORT' is non-positive")
+
+            class EvenState:
+                def __init__(self, arg: str):
+                    self.is_even = not bool(int(arg) % 2)  # 1%2 -> 1 -> T -> F
+                def __repr__(self) -> str:
+                    return f"EvenState(is_even={self.is_even})"
+
+            config = from_environment_as_dataclass(Config)
+            print(config)
+
+        stdout:
+            Config(
+                FPATH=PosixPath('/home/example/path'),
+                PORT=9999,
+                HOST='localhost',
+                MSGS_PER_CLIENTS={'alpha': 0, 'beta': 55, 'delta': 3},
+                USE_EVEN=EvenState(is_even=True),
+                RETRIES=3,
+                TIMEOUT=30)
+
 
     Raises:
         OSError - If a configuration value is requested and no default
-                  value is provided, to indicate that the
-                  component's configuration is incomplete due to missing
-                  data from the OS.
-        ValueError - If a type-indicated value is not a legal value
+                  value is provided, to indicate that the component's
+                  configuration is incomplete due to missing data from
+                  the OS.
+        ValueError - If an indicated value is not a legal value
+        TypeError - If an argument or indicated value is not a legal type
     """
 
     if sys.version_info >= (3, 7):
