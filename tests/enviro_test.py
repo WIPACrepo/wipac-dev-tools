@@ -457,7 +457,7 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                FOO: Final[int]
+                FOO: Final[int]  # type: ignore[misc]
 
             os.environ["FOO"] = "512"
             config = from_environment_as_dataclass(Config)
@@ -468,7 +468,7 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                FOO: Final[Dict[str, int]]
+                FOO: Final[Dict[str, int]]  # type: ignore[misc]
 
             os.environ["FOO"] = "foo=1 bar=2 baz=3"
             config = from_environment_as_dataclass(Config)
