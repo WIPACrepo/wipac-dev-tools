@@ -293,6 +293,7 @@ def _from_environment_as_dataclass(
         if isinstance(typ, GenericAlias):
             # Ex: Final[int], Optional[Dict[str,int]]
             if _is_optional(typ) or _is_final(typ):
+                print("is Optional or Final")
                 if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
                     typ, arg_typs = typ.__args__[0], None
                 else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
