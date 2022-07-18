@@ -10,6 +10,7 @@ Common, basic, and reusable development tools
 ### Logging Tools
 
 #### `wipac_dev_tools.logging_tools.set_level()`
+_Available for Python 3.6+_
 ```
 def set_level(
     level: str,
@@ -31,6 +32,7 @@ def set_level(
 ```
 
 #### `wipac_dev_tools.logging_tools.log_argparse_args()`
+_Available for Python 3.6+_
 ```
 def log_argparse_args(
     args: argparse.Namespace,
@@ -53,6 +55,7 @@ def log_argparse_args(
 ### Environment Variable Tool(s)
 
 #### `wipac_dev_tools.from_environment()`
+_Available for Python 3.6+_
 ```
 def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
     """Obtain configuration values from the OS environment.
@@ -84,7 +87,7 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
 
                    default_config = {
                        "HOST": "localhost",
-                       "PORT": "8080",
+                       "PORT": 8080,
                        "REQUIRED_FROM_ENVIRONMENT": None
                    }
                    config_dict = from_environment(default_config)
@@ -108,5 +111,98 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
                   component's configuration is incomplete due to missing
                   data from the OS.
         ValueError - If a type-indicated value is not a legal value
+    """
+```
+
+#### `wipac_dev_tools.from_environment_as_dataclass()`
+_Available for Python 3.7+_
+```
+def from_environment_as_dataclass(
+    dclass: Type[T],
+    collection_sep: Optional[str] = None,
+    dict_kv_joiner: str = "=",
+) -> T:
+    """Obtain configuration values from the OS environment formatted in a dataclass.
+
+    Environment variables are matched to a dataclass field's name. The
+    matching environment string is cast using the dataclass field's type
+    (there are some special cases for built-in types, see below). Then,
+    the values are used to create a dataclass instance. All normal
+    dataclass init-behavior is expected, like required fields
+    (positional arguments), optional fields with defaults, default
+    factories, post-init processing, etc.
+
+    If a field's type is a bool, `strtobool` is used for typecasting.
+
+    If a field's type is a `list`, `dict`, `set`, `frozenset`, or
+    an analogous type alias from the 'typing' module, then a conversion
+    is made (see `collection_sep` and `dict_kv_joiner`). Sub-types
+    are cast if using a typing-module type alias. The typing-module's
+    alias types must resolve to `type` within 1 nesting (eg: List[bool]
+    and Dict[int, float] are okay; List[Dict[int, float]] is not), or
+    2 if using 'Final' or 'Optional' (ex: Final[Dict[int, float]]).
+
+    If a field's type is a class that accepts 1 argument, it is
+    instantiated as such.
+
+    Arguments:
+        dclass - a (non-instantiated) dataclass, aka a type
+        collection_sep - the delimiter to split collections on ("1 2 5")
+        dict_kv_joiner - the delimiter that joins key-value pairs ("a=1 b=2 c=1")
+
+    Returns:
+        a dataclass instance mapping configuration keys to configuration values
+
+    Example:
+        env:
+            FPATH=/home/example/path
+            PORT=9999
+            HOST=localhost
+            MSGS_PER_CLIENTS=alpha=0 beta=55 delta=3
+            USE_EVEN=22
+            RETRIES=3
+
+        python:
+            @dataclasses.dataclass(frozen=True)
+            class Config:
+                FPATH: pathlib.Path
+                PORT: int
+                HOST: str
+                MSGS_PER_CLIENTS: Dict[str, int]
+                USE_EVEN: EvenState
+                RETRIES: Optional[int] = None
+                TIMEOUT: int = 30
+
+                def __post_init__(self) -> None:
+                    if self.PORT <= 0:
+                        raise ValueError("'PORT' is non-positive")
+
+            class EvenState:
+                def __init__(self, arg: str):
+                    self.is_even = not bool(int(arg) % 2)  # 1%2 -> 1 -> T -> F
+                def __repr__(self) -> str:
+                    return f"EvenState(is_even={self.is_even})"
+
+            config = from_environment_as_dataclass(Config)
+            print(config)
+
+        stdout:
+            Config(
+                FPATH=PosixPath('/home/example/path'),
+                PORT=9999,
+                HOST='localhost',
+                MSGS_PER_CLIENTS={'alpha': 0, 'beta': 55, 'delta': 3},
+                USE_EVEN=EvenState(is_even=True),
+                RETRIES=3,
+                TIMEOUT=30)
+
+
+    Raises:
+        OSError - If a configuration value is requested and no default
+                  value is provided, to indicate that the component's
+                  configuration is incomplete due to missing data from
+                  the OS.
+        ValueError - If an indicated value is not a legal value
+        TypeError - If an argument or indicated value is not a legal type
     """
 ```
