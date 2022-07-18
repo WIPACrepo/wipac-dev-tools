@@ -237,19 +237,6 @@ def from_environment_as_dataclass(
         )
 
 
-def _is_optional(typ: GenericAlias) -> bool:
-    # Optional[int] *is* typing.Union[int, NoneType]
-    return (
-        typ.__origin__ == Union
-        and len(typ.__args__) == 2
-        and typ.__args__[-1] == type(None)  # noqa: E721
-    )
-
-
-def _is_final(typ: GenericAlias) -> bool:
-    return bool(typ.__origin__ == Final)
-
-
 def _from_environment_as_dataclass(
     dclass: Type[T],
     collection_sep: Optional[str],
@@ -270,6 +257,18 @@ def _from_environment_as_dataclass(
     # type-check dclass
     if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
         raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
+
+    # some helper functions
+    def _is_optional(typ: GenericAlias) -> bool:
+        # Optional[int] *is* typing.Union[int, NoneType]
+        return (
+            typ.__origin__ == Union
+            and len(typ.__args__) == 2
+            and typ.__args__[-1] == type(None)  # noqa: E721
+        )
+
+    def _is_final(typ: GenericAlias) -> bool:
+        return bool(typ.__origin__ == Final)
 
     # iterate fields and find env vars
     kwargs: Dict[str, Any] = {}
