@@ -15,6 +15,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    _SpecialForm,
     cast,
 )
 
@@ -235,6 +236,19 @@ def from_environment_as_dataclass(
         )
 
 
+def _is_optional(typ: GenericAlias) -> bool:
+    # Optional[int] *is* typing.Union[int, NoneType]
+    return (
+        typ.__origin__ == Union
+        and len(typ.__args__) == 2
+        and isinstance(typ.__args__[-1], type(None))
+    )
+
+
+def _is_final(typ: GenericAlias) -> bool:
+    return bool(typ.__origin__ == Final)
+
+
 def _from_environment_as_dataclass(
     dclass: Type[T],
     collection_sep: Optional[str],
@@ -267,14 +281,23 @@ def _from_environment_as_dataclass(
         print(f"A: {field.type} {type({field.type})}")
         typ, arg_typs = field.type, None
 
+        # detect bare 'Final' and 'Optional'
+        if isinstance(typ, _SpecialForm):
+            raise ValueError(
+                f"'{field.type}'-indicated type is not a legal type: "
+                f"field='{field.name}' (the typing-module's Special-Form types, "
+                f"'Final' and 'Optional', must have a nested-type attached)"
+            )
+
         # take care of 'typing'-module types
-        if typ in (Final, Optional):  # type: ignore[comparison-overlap]
-            # special wrapper types, ex: Final[int], Optional[Dict[str,int]]
-            typ, arg_typs = typ.__args__[0], typ.__args__[0].__args__
-            print(f"B: {typ} {arg_typs}")
         if isinstance(typ, GenericAlias):
-            typ, arg_typs = typ.__origin__, typ.__args__
-            print(f"C: {typ} {arg_typs}")
+            # Ex: Final[int], Optional[Dict[str,int]]
+            if _is_optional(typ) or _is_final(typ):
+                typ, arg_typs = typ.__args__[0].__origin__, typ.__args__[0].__args__
+            # Ex: List[int], Dict[str,int]
+            else:
+                typ, arg_typs = typ.__origin__, typ.__args__
+            print(f"B: {typ} {arg_typs}")
             if not all(isinstance(x, type) for x in [typ] + list(arg_typs)):
                 raise ValueError(
                     f"'{field.type}'-indicated type is not a legal type: "
