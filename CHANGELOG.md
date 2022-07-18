@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v1.3.1 (2022-07-18)
+
+
 ## v1.3.0 (2022-07-18)
 ### Feature
 * Add `from_environment_as_dataclass()` ([#37](https://github.com/WIPACrepo/wipac-dev-tools/issues/37)) ([`45e75dc`](https://github.com/WIPACrepo/wipac-dev-tools/commit/45e75dcc8e3d9e9638bca045e6f9f52db9c27f87))
