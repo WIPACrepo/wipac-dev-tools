@@ -241,7 +241,7 @@ def _is_optional(typ: GenericAlias) -> bool:
     return (
         typ.__origin__ == Union
         and len(typ.__args__) == 2
-        and isinstance(typ.__args__[-1], type(None))
+        and typ.__args__[-1] == type(None)  # noqa: E721
     )
 
 
