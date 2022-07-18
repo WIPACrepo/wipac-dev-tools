@@ -1,8 +1,38 @@
 """Module to support parsing environment variables."""
 
+
 import os
+import re
+import sys
 from distutils.util import strtobool
-from typing import Dict, Mapping, Optional, Sequence, Union, cast
+from typing import (
+    Any,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
+
+try:
+    from typing import Final
+except ImportError:
+    from typing_extensions import Final  # type: ignore[misc]
+
+# IMPORTS for PYTHON 3.7+
+if sys.version_info >= (3, 7):
+    import dataclasses
+    from typing import _SpecialForm
+
+    try:
+        from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
+    except ImportError:
+        from typing import GenericAlias  # type: ignore[attr-defined]
+
 
 RetVal = Union[str, int, float, bool]
 OptionalDict = Mapping[str, Optional[RetVal]]
@@ -50,7 +80,7 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
 
                    default_config = {
                        "HOST": "localhost",
-                       "PORT": "8080",
+                       "PORT": 8080,
                        "REQUIRED_FROM_ENVIRONMENT": None
                    }
                    config_dict = from_environment(default_config)
@@ -90,7 +120,7 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
             try:
                 config[key] = _typecast(os.environ[key], type(config[key]))
             except ValueError:
-                raise ValueError(  # pylint: disable=W0707
+                raise ValueError(  # pylint: disable=raise-missing-from
                     f"'{type(config[key])}'-indicated value is not a legal value: "
                     f"key='{key}' value='{config[key]}'"
                 )
@@ -99,3 +129,210 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
             raise OSError(f"Missing environment variable '{key}'")
 
     return cast(Dict[str, RetVal], config)
+
+
+def _typecast_for_dataclass(
+    env_val: str,
+    typ: type,
+    arg_typs: Optional[Tuple[type, ...]],
+    collection_sep: Optional[str],
+    dict_kv_joiner: str,
+) -> Any:
+    """Collect the typecast value"""
+    if typ == list:
+        _list = env_val.split(collection_sep)
+        if arg_typs:
+            return [arg_typs[0](x) for x in _list]
+        return _list
+
+    elif typ == dict:
+        _dict = {
+            x.split(dict_kv_joiner)[0]: x.split(dict_kv_joiner)[1]
+            for x in env_val.split(collection_sep)
+        }
+        if arg_typs:
+            return {arg_typs[0](k): arg_typs[1](v) for k, v in _dict.items()}
+        return _dict
+
+    elif typ == set:
+        _set = set(env_val.split(collection_sep))
+        if arg_typs:
+            return {arg_typs[0](x) for x in _set}
+        return _set
+
+    elif typ == frozenset:
+        _frozenset = frozenset(env_val.split(collection_sep))
+        if arg_typs:
+            return {arg_typs[0](x) for x in _frozenset}
+        return _frozenset
+
+    elif typ == bool:
+        return strtobool(env_val)
+
+    else:
+        return typ(env_val)
+
+
+T = TypeVar("T")
+
+
+def from_environment_as_dataclass(
+    dclass: Type[T],
+    collection_sep: Optional[str] = None,
+    dict_kv_joiner: str = "=",
+) -> T:
+    """Obtain configuration values from the OS environment formatted in a dataclass.
+
+    Environment variables are matched to a dataclass field's name. The
+    matching environment string is cast using the dataclass field's type
+    (there are some special cases for built-in types, see below). Then,
+    the values are used to create a dataclass instance. All normal
+    dataclass init-behavior is expected, like required fields
+    (positional arguments), optional fields with defaults, default
+    factories, post-init processing, etc.
+
+    If a field's type is a bool, `strtobool` is used for typecasting.
+
+    If a field's type is a `list`, `dict`, `set`, `frozenset`, or
+    an analogous type alias from the 'typing' module, then a conversion
+    is made (see `collection_sep` and `dict_kv_joiner`). Sub-types
+    are cast if using a typing-module type alias. The typing-module's
+    alias types must resolve to `type` within 1 nesting (eg: List[bool]
+    and Dict[int, float] are okay; List[Dict[int, float]] is not), or
+    2 if using 'Final' or 'Optional' (ex: Final[Dict[int, float]]).
+
+    If a field's type is a class that accepts 1 argument, it is
+    instantiated as such.
+
+    Arguments:
+        dclass - a (non-instantiated) dataclass, aka a type
+        collection_sep - the delimiter to split collections on ("1 2 5")
+        dict_kv_joiner - the delimiter that joins key-value pairs ("a=1 b=2 c=1")
+
+    Returns:
+        a dataclass instance mapping configuration keys to configuration values
+
+    Example:
+        @dataclasses.dataclass(frozen=True)
+        class Config:
+           REQUIRED_FROM_ENVIRONMENT: str
+           HOST: str = "localhost"
+           PORT: int = 8080
+       }
+       config_dclass = from_environment_as_dataclass(Config)
+
+    Raises:
+        OSError - If a configuration value is requested and no default
+                  value is provided, to indicate that the
+                  component's configuration is incomplete due to missing
+                  data from the OS.
+        ValueError - If a type-indicated value is not a legal value
+    """
+
+    if sys.version_info >= (3, 7):
+        return _from_environment_as_dataclass(dclass, collection_sep, dict_kv_joiner)
+    else:
+        raise NotImplementedError(
+            "Sorry, from_environment_as_dataclass() is only available for 3.7+"
+        )
+
+
+def _from_environment_as_dataclass(
+    dclass: Type[T],
+    collection_sep: Optional[str],
+    dict_kv_joiner: str,
+) -> T:
+
+    # check args
+    if (
+        (dict_kv_joiner == collection_sep)
+        or (not collection_sep and " " in dict_kv_joiner)  # collection_sep=None is \s+
+        or (collection_sep and collection_sep in dict_kv_joiner)
+    ):
+        raise RuntimeError(
+            r"'collection_sep' ('None'='\s+') cannot overlap with 'dict_kv_joiner': "
+            f"'{collection_sep}' & '{dict_kv_joiner}'"
+        )
+
+    # type-check dclass
+    if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
+        raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
+
+    # some helper functions
+    def _is_optional(typ: GenericAlias) -> bool:
+        # Optional[int] *is* typing.Union[int, NoneType]
+        return (
+            typ.__origin__ == Union
+            and len(typ.__args__) == 2
+            and typ.__args__[-1] == type(None)  # noqa: E721
+        )
+
+    def _is_final(typ: GenericAlias) -> bool:
+        return bool(typ.__origin__ == Final)
+
+    # iterate fields and find env vars
+    kwargs: Dict[str, Any] = {}
+    for field in dataclasses.fields(dclass):
+        if not field.init:
+            continue  # don't try to get a field that can't be set via __init__
+        # get value
+        try:
+            env_val = os.environ[field.name]
+        except KeyError:
+            continue
+
+        typ, arg_typs = field.type, None
+
+        # detect bare 'Final' and 'Optional'
+        if isinstance(typ, _SpecialForm):
+            raise ValueError(
+                f"'{field.type}' is not a supported type: "
+                f"field='{field.name}' (any of the typing-module's SpecialForm "
+                f"types, 'Final' and 'Optional', must have a nested type attached)"
+            )
+
+        # take care of 'typing'-module types
+        if isinstance(typ, GenericAlias):
+            # Ex: Final[int], Optional[Dict[str,int]]
+            if _is_optional(typ) or _is_final(typ):
+                if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
+                    typ, arg_typs = typ.__args__[0], None
+                else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
+                    typ, arg_typs = typ.__args__[0].__origin__, typ.__args__[0].__args__
+            # Ex: List[int], Dict[str,int]
+            else:
+                typ, arg_typs = typ.__origin__, typ.__args__
+            if not (
+                isinstance(typ, type)
+                and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
+            ):
+                raise ValueError(
+                    f"'{field.type}' is not a supported type: "
+                    f"field='{field.name}' (the typing-module's alias "
+                    f"types must resolve to 'type' within 1 nesting, "
+                    f"or 2 if using 'Final' or 'Optional')"
+                )
+
+        try:
+            kwargs[field.name] = _typecast_for_dataclass(
+                env_val, typ, arg_typs, collection_sep, dict_kv_joiner
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"'{field.type}'-indicated value is not a legal value: "
+                f"var='{field.name}' value='{env_val}'"
+            ) from e
+
+    try:
+        return dclass(**kwargs)
+    except TypeError as e:
+        m = re.fullmatch(
+            r".*__init__\(\) missing \d+ required positional argument(?P<s>s?): (?P<args>.+)",
+            str(e),
+        )  # in 3.10 the class's qualname is used before "__init__()..."
+        if m:
+            raise OSError(
+                f"Missing required environment variable{m.groupdict()['s']}: "
+                f"{m.groupdict()['args']}"
+            ) from e
+        raise  # some other kind of TypeError
