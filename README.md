@@ -10,6 +10,7 @@ Common, basic, and reusable development tools
 ### Logging Tools
 
 #### `wipac_dev_tools.logging_tools.set_level()`
+_Available for Python 3.6+_
 ```
 def set_level(
     level: str,
@@ -31,6 +32,7 @@ def set_level(
 ```
 
 #### `wipac_dev_tools.logging_tools.log_argparse_args()`
+_Available for Python 3.6+_
 ```
 def log_argparse_args(
     args: argparse.Namespace,
@@ -53,6 +55,7 @@ def log_argparse_args(
 ### Environment Variable Tool(s)
 
 #### `wipac_dev_tools.from_environment()`
+_Available for Python 3.6+_
 ```
 def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
     """Obtain configuration values from the OS environment.
@@ -84,7 +87,7 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
 
                    default_config = {
                        "HOST": "localhost",
-                       "PORT": "8080",
+                       "PORT": 8080,
                        "REQUIRED_FROM_ENVIRONMENT": None
                    }
                    config_dict = from_environment(default_config)
