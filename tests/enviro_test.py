@@ -585,7 +585,7 @@ if sys.version_info >= (3, 7):
                 "typing.List[typing.Dict[str, int]]'-indicated type is not a "
                 "legal type: field='FOO' (the typing-module's alias types "
                 "must resolve to 'type' within 1 nesting, or 2 if using "
-                "'Final' or 'Optional'"
+                "'Final' or 'Optional')"
             )
 
         def test_106__dict_delims(self) -> None:

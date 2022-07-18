@@ -15,7 +15,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    _SpecialForm,
     cast,
 )
 
@@ -24,8 +23,10 @@ try:
 except ImportError:
     from typing_extensions import Final  # type: ignore[misc]
 
+# IMPORTS for PYTHON 3.7+
 if sys.version_info >= (3, 7):
     import dataclasses
+    from typing import _SpecialForm
 
     try:
         from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
