@@ -301,7 +301,10 @@ def _from_environment_as_dataclass(
             else:
                 typ, arg_typs = typ.__origin__, typ.__args__
             print(f"B: {typ} {arg_typs}")
-            if not all(isinstance(x, type) for x in [typ] + list(arg_typs)):
+            if not (
+                isinstance(typ, type)
+                and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
+            ):
                 raise ValueError(
                     f"'{field.type}'-indicated type is not a legal type: "
                     f"field='{field.name}' (the typing-module's alias "
