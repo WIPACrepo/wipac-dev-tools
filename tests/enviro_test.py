@@ -324,7 +324,7 @@ if sys.version_info >= (3, 7):
                 config = from_environment_as_dataclass(Config)
                 self.assertEqual(config.FOO, False)
 
-        def test_008__list(self) -> None:
+        def test_020__list(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -335,7 +335,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, ["foo", "bar", "baz"])
 
-        def test_009__list_int(self) -> None:
+        def test_021__list_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -346,7 +346,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, [123, 456, 789])
 
-        def test_010__set(self) -> None:
+        def test_022__set(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -357,7 +357,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, {"bar", "baz", "foo"})
 
-        def test_011__set_int(self) -> None:
+        def test_023__set_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -368,7 +368,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, {123, 456, 789})
 
-        def test_012__dict(self) -> None:
+        def test_024__dict(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -379,7 +379,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, {"bar": "2", "baz": "3", "foo": "1"})
 
-        def test_013__dict_str_int(self) -> None:
+        def test_025__dict_str_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -390,7 +390,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, {"bar": 2, "baz": 3, "foo": 1})
 
-        def test_014__frozen_set(self) -> None:
+        def test_026__frozen_set(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -401,7 +401,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, frozenset({"bar", "baz", "foo"}))
 
-        def test_015__frozen_int(self) -> None:
+        def test_027__frozen_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -412,7 +412,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, frozenset({123, 456, 789}))
 
-        def test_016__class(self) -> None:
+        def test_028__class(self) -> None:
             """Test normal use case."""
 
             class OneArgClass:
@@ -427,7 +427,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO.arg, "this is my extra cool string")
 
-        def test_017__dict_class_int(self) -> None:
+        def test_029__dict_class_int(self) -> None:
             """Test normal use case."""
 
             class OneArgClass:
@@ -452,7 +452,7 @@ if sys.version_info >= (3, 7):
                 config.FOO, {OneArgClass("this-is-my-extra-cool-string"): 2}
             )
 
-        def test_020__final_int(self) -> None:
+        def test_050__final_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -463,7 +463,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, 512)
 
-        def test_021__final_dict_str_int(self) -> None:
+        def test_051__final_dict_str_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -474,7 +474,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, {"bar": 2, "baz": 3, "foo": 1})
 
-        def test_022__optional_bool(self) -> None:
+        def test_052__optional_bool(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -485,7 +485,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, True)
 
-        def test_023__optional_dict_str_int(self) -> None:
+        def test_053__optional_dict_str_int(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
@@ -496,7 +496,7 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, {"bar": 2, "baz": 3, "foo": 1})
 
-        def test_023__optional_dict(self) -> None:
+        def test_054__optional_dict(self) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)

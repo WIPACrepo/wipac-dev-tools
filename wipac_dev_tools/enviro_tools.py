@@ -264,14 +264,17 @@ def _from_environment_as_dataclass(
         except KeyError:
             continue
 
+        print(f"A: {field.type} {type({field.type})}")
         typ, arg_typs = field.type, None
 
         # take care of 'typing'-module types
         if typ in (Final, Optional):  # type: ignore[comparison-overlap]
             # special wrapper types, ex: Final[int], Optional[Dict[str,int]]
             typ, arg_typs = typ.__args__[0], typ.__args__[0].__args__
+            print(f"B: {typ} {arg_typs}")
         if isinstance(typ, GenericAlias):
             typ, arg_typs = typ.__origin__, typ.__args__
+            print(f"C: {typ} {arg_typs}")
             if not all(isinstance(x, type) for x in [typ] + list(arg_typs)):
                 raise ValueError(
                     f"'{field.type}'-indicated type is not a legal type: "
