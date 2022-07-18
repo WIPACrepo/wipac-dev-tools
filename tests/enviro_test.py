@@ -24,7 +24,7 @@ if sys.version_info >= (3, 7):
     import dataclasses as dc
 
 
-# pylint:disable=missing-class-docstring,disallowed-name
+# pylint:disable=missing-class-docstring,disallowed-name,invalid-name
 
 
 class FromEnvironmentTest(unittest.TestCase):
@@ -636,7 +636,7 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                FOO: Final
+                FOO: Final  # type: ignore[misc] # ...this is an error after all
 
             os.environ["FOO"] = "foo bar baz"
             with self.assertRaises(ValueError):
