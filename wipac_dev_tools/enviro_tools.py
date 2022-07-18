@@ -198,7 +198,7 @@ def from_environment_as_dataclass(
     are cast if using a typing-module type alias. The typing-module's
     alias types must resolve to `type` within 1 nesting (eg: List[bool]
     and Dict[int, float] are okay; List[Dict[int, float]] is not), or
-    two if using 'Final' or 'Optional' (ex: Final[Dict[int, float]]).
+    2 if using 'Final' or 'Optional' (ex: Final[Dict[int, float]]).
 
     If a field's type is a class that accepts 1 argument, it is
     instantiated as such.
@@ -255,6 +255,7 @@ def _from_environment_as_dataclass(
     dict_kv_joiner: str,
 ) -> T:
 
+    # check args
     if (
         (dict_kv_joiner == collection_sep)
         or (not collection_sep and " " in dict_kv_joiner)  # collection_sep=None is \s+
@@ -265,9 +266,11 @@ def _from_environment_as_dataclass(
             f"'{collection_sep}' & '{dict_kv_joiner}'"
         )
 
+    # type-check dclass
     if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
         raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
 
+    # iterate fields and find env vars
     kwargs: Dict[str, Any] = {}
     for field in dataclasses.fields(dclass):
         if not field.init:
@@ -278,22 +281,20 @@ def _from_environment_as_dataclass(
         except KeyError:
             continue
 
-        print(f"A: {field.type} {type({field.type})}")
         typ, arg_typs = field.type, None
 
         # detect bare 'Final' and 'Optional'
         if isinstance(typ, _SpecialForm):
             raise ValueError(
                 f"'{field.type}'-indicated type is not a legal type: "
-                f"field='{field.name}' (the typing-module's Special-Form types, "
-                f"'Final' and 'Optional', must have a nested-type attached)"
+                f"field='{field.name}' (the typing-module's SpecialForm types, "
+                f"'Final' and 'Optional', must have a nested type attached)"
             )
 
         # take care of 'typing'-module types
         if isinstance(typ, GenericAlias):
             # Ex: Final[int], Optional[Dict[str,int]]
             if _is_optional(typ) or _is_final(typ):
-                print("is Optional or Final")
                 if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
                     typ, arg_typs = typ.__args__[0], None
                 else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
@@ -301,7 +302,6 @@ def _from_environment_as_dataclass(
             # Ex: List[int], Dict[str,int]
             else:
                 typ, arg_typs = typ.__origin__, typ.__args__
-            print(f"B: {typ} {arg_typs}")
             if not (
                 isinstance(typ, type)
                 and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
@@ -309,8 +309,8 @@ def _from_environment_as_dataclass(
                 raise ValueError(
                     f"'{field.type}'-indicated type is not a legal type: "
                     f"field='{field.name}' (the typing-module's alias "
-                    f"types must resolved to 'type' within 1 nesting, "
-                    f"or two if using 'Final' or 'Optional')"
+                    f"types must resolve to 'type' within 1 nesting, "
+                    f"or 2 if using 'Final' or 'Optional')"
                 )
 
         try:
