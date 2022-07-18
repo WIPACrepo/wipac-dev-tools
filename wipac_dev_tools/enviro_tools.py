@@ -8,6 +8,7 @@ from distutils.util import strtobool
 from typing import (
     Any,
     Dict,
+    Final,
     Mapping,
     Optional,
     Sequence,
@@ -189,9 +190,10 @@ def from_environment_as_dataclass(
     If a field's type is a `list`, `dict`, `set`, `frozenset`, or
     an analogous type alias from the 'typing' module, then a conversion
     is made (see `collection_sep` and `dict_kv_joiner`). Sub-types
-    are cast if using a typing-module type alias. The typing module's
+    are cast if using a typing-module type alias. The typing-module's
     alias types must resolve to `type` within 1 nesting (eg: List[bool]
-    and Dict[int, float] are okay; List[Dict[int, float]] is not).
+    and Dict[int, float] are okay; List[Dict[int, float]] is not), or
+    two if using 'Final' or 'Optional' (ex: Final[Dict[int, float]]).
 
     If a field's type is a class that accepts 1 argument, it is
     instantiated as such.
@@ -258,17 +260,21 @@ def _from_environment_as_dataclass(
         except KeyError:
             continue
 
-        # take care of 'GenericAlias' types
-        if isinstance(field.type, GenericAlias):
-            typ, arg_typs = field.type.__origin__, field.type.__args__
+        typ, arg_typs = field.type, None
+
+        # take care of 'typing'-module types
+        if typ in (Final, Optional):  # type: ignore[comparison-overlap]
+            # special wrapper types, ex: Final[int], Optional[Dict[str,int]]
+            typ, arg_typs = typ.__args__[0], typ.__args__[0].__args__
+        if isinstance(typ, GenericAlias):
+            typ, arg_typs = typ.__origin__, typ.__args__
             if not all(isinstance(x, type) for x in [typ] + list(arg_typs)):
                 raise ValueError(
                     f"'{field.type}'-indicated type is not a legal type: "
-                    f"field='{field.name}' (the typing module's alias "
-                    f"types must resolved to 'type' within 1 nesting)"
+                    f"field='{field.name}' (the typing-module's alias "
+                    f"types must resolved to 'type' within 1 nesting, "
+                    f"or two if using 'Final' or 'Optional')"
                 )
-        else:
-            typ, arg_typs = field.type, None
 
         try:
             kwargs[field.name] = _typecast_for_dataclass(

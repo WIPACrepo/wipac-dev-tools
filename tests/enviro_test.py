@@ -7,7 +7,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from typing import Dict, FrozenSet, List, Set
+from typing import Any, Dict, Final, FrozenSet, List, Optional, Set
 
 from wipac_dev_tools import (  # noqa # pylint: disable=E0401,C0413
     from_environment,
@@ -189,6 +189,8 @@ if sys.version_info >= (3, 7):
                 HOST: str
                 MSGS_PER_CLIENTS: Dict[str, int]
                 USE_EVEN: EvenState
+                RETRIES: Optional[int] = None
+                TIMEOUT: int = 30
 
                 def __post_init__(self) -> None:
                     if self.PORT <= 0:
@@ -199,12 +201,15 @@ if sys.version_info >= (3, 7):
             os.environ["HOST"] = "localhost"
             os.environ["MSGS_PER_CLIENTS"] = "alpha=0 beta=55 delta=3"
             os.environ["USE_EVEN"] = "22"
+            os.environ["RETRIES"] = "3"
             config = from_environment_as_dataclass(Config)
             assert config.FPATH == pathlib.Path("/home/example/path")
             assert config.PORT == 9999
             assert config.HOST == "localhost"
             assert config.MSGS_PER_CLIENTS == {"alpha": 0, "beta": 55, "delta": 3}
             assert config.USE_EVEN.is_even
+            assert config.RETRIES == 3
+            assert config.TIMEOUT == 30
 
         def test_000__str(self) -> None:
             """Test normal use case."""
@@ -441,6 +446,61 @@ if sys.version_info >= (3, 7):
                 config.FOO, {OneArgClass("this-is-my-extra-cool-string"): 2}
             )
 
+        def test_020__final_int(self) -> None:
+            """Test normal use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Final[int]
+
+            os.environ["FOO"] = "512"
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, 512)
+
+        def test_021__final_dict_str_int(self) -> None:
+            """Test normal use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Final[Dict[str, int]]
+
+            os.environ["FOO"] = "foo=1 bar=2 baz=3"
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, {"bar": 2, "baz": 3, "foo": 1})
+
+        def test_022__optional_bool(self) -> None:
+            """Test normal use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Optional[bool]
+
+            os.environ["FOO"] = "T"
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, True)
+
+        def test_023__optional_dict_str_int(self) -> None:
+            """Test normal use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Optional[Dict[str, int]]
+
+            os.environ["FOO"] = "foo=1 bar=2 baz=3"
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, {"bar": 2, "baz": 3, "foo": 1})
+
+        def test_023__optional_dict(self) -> None:
+            """Test normal use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Optional[dict]
+
+            os.environ["FOO"] = "foo=1 bar=2 baz=3"
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, {"bar": "2", "baz": "3", "foo": "1"})
+
         def test_100_error__missing_required(self) -> None:
             """Test error use case."""
             # Missing
@@ -552,6 +612,39 @@ if sys.version_info >= (3, 7):
                 r"'collection_sep' ('None'='\s+') cannot overlap with "
                 "'dict_kv_joiner': ' ' & ' = '"
             )
+
+        def test_108_error__bytes(self) -> None:
+            """Test error use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Final
+
+            os.environ["FOO"] = "foo bar baz"
+            with self.assertRaises(TypeError):
+                from_environment_as_dataclass(Config)
+
+        def test_109_error__final_only(self) -> None:
+            """Test error use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Final
+
+            os.environ["FOO"] = "foo bar baz"
+            with self.assertRaises(ValueError):
+                from_environment_as_dataclass(Config)
+
+        def test_109_error__final_only(self) -> None:
+            """Test error use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Any
+
+            os.environ["FOO"] = "foo bar baz"
+            with self.assertRaises(ValueError):
+                from_environment_as_dataclass(Config)
 
         def test_200_convert(self) -> None:
             """Test conversion cases."""
