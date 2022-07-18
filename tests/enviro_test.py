@@ -631,6 +631,8 @@ if sys.version_info >= (3, 7):
             with self.assertRaises(TypeError):
                 from_environment_as_dataclass(Config)
 
+        # NOTE: mypy crashes with an un-typed non-initialized 'Final'
+        # see https://github.com/python/mypy/issues/10090
         # def test_109_error__final_only(self) -> None:
         #     """Test error use case."""
 
