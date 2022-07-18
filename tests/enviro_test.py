@@ -582,8 +582,8 @@ if sys.version_info >= (3, 7):
             with self.assertRaises(ValueError) as cm:
                 from_environment_as_dataclass(Config)
             assert str(cm.exception) == (
-                "typing.List[typing.Dict[str, int]]'-indicated type is not a "
-                "legal type: field='FOO' (the typing-module's alias types "
+                "'typing.List[typing.Dict[str, int]]' is not a "
+                "supported type: field='FOO' (the typing-module's alias types "
                 "must resolve to 'type' within 1 nesting, or 2 if using "
                 "'Final' or 'Optional')"
             )

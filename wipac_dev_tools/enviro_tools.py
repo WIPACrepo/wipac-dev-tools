@@ -287,9 +287,9 @@ def _from_environment_as_dataclass(
         # detect bare 'Final' and 'Optional'
         if isinstance(typ, _SpecialForm):
             raise ValueError(
-                f"'{field.type}'-indicated type is not a legal type: "
-                f"field='{field.name}' (the typing-module's SpecialForm types, "
-                f"'Final' and 'Optional', must have a nested type attached)"
+                f"'{field.type}' is not a supported type: "
+                f"field='{field.name}' (any of the typing-module's SpecialForm "
+                f"types, 'Final' and 'Optional', must have a nested type attached)"
             )
 
         # take care of 'typing'-module types
@@ -308,7 +308,7 @@ def _from_environment_as_dataclass(
                 and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
             ):
                 raise ValueError(
-                    f"'{field.type}'-indicated type is not a legal type: "
+                    f"'{field.type}' is not a supported type: "
                     f"field='{field.name}' (the typing-module's alias "
                     f"types must resolve to 'type' within 1 nesting, "
                     f"or 2 if using 'Final' or 'Optional')"
