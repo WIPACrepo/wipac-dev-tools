@@ -635,7 +635,7 @@ if sys.version_info >= (3, 7):
             with self.assertRaises(ValueError):
                 from_environment_as_dataclass(Config)
 
-        def test_109_error__final_only(self) -> None:
+        def test_110_error__any(self) -> None:
             """Test error use case."""
 
             @dc.dataclass(frozen=True)
