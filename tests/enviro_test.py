@@ -7,12 +7,18 @@ import shutil
 import sys
 import tempfile
 import unittest
-from typing import Any, Dict, Final, FrozenSet, List, Optional, Set
+from typing import Any, Dict, FrozenSet, List, Optional, Set
 
 from wipac_dev_tools import (  # noqa # pylint: disable=E0401,C0413
     from_environment,
     from_environment_as_dataclass,
 )
+
+try:
+    from typing import Final
+except ImportError:
+    from typing_extensions import Final  # type: ignore[misc]
+
 
 if sys.version_info >= (3, 7):
     import dataclasses as dc

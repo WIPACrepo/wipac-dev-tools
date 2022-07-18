@@ -8,7 +8,6 @@ from distutils.util import strtobool
 from typing import (
     Any,
     Dict,
-    Final,
     Mapping,
     Optional,
     Sequence,
@@ -18,6 +17,11 @@ from typing import (
     Union,
     cast,
 )
+
+try:
+    from typing import Final
+except ImportError:
+    from typing_extensions import Final  # type: ignore[misc]
 
 if sys.version_info >= (3, 7):
     import dataclasses
