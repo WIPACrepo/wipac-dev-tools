@@ -42,7 +42,7 @@ KeySpec = Union[str, Sequence[str], OptionalDict]
 
 def _typecast(source: str, type_: type) -> RetVal:
     if type_ == bool:
-        return strtobool(source.lower())
+        return bool(strtobool(source.lower()))
     elif type_ == int:
         return int(source)
     elif type_ == float:
