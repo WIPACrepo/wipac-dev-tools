@@ -132,7 +132,7 @@ def from_environment_as_dataclass(
     (positional arguments), optional fields with defaults, default
     factories, post-init processing, etc.
 
-    If a field's type is a bool, `str_to_bool` is used for typecasting.
+    If a field's type is a bool, `wipac_dev_tools.strtobool` is applied.
 
     If a field's type is a `list`, `dict`, `set`, `frozenset`, or
     an analogous type alias from the 'typing' module, then a conversion
@@ -204,5 +204,21 @@ def from_environment_as_dataclass(
                   the OS.
         ValueError - If an indicated value is not a legal value
         TypeError - If an argument or indicated value is not a legal type
+    """
+```
+
+#### `wipac_dev_tools.strtobool()`
+```
+def strtobool(string: str) -> bool:
+    """Smart-cast a string to a bool using common-sense interpretations.
+
+    Unlike the since deprecated `distutils.util.strtobool`, this
+    returns an actual bool.
+
+    True: 'y', 'yes', 't', 'true', 'on', '1'
+    False: 'n', 'no', 'f', 'false', 'off', '0'
+
+    Raises:
+        ValueError: if the string does not match any of the about
     """
 ```
