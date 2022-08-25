@@ -3,12 +3,14 @@
 from . import logging_tools
 from .enviro_tools import from_environment, from_environment_as_dataclass  # noqa
 from .setup_tools import SetupShop  # noqa
+from .strtobool import strtobool
 
 __all__ = [
     "from_environment",
     "from_environment_as_dataclass",
     "SetupShop",
     "logging_tools",
+    "strtobool",
 ]
 
 # version is a human-readable version number.

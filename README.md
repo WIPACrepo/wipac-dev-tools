@@ -132,7 +132,7 @@ def from_environment_as_dataclass(
     (positional arguments), optional fields with defaults, default
     factories, post-init processing, etc.
 
-    If a field's type is a bool, `strtobool` is used for typecasting.
+    If a field's type is a bool, `str_to_bool` is used for typecasting.
 
     If a field's type is a `list`, `dict`, `set`, `frozenset`, or
     an analogous type alias from the 'typing' module, then a conversion
