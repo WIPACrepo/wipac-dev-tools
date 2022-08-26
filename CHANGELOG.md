@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.4.0 (2022-08-26)
+### Feature
+* Add `wipac_dev_tools.strtobool()` ([#40](https://github.com/WIPACrepo/wipac-dev-tools/issues/40)) ([`4fcde91`](https://github.com/WIPACrepo/wipac-dev-tools/commit/4fcde91bd2905858d98a97ee4cc90eccb1e18029))
+
 ## v1.3.1 (2022-07-18)
 
 
