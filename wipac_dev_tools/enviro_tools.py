@@ -4,7 +4,6 @@
 import os
 import re
 import sys
-from distutils.util import strtobool
 from typing import (
     Any,
     Dict,
@@ -17,6 +16,8 @@ from typing import (
     Union,
     cast,
 )
+
+from .strtobool import strtobool
 
 try:
     from typing import Final
@@ -191,7 +192,7 @@ def from_environment_as_dataclass(
     (positional arguments), optional fields with defaults, default
     factories, post-init processing, etc.
 
-    If a field's type is a bool, `strtobool` is used for typecasting.
+    If a field's type is a bool, `wipac_dev_tools.strtobool` is applied.
 
     If a field's type is a `list`, `dict`, `set`, `frozenset`, or
     an analogous type alias from the 'typing' module, then a conversion
