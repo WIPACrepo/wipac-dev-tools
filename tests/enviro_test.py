@@ -631,18 +631,16 @@ if sys.version_info >= (3, 7):
             with self.assertRaises(TypeError):
                 from_environment_as_dataclass(Config)
 
-        # NOTE: mypy crashes with an un-typed non-initialized 'Final'
-        # see https://github.com/python/mypy/issues/10090
-        # def test_109_error__final_only(self) -> None:
-        #     """Test error use case."""
+        def test_109_error__final_only(self) -> None:
+            """Test error use case."""
 
-        #     @dc.dataclass(frozen=True)
-        #     class Config:
-        #         FOO: Final  # type: ignore[misc] # ...this is an error after all
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Final  # type: ignore[misc] # ...this is an error after all
 
-        #     os.environ["FOO"] = "foo bar baz"
-        #     with self.assertRaises(ValueError):
-        #         from_environment_as_dataclass(Config)
+            os.environ["FOO"] = "foo bar baz"
+            with self.assertRaises(ValueError):
+                from_environment_as_dataclass(Config)
 
         def test_110_error__any(self) -> None:
             """Test error use case."""
