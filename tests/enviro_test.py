@@ -636,7 +636,7 @@ if sys.version_info >= (3, 7):
 
             @dc.dataclass(frozen=True)
             class Config:
-                FOO: Final  # type: ignore[misc] # ...this is an error after all
+                FOO: Final
 
             os.environ["FOO"] = "foo bar baz"
             with self.assertRaises(ValueError):
