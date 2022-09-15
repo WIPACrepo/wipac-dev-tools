@@ -5,7 +5,10 @@ import wipac_dev_tools
 
 def test_available() -> None:
     """Test the wanted modules/sub-modules are available."""
-    assert set(dir(wipac_dev_tools)) == {
+    availables = set(dir(wipac_dev_tools))
+    availables = {a for a in availables if not a.startswith("__")}
+
+    assert availables == {
         "from_environment",
         "from_environment_as_dataclass",
         "SetupShop",
