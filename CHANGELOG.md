@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.5.0 (2022-09-15)
+### Feature
+* Argparse Tools ([#42](https://github.com/WIPACrepo/wipac-dev-tools/issues/42)) ([`b5f78cf`](https://github.com/WIPACrepo/wipac-dev-tools/commit/b5f78cf4bd715968a1370aed150a71c7be29df12))
+
 ## v1.4.0 (2022-08-26)
 ### Feature
 * Add `wipac_dev_tools.strtobool()` ([#40](https://github.com/WIPACrepo/wipac-dev-tools/issues/40)) ([`4fcde91`](https://github.com/WIPACrepo/wipac-dev-tools/commit/4fcde91bd2905858d98a97ee4cc90eccb1e18029))
