@@ -12,7 +12,7 @@ def validate_arg(val: T, test: bool, exc: Exception) -> T:
 
     If the passed exception is not an instance of `ArgumentTypeError`,
     `TypeError`, or `ValueError`, then an `ArgumentTypeError` instance
-    is raised, like so: `ArgumentTypeError(str(exc))`
+    is raised, like so: `ArgumentTypeError(repr(exc))`
     """
     if test:
         return val
@@ -22,7 +22,7 @@ def validate_arg(val: T, test: bool, exc: Exception) -> T:
     # the exception is caught and a nicely formatted error message is displayed.
     # No other exception types are handled.
     if not isinstance(exc, (argparse.ArgumentTypeError, TypeError, ValueError)):
-        raise argparse.ArgumentTypeError(str(exc))
+        raise argparse.ArgumentTypeError(repr(exc))
 
     raise exc
 
