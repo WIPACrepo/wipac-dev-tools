@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v1.5.1 (2022-09-26)
+
+
 ## v1.5.0 (2022-09-15)
 ### Feature
 * Argparse Tools ([#42](https://github.com/WIPACrepo/wipac-dev-tools/issues/42)) ([`b5f78cf`](https://github.com/WIPACrepo/wipac-dev-tools/commit/b5f78cf4bd715968a1370aed150a71c7be29df12))
