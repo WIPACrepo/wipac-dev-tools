@@ -1,6 +1,5 @@
 """Test logging tools."""
 
-import logging
 import random
 import uuid
 from itertools import chain
@@ -56,6 +55,8 @@ def test_00(
     logfn(message)
 
     for record in caplog.records:
+        if record.name == "root":
+            continue  # this is other logging stuff
         assert message in record.getMessage()
         assert record.levelname == level.upper()
         assert record.msg == message
