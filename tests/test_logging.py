@@ -40,8 +40,8 @@ def test_00(level: str, capsys: Any) -> None:
     crazycase)."""
     print(level)
     logger_name = _new_logger_name()
-    logging_tools.set_level(
-        level,  # type: ignore[assignment]
+    logging_tools.set_level(  # type: ignore[assignment]
+        level,
         first_party_loggers=logging.getLogger(logger_name),
         third_party_level="WARNING",
         use_coloredlogs=False,
