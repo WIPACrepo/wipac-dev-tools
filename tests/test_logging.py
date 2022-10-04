@@ -15,7 +15,8 @@ def _new_logger_name() -> str:
 
 
 def crazycase(string: str) -> str:
-    """Get the string where each char is either UPPER or lower case with a 50% chance."""
+    """Get the string where each char is either UPPER or lower case with a 50%
+    chance."""
     return "".join(
         c.upper() if i % 2 == random.randint(0, 1) else c.lower()
         for i, c in enumerate(string)
@@ -35,11 +36,12 @@ level_of_a_different_capitalization = list(
 
 @pytest.mark.parametrize("level", level_of_a_different_capitalization)
 def test_00(level: str, capsys: Any) -> None:
-    """Test `set_level()` with multiple level cases (upper, lower, crazycase)."""
+    """Test `set_level()` with multiple level cases (upper, lower,
+    crazycase)."""
     print(level)
     logger_name = _new_logger_name()
     logging_tools.set_level(
-        level,
+        level,  # type: ignore[assignment]
         first_party_loggers=logging.getLogger(logger_name),
         third_party_level="WARNING",
         use_coloredlogs=False,
