@@ -49,7 +49,7 @@ def test_00(level: logging_tools.LoggerLevel, capsys: Any) -> None:
 
     message = f"this is a test! ({(uuid.uuid4().hex)[:4]})"
 
-    logfn = getattr(logging.getLogger(logger_name), level.lower())
+    logfn = logging_tools.get_logger_fn(logger_name, level)
     logfn(message)
 
     stderr = capsys.readouterr()
