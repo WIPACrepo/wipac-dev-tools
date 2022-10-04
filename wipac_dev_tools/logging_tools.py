@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import Callable, List, Optional, TypeVar, Union
+from typing import Callable, List, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -41,7 +41,7 @@ def get_logger_fn(
 
 def log_argparse_args(
     args: argparse.Namespace,
-    logger: Optional[Union[str, logging.Logger]] = None,
+    logger: Union[None, str, logging.Logger] = None,
     level: LoggerLevel = "WARNING",
 ) -> argparse.Namespace:
     """Log the argparse args and their values at the given level.
@@ -84,8 +84,8 @@ def log_dataclass(
 
 def set_level(
     level: LoggerLevel,
-    first_party_loggers: Optional[
-        Union[str, logging.Logger, List[Union[str, logging.Logger]]]
+    first_party_loggers: Union[
+        None, str, logging.Logger, List[Union[str, logging.Logger]]
     ] = None,
     third_party_level: LoggerLevel = "WARNING",
     use_coloredlogs: bool = False,
