@@ -35,7 +35,7 @@ level_of_a_different_capitalization = list(
 
 
 @pytest.mark.parametrize("level", level_of_a_different_capitalization)
-def test_00(level: logging_tools.LoggerLevel, capsys: Any) -> None:
+def test_00(level: logging_tools.LoggerLevel, caplog: Any) -> None:
     """Test `set_level()` with multiple level cases (upper, lower,
     crazycase)."""
     print(level)
@@ -52,8 +52,11 @@ def test_00(level: logging_tools.LoggerLevel, capsys: Any) -> None:
     logfn = logging_tools.get_logger_fn(logger_name, level)
     logfn(message)
 
-    out, err = capsys.readouterr()
-    assert message in err
+    for record in caplog.records:
+        assert message in record.getMessage()
+        assert record.levelname == level.upper()
+        assert record.msg == message
+        assert record.name == logger_name
 
 
 # def test_00() -> None:
