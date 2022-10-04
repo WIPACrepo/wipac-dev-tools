@@ -52,8 +52,8 @@ def test_00(level: logging_tools.LoggerLevel, capsys: Any) -> None:
     logfn = logging_tools.get_logger_fn(logger_name, level)
     logfn(message)
 
-    stderr = capsys.readouterr()
-    assert message in stderr
+    out, err = capsys.readouterr()
+    assert message in err
 
 
 # def test_00() -> None:
