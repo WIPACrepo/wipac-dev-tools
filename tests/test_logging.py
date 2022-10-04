@@ -63,7 +63,7 @@ def test_00(
         assert record.name == logger_name
         found_log_record = True
 
-    if LEVELS.index(set_level) <= LEVELS.index(log_level):
+    if LEVELS.index(set_level.upper()) <= LEVELS.index(log_level.upper()):
         assert found_log_record
     else:
         assert not found_log_record
