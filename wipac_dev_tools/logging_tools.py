@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import Any, Callable, List, Optional, TypeVar, Union
+from typing import Callable, List, Optional, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
