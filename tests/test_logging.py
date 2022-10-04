@@ -9,8 +9,15 @@ import pytest
 from wipac_dev_tools import logging_tools
 
 
-def _new_logger_name() -> str:
+@pytest.fixture()
+def logger_name() -> str:
     return "log" + (uuid.uuid4().hex)[:8]
+
+
+@pytest.fixture()
+def caplog_cleanup(caplog: Any) -> None:
+    yield
+    caplog.clear()
 
 
 def crazycase(string: str) -> str:
@@ -38,10 +45,11 @@ def test_00(
     third_party_level: logging_tools.LoggerLevel,
     log_level: logging_tools.LoggerLevel,
     caplog: Any,
+    caplog_cleanup: Any,
+    logger_name: str,
 ) -> None:
     """Test `set_level()` with multiple level cases (upper, lower,
     crazycase)."""
-    logger_name = _new_logger_name()
     logging_tools.set_level(
         set_level,
         first_party_loggers=logger_name,
