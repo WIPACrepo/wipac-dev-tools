@@ -44,12 +44,17 @@ def test_00(
 ) -> None:
     """Test `set_level()` with multiple level cases (upper, lower,
     crazycase)."""
-    third_party_logger = logging.getLogger(f"third-party-{logger_name}")
+    present_third_party_name = f"third-party-{logger_name}"
+    logging.getLogger(present_third_party_name)  # this creates the logger
+    #
+    future_third_party_name = f"future-third-party-{logger_name}"
+
     logging_tools.set_level(
         set_level,
         first_party_loggers=logger_name,
         third_party_level=third_party_level,
         use_coloredlogs=False,
+        future_third_parties=future_third_party_name,
     )
 
     message = f"this is a test! ({(uuid.uuid4().hex)[:4]})"
@@ -57,18 +62,26 @@ def test_00(
     logfn = logging_tools.get_logger_fn(logger_name, log_level)
     logfn(message)
 
-    third_party_msg = f"here's a third party logger ({(uuid.uuid4().hex)[:4]})"
-    third_party_logger.info(third_party_msg)
+    present_third_party_msg = f"here's a third party logger ({(uuid.uuid4().hex)[:4]})"
+    logging.getLogger(present_third_party_name).info(present_third_party_msg)
+    #
+    future_third_party_msg = f"FUTURE 3RD PARTY ({(uuid.uuid4().hex)[:4]})"
+    logging.getLogger(future_third_party_name).warning(future_third_party_msg)
 
     found_log_record = False
-    found_third_party = False
+    found_present_third_party = False
+    found_future_third_party = False
     for record in caplog.records:
         if record.name == "root":  # this is other logging stuff
             continue
-        elif record.name == f"third-party-{logger_name}":
+        elif record.name == present_third_party_name:
             assert record.levelname == "INFO"
-            assert record.msg == third_party_msg
-            found_third_party = True
+            assert record.msg == present_third_party_msg
+            found_present_third_party = True
+        elif record.name == future_third_party_name:
+            assert record.levelname == "WARNING"
+            assert record.msg == future_third_party_msg
+            found_future_third_party = True
         else:
             assert message in record.getMessage()
             assert record.levelname == log_level.upper()
@@ -79,12 +92,20 @@ def test_00(
 
     caplog.clear()
 
+    # first party
     if LEVELS.index(set_level.upper()) <= LEVELS.index(log_level.upper()):
         assert found_log_record
     else:
         assert not found_log_record
 
+    # current third party
     if LEVELS.index(third_party_level.upper()) <= LEVELS.index("INFO"):
-        assert found_third_party
+        assert found_present_third_party
     else:
-        assert not found_third_party
+        assert not found_present_third_party
+
+    # future third party
+    if LEVELS.index(third_party_level.upper()) <= LEVELS.index("WARNING"):
+        assert found_future_third_party
+    else:
+        assert not found_future_third_party
