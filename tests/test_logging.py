@@ -14,12 +14,6 @@ def logger_name() -> str:
     return "log" + (uuid.uuid4().hex)[:8]
 
 
-@pytest.fixture()
-def caplog_cleanup(caplog: Any) -> Generator:
-    yield
-    caplog.clear()
-
-
 def crazycase(string: str) -> str:
     """Get the string where each char is either UPPER or lower case with a 50%
     chance."""
@@ -45,7 +39,6 @@ def test_00(
     third_party_level: logging_tools.LoggerLevel,
     log_level: logging_tools.LoggerLevel,
     caplog: Any,
-    caplog_cleanup: Any,
     logger_name: str,
 ) -> None:
     """Test `set_level()` with multiple level cases (upper, lower,
