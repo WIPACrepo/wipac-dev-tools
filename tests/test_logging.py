@@ -31,20 +31,21 @@ LEVEL_OF_A_DIFFERENT_CAPITALIZATION = list(
 
 
 @pytest.mark.parametrize("log_level", LEVELS)
+@pytest.mark.parametrize("third_party_level", LEVEL_OF_A_DIFFERENT_CAPITALIZATION)
 @pytest.mark.parametrize("set_level", LEVEL_OF_A_DIFFERENT_CAPITALIZATION)
 def test_00(
     set_level: logging_tools.LoggerLevel,
+    third_party_level: logging_tools.LoggerLevel,
     log_level: logging_tools.LoggerLevel,
     caplog: Any,
 ) -> None:
     """Test `set_level()` with multiple level cases (upper, lower,
     crazycase)."""
-    print(set_level)
     logger_name = _new_logger_name()
     logging_tools.set_level(
         set_level,
         first_party_loggers=logger_name,
-        third_party_level="WARNING",
+        third_party_level=third_party_level,
         use_coloredlogs=False,
     )
 
@@ -54,16 +55,27 @@ def test_00(
     logfn(message)
 
     found_log_record = False
+    found_third_parties = False
     for record in caplog.records:
-        if record.name == "root":
-            continue  # this is other logging stuff
-        assert message in record.getMessage()
-        assert record.levelname == log_level.upper()
-        assert record.msg == message
-        assert record.name == logger_name
-        found_log_record = True
+        if record.name == "root":  # this is other logging stuff
+            assert record.levelname == "INFO"
+            assert (
+                "First-Party Logger" in record.msg or "Third-Party Logger" in record.msg
+            )
+            found_third_parties = True
+        else:
+            assert message in record.getMessage()
+            assert record.levelname == log_level.upper()
+            assert record.msg == message
+            assert record.name == logger_name
+            found_log_record = True
 
     if LEVELS.index(set_level.upper()) <= LEVELS.index(log_level.upper()):
         assert found_log_record
     else:
         assert not found_log_record
+
+    if LEVELS.index(third_party_level.upper()) <= LEVELS.index("INFO"):
+        assert found_third_parties
+    else:
+        assert not found_third_parties
