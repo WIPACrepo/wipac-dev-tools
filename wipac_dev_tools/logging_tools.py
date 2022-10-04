@@ -19,8 +19,6 @@ LoggerLevel = Literal[
     "debug",
 ]
 
-LOGGER = logging.getLogger("wipac-dev-tools.logging-tools")
-
 
 def log_argparse_args(
     args: argparse.Namespace,
@@ -40,7 +38,7 @@ def log_argparse_args(
     level = level.upper()  # type: ignore[assignment]
 
     if not logger:
-        _logger = LOGGER
+        _logger = logging.getLogger()
     elif isinstance(logger, logging.Logger):
         _logger = logger
     else:
@@ -86,7 +84,6 @@ def set_level(
         first_party_loggers = []
     elif isinstance(first_party_loggers, (str, logging.Logger)):
         first_party_loggers = [first_party_loggers]
-    first_party_loggers.append(LOGGER)
 
     # root
     if use_coloredlogs:
@@ -109,7 +106,7 @@ def set_level(
             log.setLevel(level)
         else:  # str
             logging.getLogger(log).setLevel(level)
-        LOGGER.info(f"Set First-Party Logger Level: '{log}' ({level})")
+        logging.getLogger().info(f"Set First-Party Logger Level: '{log}' ({level})")
 
     # third-party
     for log_name in logging.root.manager.loggerDict:
@@ -118,4 +115,6 @@ def set_level(
         if logging.getLogger(log_name) in first_party_loggers:
             continue
         logging.getLogger(log_name).setLevel(third_party_level)
-        LOGGER.info(f"Set Third-Party Logger Level: '{log_name}' ({level})")
+        logging.getLogger().info(
+            f"Set Third-Party Logger Level: '{log_name}' ({level})"
+        )
