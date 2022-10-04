@@ -1,8 +1,10 @@
 """Common tools to supplement/assist the standard logging package."""
 
 import argparse
+import dataclasses
 import logging
-from typing import List, Optional, Union
+from dataclasses import dataclass, fields
+from typing import Any, Callable, List, Optional, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -20,6 +22,25 @@ LoggerLevel = Literal[
 ]
 
 
+def get_logger_fn(
+    logger: Union[None, str, logging.Logger], level: LoggerLevel
+) -> Callable[[str], None]:
+    """Get the logger function from `logger` and `level`."""
+    level = level.upper()  # type: ignore[assignment]
+
+    if not logger:
+        _logger = logging.getLogger()
+    elif isinstance(logger, logging.Logger):
+        _logger = logger
+    else:
+        _logger = logging.getLogger(logger)
+
+    if level not in ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]:
+        raise ValueError(f"Invalid logging level: {level}")
+
+    return getattr(_logger, level.lower())  # ..., info, warning, critical, ...
+
+
 def log_argparse_args(
     args: argparse.Namespace,
     logger: Optional[Union[str, logging.Logger]] = None,
@@ -35,26 +56,34 @@ def log_argparse_args(
         2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING log: DEBUG
         2022-05-13 22:37:21 fv-az136-643 my-logs[61] WARNING log_third_party: WARNING
     """
-    level = level.upper()  # type: ignore[assignment]
+    logger_fn = get_logger_fn(logger, level)
 
-    if not logger:
-        _logger = logging.getLogger()
-    elif isinstance(logger, logging.Logger):
-        _logger = logger
-    else:
-        _logger = logging.getLogger(logger)
-
-    if level not in ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]:
-        raise ValueError(f"Invalid logging level: {level}")
-    log = getattr(_logger, level.lower())  # ..., info, warning, critical, ...
     for arg, val in vars(args).items():
-        log(f"{arg}: {val}")
+        logger_fn(f"{arg}: {val}")
 
     return args
 
 
+T = TypeVar("T")
+
+
+def log_dataclass(
+    dclass: T, logger: Union[str, logging.Logger], level: LoggerLevel
+) -> T:
+    """Log a dataclass instance's fields and members."""
+    if not (dataclasses.is_dataclass(dclass) and not isinstance(dclass, type)):
+        raise TypeError(f"Expected instantiated dataclass: 'dclass' ({dclass})")
+
+    logger_fn = get_logger_fn(logger, level)
+
+    for field in fields(dclass):
+        logger_fn(f"(env) {field.name}: {getattr(dclass, field.name)}")
+
+    return dclass
+
+
 def set_level(
-    level: str,
+    level: LoggerLevel,
     first_party_loggers: Optional[
         Union[str, logging.Logger, List[Union[str, logging.Logger]]]
     ] = None,
@@ -92,7 +121,7 @@ def set_level(
 
             coloredlogs.install(level=level)  # root
         except ImportError:
-            LOGGER.warning(
+            logging.getLogger().warning(
                 "set_level()'s `use_coloredlogs` was set to `True`, "
                 "but coloredlogs is not installed. Proceeding with only logging package."
             )
