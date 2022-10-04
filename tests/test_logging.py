@@ -72,6 +72,8 @@ def test_00(
             assert record.name == logger_name
             found_log_record = True
 
+    caplog.clear()
+
     if LEVELS.index(set_level.upper()) <= LEVELS.index(log_level.upper()):
         assert found_log_record
     else:
