@@ -135,7 +135,7 @@ def set_level(
             log.setLevel(level)
         else:  # str
             logging.getLogger(log).setLevel(level)
-        logging.getLogger().info(f"Set First-Party Logger Level: '{log}' ({level})")
+        logging.getLogger().info(f"First-Party Logger: '{log}' ({level})")
 
     # third-party
     for log_name in logging.root.manager.loggerDict:
@@ -144,6 +144,4 @@ def set_level(
         if logging.getLogger(log_name) in first_party_loggers:
             continue
         logging.getLogger(log_name).setLevel(third_party_level)
-        logging.getLogger().info(
-            f"Set Third-Party Logger Level: '{log_name}' ({level})"
-        )
+        logging.getLogger().info(f"Third-Party Logger: '{log_name}' ({level})")
