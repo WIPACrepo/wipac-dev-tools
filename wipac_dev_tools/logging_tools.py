@@ -19,7 +19,7 @@ LoggerLevel = Literal[
     "debug",
 ]
 
-LOGGER = logging.getLogger("wipac_dev_tools.logging_tools")
+LOGGER = logging.getLogger("wipac-dev-tools.logging-tools")
 
 
 def log_argparse_args(
