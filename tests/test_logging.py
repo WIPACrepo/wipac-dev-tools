@@ -3,7 +3,7 @@
 import random
 import uuid
 from itertools import chain
-from typing import Any, Generator
+from typing import Any
 
 import pytest
 from wipac_dev_tools import logging_tools
@@ -59,10 +59,11 @@ def test_00(
     found_third_parties = False
     for record in caplog.records:
         if record.name == "root":  # this is other logging stuff
+            if "Third-Party Logger" in record.msg:
+                continue  # this is leftover form prev tests
+            # did we find the third party logger message (w/ info about a first-party logger)?
             assert record.levelname == "INFO"
-            assert (
-                "First-Party Logger" in record.msg or "Third-Party Logger" in record.msg
-            )
+            assert "First-Party Logger" in record.msg
             found_third_parties = True
         else:
             assert message in record.getMessage()
