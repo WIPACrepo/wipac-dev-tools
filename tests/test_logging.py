@@ -54,6 +54,7 @@ def test_00(
     logfn = logging_tools.get_logger_fn(logger_name, level)
     logfn(message)
 
+    got_there = False
     for record in caplog.records:
         if record.name == "root":
             continue  # this is other logging stuff
@@ -61,6 +62,8 @@ def test_00(
         assert record.levelname == level.upper()
         assert record.msg == message
         assert record.name == logger_name
+        got_there = True
+    assert got_there
 
 
 # def test_00() -> None:
