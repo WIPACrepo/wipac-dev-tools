@@ -22,15 +22,16 @@ def crazycase(string: str) -> str:
     )
 
 
-levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
 # horse of a different color, err...
-level_of_a_different_capitalization = list(
-    chain(*[[lvl.upper(), lvl.lower(), crazycase(lvl)] for lvl in levels])
+LEVEL_OF_A_DIFFERENT_CAPITALIZATION = list(
+    chain(*[[lvl.upper(), lvl.lower(), crazycase(lvl)] for lvl in LEVELS])
 )
 
 
-@pytest.mark.parametrize("log_level", levels)
-@pytest.mark.parametrize("set_level", level_of_a_different_capitalization)
+@pytest.mark.parametrize("log_level", LEVELS)
+@pytest.mark.parametrize("set_level", LEVEL_OF_A_DIFFERENT_CAPITALIZATION)
 def test_00(
     set_level: logging_tools.LoggerLevel,
     log_level: logging_tools.LoggerLevel,
@@ -52,68 +53,17 @@ def test_00(
     logfn = logging_tools.get_logger_fn(logger_name, log_level)
     logfn(message)
 
-    got_there = False
+    found_log_record = False
     for record in caplog.records:
         if record.name == "root":
             continue  # this is other logging stuff
         assert message in record.getMessage()
-        assert record.levelname == level.upper()
+        assert record.levelname == log_level.upper()
         assert record.msg == message
         assert record.name == logger_name
-        got_there = True
-    assert got_there
+        found_log_record = True
 
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
-
-
-# def test_00() -> None:
-#     """ """
-#     pass
+    if LEVELS.index(set_level) <= LEVELS.index(log_level):
+        assert found_log_record
+    else:
+        assert not found_log_record
