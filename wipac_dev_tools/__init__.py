@@ -1,13 +1,21 @@
 """Init."""
 
-from . import logging_tools
-from .enviro_tools import from_environment  # noqa
+from . import argparse_tools, logging_tools
+from .enviro_tools import from_environment, from_environment_as_dataclass  # noqa
 from .setup_tools import SetupShop  # noqa
+from .strtobool import strtobool
 
-__all__ = ["from_environment", "SetupShop", "logging_tools"]
+__all__ = [
+    "from_environment",
+    "from_environment_as_dataclass",
+    "SetupShop",
+    "logging_tools",
+    "strtobool",
+    "argparse_tools",
+]
 
 # version is a human-readable version number.
-__version__ = "1.2.2"
+__version__ = "1.5.1"
 
 # version_info is a four-tuple for programmatic comparison. The first
 # three numbers are the components of the version number. The fourth

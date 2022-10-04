@@ -2,6 +2,24 @@
 
 <!--next-version-placeholder-->
 
+## v1.5.1 (2022-09-26)
+
+
+## v1.5.0 (2022-09-15)
+### Feature
+* Argparse Tools ([#42](https://github.com/WIPACrepo/wipac-dev-tools/issues/42)) ([`b5f78cf`](https://github.com/WIPACrepo/wipac-dev-tools/commit/b5f78cf4bd715968a1370aed150a71c7be29df12))
+
+## v1.4.0 (2022-08-26)
+### Feature
+* Add `wipac_dev_tools.strtobool()` ([#40](https://github.com/WIPACrepo/wipac-dev-tools/issues/40)) ([`4fcde91`](https://github.com/WIPACrepo/wipac-dev-tools/commit/4fcde91bd2905858d98a97ee4cc90eccb1e18029))
+
+## v1.3.1 (2022-07-18)
+
+
+## v1.3.0 (2022-07-18)
+### Feature
+* Add `from_environment_as_dataclass()` ([#37](https://github.com/WIPACrepo/wipac-dev-tools/issues/37)) ([`45e75dc`](https://github.com/WIPACrepo/wipac-dev-tools/commit/45e75dcc8e3d9e9638bca045e6f9f52db9c27f87))
+
 ## v1.2.2 (2022-05-31)
 
 
