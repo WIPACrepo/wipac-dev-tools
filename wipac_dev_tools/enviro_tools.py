@@ -1,6 +1,7 @@
 """Module to support parsing environment variables."""
 
 
+import logging
 import os
 import re
 import sys
@@ -17,6 +18,7 @@ from typing import (
     cast,
 )
 
+from . import logging_tools
 from .strtobool import strtobool
 
 try:
@@ -139,7 +141,7 @@ def _typecast_for_dataclass(
     collection_sep: Optional[str],
     dict_kv_joiner: str,
 ) -> Any:
-    """Collect the typecast value"""
+    """Collect the typecast value."""
     if typ == list:
         _list = env_val.split(collection_sep)
         if arg_typs:
@@ -181,8 +183,10 @@ def from_environment_as_dataclass(
     dclass: Type[T],
     collection_sep: Optional[str] = None,
     dict_kv_joiner: str = "=",
+    log_vars: Optional[logging_tools.LoggerLevel] = "WARNING",
 ) -> T:
-    """Obtain configuration values from the OS environment formatted in a dataclass.
+    """Obtain configuration values from the OS environment formatted in a
+    dataclass.
 
     Environment variables are matched to a dataclass field's name. The
     matching environment string is cast using the dataclass field's type
@@ -209,6 +213,7 @@ def from_environment_as_dataclass(
         dclass - a (non-instantiated) dataclass, aka a type
         collection_sep - the delimiter to split collections on ("1 2 5")
         dict_kv_joiner - the delimiter that joins key-value pairs ("a=1 b=2 c=1")
+        log_vars - what level to log the collected environment variables (set to `None` to not log)
 
     Returns:
         a dataclass instance mapping configuration keys to configuration values
@@ -267,7 +272,9 @@ def from_environment_as_dataclass(
     """
 
     if sys.version_info >= (3, 7):
-        return _from_environment_as_dataclass(dclass, collection_sep, dict_kv_joiner)
+        return _from_environment_as_dataclass(
+            dclass, collection_sep, dict_kv_joiner, log_vars
+        )
     else:
         raise NotImplementedError(
             "Sorry, from_environment_as_dataclass() is only available for 3.7+"
@@ -278,6 +285,7 @@ def _from_environment_as_dataclass(
     dclass: Type[T],
     collection_sep: Optional[str],
     dict_kv_joiner: str,
+    log_vars: Optional[logging_tools.LoggerLevel],
 ) -> T:
 
     # check args
@@ -361,7 +369,7 @@ def _from_environment_as_dataclass(
             ) from e
 
     try:
-        return dclass(**kwargs)
+        env_vars = dclass(**kwargs)
     except TypeError as e:
         m = re.fullmatch(
             r".*__init__\(\) missing \d+ required positional argument(?P<s>s?): (?P<args>.+)",
@@ -373,3 +381,8 @@ def _from_environment_as_dataclass(
                 f"{m.groupdict()['args']}"
             ) from e
         raise  # some other kind of TypeError
+
+    # log & return
+    if log_vars:
+        logging_tools.log_dataclass(env_vars, logging.getLogger(), log_vars)
+    return env_vars

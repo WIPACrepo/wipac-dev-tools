@@ -1,7 +1,3 @@
-# For most recent version see:
-# https://github.com/WIPACrepo/wipac-dev-tools/blob/main/.github/workflows/wipac-cicd.yml
-# Copy any updates to wipac-dev-tools.
-
 name: wipac ci/cd
 
 on: [push]
@@ -20,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - uses: WIPACrepo/wipac-dev-mypy-action@v1
+      - uses: WIPACrepo/wipac-dev-mypy-action@v1.1
 
   py-setup:
     runs-on: ubuntu-latest
@@ -30,7 +26,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      - uses: WIPACrepo/wipac-dev-py-setup-action@v1.6
+      - uses: WIPACrepo/wipac-dev-py-setup-action@v1.8
         with:
           base-keywords: "WIPAC IceCube"
 
@@ -42,19 +38,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - id: versions
-        uses: WIPACrepo/wipac-dev-py-versions-action@v1.1
+        uses: WIPACrepo/wipac-dev-py-versions-action@v2
 
   tests:
     needs: [py-versions]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
+      matrix:
+        py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.py3_versions }}
+          python-version: ${{ matrix.py3 }}
       - name: Pytest
         run: |
           pip install --upgrade pip wheel setuptools pytest
