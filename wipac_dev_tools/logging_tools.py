@@ -141,8 +141,11 @@ def set_level(
         logging.getLogger().info(f"First-Party Logger: '{log}' ({level})")
 
     # third-party
-    if isinstance(future_third_parties, str):
+    if not future_third_parties:
+        future_third_parties = []
+    elif isinstance(future_third_parties, str):
         future_third_parties = [future_third_parties]
+    # set 'em
     for log_name in list(logging.root.manager.loggerDict) + future_third_parties:
         if log_name in first_party_loggers:
             continue
