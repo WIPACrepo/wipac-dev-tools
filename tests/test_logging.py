@@ -22,28 +22,26 @@ def crazycase(string: str) -> str:
     )
 
 
+levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 # horse of a different color, err...
 level_of_a_different_capitalization = list(
-    chain(
-        *[
-            [lvl.upper(), lvl.lower(), crazycase(lvl)]
-            for lvl in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-        ]
-    )
+    chain(*[[lvl.upper(), lvl.lower(), crazycase(lvl)] for lvl in levels])
 )
 
 
-@pytest.mark.parametrize("level", level_of_a_different_capitalization)
+@pytest.mark.parametrize("log_level", levels)
+@pytest.mark.parametrize("set_level", level_of_a_different_capitalization)
 def test_00(
-    level: logging_tools.LoggerLevel,
+    set_level: logging_tools.LoggerLevel,
+    log_level: logging_tools.LoggerLevel,
     caplog: Any,
 ) -> None:
     """Test `set_level()` with multiple level cases (upper, lower,
     crazycase)."""
-    print(level)
+    print(set_level)
     logger_name = _new_logger_name()
     logging_tools.set_level(
-        level,
+        set_level,
         first_party_loggers=logger_name,
         third_party_level="WARNING",
         use_coloredlogs=False,
@@ -51,7 +49,7 @@ def test_00(
 
     message = f"this is a test! ({(uuid.uuid4().hex)[:4]})"
 
-    logfn = logging_tools.get_logger_fn(logger_name, level)
+    logfn = logging_tools.get_logger_fn(logger_name, log_level)
     logfn(message)
 
     got_there = False
