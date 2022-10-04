@@ -1,5 +1,6 @@
 """Test logging tools."""
 
+import logging
 import random
 import uuid
 from itertools import chain
@@ -43,6 +44,7 @@ def test_00(
 ) -> None:
     """Test `set_level()` with multiple level cases (upper, lower,
     crazycase)."""
+    third_party_logger = logging.getLogger(f"third-party-{logger_name}")
     logging_tools.set_level(
         set_level,
         first_party_loggers=logger_name,
@@ -55,22 +57,23 @@ def test_00(
     logfn = logging_tools.get_logger_fn(logger_name, log_level)
     logfn(message)
 
+    third_party_msg = f"here's a third party logger ({(uuid.uuid4().hex)[:4]})"
+    third_party_logger.info(third_party_msg)
+
     found_log_record = False
-    found_third_parties = False
+    found_third_party = False
     for record in caplog.records:
-        if record.name == "root":  # this is other logging stuff
-            if "Third-Party Logger" in record.msg:
-                continue  # this is leftover form prev tests
-            # did we find the third party logger message (w/ info about a first-party logger)?
+        if record.name == f"third-party-{logger_name}":
             assert record.levelname == "INFO"
-            assert "First-Party Logger" in record.msg
-            found_third_parties = True
+            assert record.msg == third_party_msg
+            found_third_party = True
         else:
             assert message in record.getMessage()
             assert record.levelname == log_level.upper()
             assert record.msg == message
             assert record.name == logger_name
             found_log_record = True
+        # NOTE - there may be other leftover log messages in the stream
 
     caplog.clear()
 
@@ -80,6 +83,6 @@ def test_00(
         assert not found_log_record
 
     if LEVELS.index(third_party_level.upper()) <= LEVELS.index("INFO"):
-        assert found_third_parties
+        assert found_third_party
     else:
-        assert not found_third_parties
+        assert not found_third_party
