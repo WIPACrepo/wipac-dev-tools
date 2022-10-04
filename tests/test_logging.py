@@ -3,7 +3,7 @@
 import random
 import uuid
 from itertools import chain
-from typing import Any
+from typing import Any, Generator
 
 import pytest
 from wipac_dev_tools import logging_tools
@@ -15,7 +15,7 @@ def logger_name() -> str:
 
 
 @pytest.fixture()
-def caplog_cleanup(caplog: Any) -> None:
+def caplog_cleanup(caplog: Any) -> Generator:
     yield
     caplog.clear()
 
