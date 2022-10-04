@@ -38,7 +38,7 @@ LEVEL_OF_A_DIFFERENT_CAPITALIZATION = list(
 
 
 @pytest.mark.parametrize("log_level", LEVELS)
-@pytest.mark.parametrize("third_party_level", LEVEL_OF_A_DIFFERENT_CAPITALIZATION)
+@pytest.mark.parametrize("third_party_level", LEVELS)
 @pytest.mark.parametrize("set_level", LEVEL_OF_A_DIFFERENT_CAPITALIZATION)
 def test_00(
     set_level: logging_tools.LoggerLevel,
@@ -83,7 +83,7 @@ def test_00(
     else:
         assert not found_log_record
 
-    if LEVELS.index(third_party_level.upper()) <= LEVELS.index("INFO"):
+    if LEVELS.index("INFO") <= LEVELS.index(third_party_level.upper()):
         assert found_third_parties
     else:
         assert not found_third_parties
