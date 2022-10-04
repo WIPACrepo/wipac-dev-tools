@@ -35,14 +35,17 @@ level_of_a_different_capitalization = list(
 
 
 @pytest.mark.parametrize("level", level_of_a_different_capitalization)
-def test_00(level: logging_tools.LoggerLevel, caplog: Any) -> None:
+def test_00(
+    level: logging_tools.LoggerLevel,
+    caplog: Any,
+) -> None:
     """Test `set_level()` with multiple level cases (upper, lower,
     crazycase)."""
     print(level)
     logger_name = _new_logger_name()
     logging_tools.set_level(
         level,
-        first_party_loggers=logging.getLogger(logger_name),
+        first_party_loggers=logger_name,
         third_party_level="WARNING",
         use_coloredlogs=False,
     )
