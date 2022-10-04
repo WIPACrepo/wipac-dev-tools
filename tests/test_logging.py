@@ -83,7 +83,7 @@ def test_00(
     else:
         assert not found_log_record
 
-    if LEVELS.index("INFO") <= LEVELS.index(third_party_level.upper()):
+    if LEVELS.index(third_party_level.upper()) <= LEVELS.index("INFO"):
         assert found_third_parties
     else:
         assert not found_third_parties
