@@ -13,21 +13,29 @@ Common, basic, and reusable development tools
 _Available for Python 3.6+_
 ```
 def set_level(
-    level: str,
-    first_party_loggers: Optional[List[Union[str, logging.Logger]]] = None,
+    level: LoggerLevel,
+    first_party_loggers: Union[None, str, logging.Logger, List[Union[str, logging.Logger]]] = None,
     third_party_level: LoggerLevel = "WARNING",
+    future_third_parties: Union[None, str, List[str]] = None,
     use_coloredlogs: bool = False,
 ) -> None:
-    """Set the level of the root logger, first-party loggers, and third-party loggers.
+    """Set the level of the root logger, first-party loggers, and third-party
+    loggers.
 
-    The root logger and first-party logger(s) are set to the same level
-    (`level`). The third-party loggers are non-root and non-first-party
-    loggers that are defined at the time of invocation. If a logger is
-    created after this function call, then its level defaults to its
-    parent (that's the root logger for non-child loggers).
+    The root logger and first-party logger(s) are set to the same level (`level`).
 
-    Passing `use_coloredlogs=True` will import and use the `coloredlogs`
-    package. This will set the logger format and use colored text.
+    Args:
+        `level`
+            the desired logging level (first-party), case-insensitive
+        `first_party_loggers`
+            a list (or a single instance) of `logging.Logger` or the loggers' names
+        `third_party_level`
+            the desired logging level for any other (currently) available loggers, case-insensitive
+        `future_third_parties`
+            additional third party logger(s) which have not yet been created
+        `use_coloredlogs`
+            if True, will import and use the `coloredlogs` package.
+            This will set the logger format and use colored text.
     """
 ```
 
@@ -36,7 +44,7 @@ _Available for Python 3.6+_
 ```
 def log_argparse_args(
     args: argparse.Namespace,
-    logger: Optional[Union[str, logging.Logger]] = None,
+    logger: Union[None, str, logging.Logger] = None,
     level: LoggerLevel = "WARNING",
 ) -> argparse.Namespace:
     """Log the argparse args and their values at the given level.
@@ -121,8 +129,10 @@ def from_environment_as_dataclass(
     dclass: Type[T],
     collection_sep: Optional[str] = None,
     dict_kv_joiner: str = "=",
+    log_vars: Optional[logging_tools.LoggerLevel] = "WARNING",
 ) -> T:
-    """Obtain configuration values from the OS environment formatted in a dataclass.
+    """Obtain configuration values from the OS environment formatted in a
+    dataclass.
 
     Environment variables are matched to a dataclass field's name. The
     matching environment string is cast using the dataclass field's type
@@ -149,6 +159,7 @@ def from_environment_as_dataclass(
         dclass - a (non-instantiated) dataclass, aka a type
         collection_sep - the delimiter to split collections on ("1 2 5")
         dict_kv_joiner - the delimiter that joins key-value pairs ("a=1 b=2 c=1")
+        log_vars - what level to log the collected environment variables (set to `None` to not log)
 
     Returns:
         a dataclass instance mapping configuration keys to configuration values

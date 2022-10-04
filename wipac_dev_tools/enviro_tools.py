@@ -270,7 +270,6 @@ def from_environment_as_dataclass(
         ValueError - If an indicated value is not a legal value
         TypeError - If an argument or indicated value is not a legal type
     """
-
     if sys.version_info >= (3, 7):
         return _from_environment_as_dataclass(
             dclass, collection_sep, dict_kv_joiner, log_vars
