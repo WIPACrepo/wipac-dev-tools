@@ -63,7 +63,9 @@ def test_00(
     found_log_record = False
     found_third_party = False
     for record in caplog.records:
-        if record.name == f"third-party-{logger_name}":
+        if record.name == "root":  # this is other logging stuff
+            continue
+        elif record.name == f"third-party-{logger_name}":
             assert record.levelname == "INFO"
             assert record.msg == third_party_msg
             found_third_party = True
