@@ -88,6 +88,7 @@ def set_level(
         None, str, logging.Logger, List[Union[str, logging.Logger]]
     ] = None,
     third_party_level: LoggerLevel = "WARNING",
+    future_third_parties: Union[None, str, List[str]] = None,
     use_coloredlogs: bool = False,
 ) -> None:
     """Set the level of the root logger, first-party loggers, and third-party
@@ -102,6 +103,8 @@ def set_level(
             a list (or a single instance) of `logging.Logger` or the loggers' names
         `third_party_level`
             the desired logging level for any other (currently) available loggers, case-insensitive
+        `future_third_parties`
+            additional third party logger(s) which have not yet been created
         `use_coloredlogs`
             if True, will import and use the `coloredlogs` package.
             This will set the logger format and use colored text.
@@ -138,7 +141,9 @@ def set_level(
         logging.getLogger().info(f"First-Party Logger: '{log}' ({level})")
 
     # third-party
-    for log_name in logging.root.manager.loggerDict:
+    if isinstance(future_third_parties, str):
+        future_third_parties = [future_third_parties]
+    for log_name in list(logging.root.manager.loggerDict) + future_third_parties:
         if log_name in first_party_loggers:
             continue
         if logging.getLogger(log_name) in first_party_loggers:
