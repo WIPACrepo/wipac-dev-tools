@@ -176,6 +176,7 @@ def _set_level(
     logging.getLogger().info(f"Root Logger: '' ({level})")
 
     # third-party
+    logset_third_parties = []
     for log_name in sorted(
         set(list(logging.root.manager.loggerDict) + future_third_parties)
     ):
@@ -183,9 +184,10 @@ def _set_level(
         # # In theory we might be doing WAY more sets than necessary,
         # # but in reality logger hierarchy chains aren't super long
         for ancestor in _get_all_ancestors(log_name):
-            if ancestor in first_party_loggers:
+            if ancestor in first_party_loggers or ancestor in logset_third_parties:
                 break
             _set_and_share(ancestor, third_party_level, "Third-Party")
+            logset_third_parties.append(ancestor)
 
     # first-party (set these last for peace of mind)
     for log_name in first_party_loggers:
