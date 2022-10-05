@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import Callable, List, TypeVar, Union
+from typing import Callable, Iterator, List, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -82,6 +82,26 @@ def log_dataclass(
     return dclass
 
 
+def _to_list(pseudo_list: Union[None, T, List[T]]) -> List[T]:
+    if not pseudo_list:
+        return []
+    elif not isinstance(pseudo_list, list):
+        return [pseudo_list]
+    else:
+        return pseudo_list
+
+
+def _set_and_share(log_name: str, level: LoggerLevel, text: str) -> None:
+    logging.getLogger(log_name).setLevel(level)
+    logging.getLogger().info(f"{text} Logger: '{log_name}' ({level})")
+
+
+def _get_all_ancestors(dotted: str) -> Iterator[str]:
+    parts = dotted.split(".")
+    for i in range(len(parts)):
+        yield ".".join(parts[: i + 1])  # i=1 gets first 2 elements, dotted
+
+
 def set_level(
     level: LoggerLevel,
     first_party_loggers: Union[
@@ -112,14 +132,12 @@ def set_level(
     level = level.upper()  # type: ignore[assignment]
     third_party_level = third_party_level.upper()  # type: ignore[assignment]
 
-    if not first_party_loggers:
-        first_party_loggers = []
-    if not isinstance(first_party_loggers, list):  # str or Logger
-        first_party_loggers = [first_party_loggers]
     # convert to names (str) only
     first_party_loggers = [
-        lg.name if isinstance(lg, logging.Logger) else lg for lg in first_party_loggers
+        lg.name if isinstance(lg, logging.Logger) else lg
+        for lg in _to_list(first_party_loggers)
     ]
+    future_third_parties = _to_list(future_third_parties)
 
     # root
     if use_coloredlogs:
@@ -130,27 +148,25 @@ def set_level(
         except ImportError:
             logging.getLogger().warning(
                 "set_level()'s `use_coloredlogs` was set to `True`, "
-                "but coloredlogs is not installed. Proceeding with only logging package."
+                "but 'coloredlogs' is not installed. Proceeding with 'logging' package."
             )
             logging.getLogger().setLevel(level)
     else:
         logging.getLogger().setLevel(level)
-
-    # first-party
-    for log in first_party_loggers:
-        logging.getLogger(log).setLevel(level)
-        logging.getLogger().info(f"First-Party Logger: '{log}' ({level})")
+    logging.getLogger().info(f"Root Logger: '' ({level})")
 
     # third-party
-    if not future_third_parties:
-        future_third_parties = []
-    elif isinstance(future_third_parties, str):
-        future_third_parties = [future_third_parties]
-    # set 'em
-    for log_name in list(logging.root.manager.loggerDict) + future_third_parties:
-        if log_name in first_party_loggers:
-            continue
-        if logging.getLogger(log_name) in first_party_loggers:
-            continue
-        logging.getLogger(log_name).setLevel(third_party_level)
-        logging.getLogger().info(f"Third-Party Logger: '{log_name}' ({level})")
+    for log_name in sorted(
+        set(list(logging.root.manager.loggerDict) + future_third_parties)
+    ):
+        # set every ancestor until we infringe on a first-party's territory
+        # # In theory we might be doing WAY more sets than necessary,
+        # # but in reality logger hierarchy chains aren't super long
+        for ancestor in _get_all_ancestors(log_name):
+            if ancestor in first_party_loggers:
+                break
+            _set_and_share(ancestor, third_party_level, "Third-Party")
+
+    # first-party (set these last for peace of mind)
+    for log_name in first_party_loggers:
+        _set_and_share(log_name, level, "First-Party")
