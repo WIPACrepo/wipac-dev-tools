@@ -133,7 +133,7 @@ def set_level(
     third_party_level = third_party_level.upper()  # type: ignore[assignment]
 
     # convert to names (str) only
-    first_party_loggers = [
+    first_party_loggers: List[str] = [
         lg.name if isinstance(lg, logging.Logger) else lg
         for lg in _to_list(first_party_loggers)
     ]
