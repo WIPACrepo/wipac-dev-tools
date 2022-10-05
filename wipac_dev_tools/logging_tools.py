@@ -112,9 +112,14 @@ def set_level(
     level = level.upper()  # type: ignore[assignment]
     third_party_level = third_party_level.upper()  # type: ignore[assignment]
 
-    first_party_loggers = []
+    if not first_party_loggers:
+        first_party_loggers = []
     if not isinstance(first_party_loggers, list):  # str or Logger
         first_party_loggers = [first_party_loggers]
+    # convert to names (str) only
+    first_party_loggers = [
+        lg.name if isinstance(lg, logging.Logger) else lg for lg in first_party_loggers
+    ]
 
     # root
     if use_coloredlogs:
@@ -133,10 +138,7 @@ def set_level(
 
     # first-party
     for log in first_party_loggers:
-        if isinstance(log, logging.Logger):
-            log.setLevel(level)
-        else:  # str
-            logging.getLogger(log).setLevel(level)
+        logging.getLogger(log).setLevel(level)
         logging.getLogger().info(f"First-Party Logger: '{log}' ({level})")
 
     # third-party
