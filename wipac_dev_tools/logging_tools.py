@@ -112,9 +112,8 @@ def set_level(
     level = level.upper()  # type: ignore[assignment]
     third_party_level = third_party_level.upper()  # type: ignore[assignment]
 
-    if not first_party_loggers:
-        first_party_loggers = []
-    elif isinstance(first_party_loggers, (str, logging.Logger)):
+    first_party_loggers = []
+    if not isinstance(first_party_loggers, list):  # str or Logger
         first_party_loggers = [first_party_loggers]
 
     # root
