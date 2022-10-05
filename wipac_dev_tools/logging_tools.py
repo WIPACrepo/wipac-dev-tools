@@ -129,21 +129,17 @@ def set_level(
             if True, will import and use the `coloredlogs` package.
             This will set the logger format and use colored text.
     """
-    level = level.upper()  # type: ignore[assignment]
-    third_party_level = third_party_level.upper()  # type: ignore[assignment]
-
     # convert to names (str) only
-    first_party_loggers = [
+    first_parties: List[str] = [
         lg.name if isinstance(lg, logging.Logger) else lg
         for lg in _to_list(first_party_loggers)
     ]
-    future_third_parties = _to_list(future_third_parties)
 
     return _set_level(
-        level,
-        first_party_loggers,
-        third_party_level,
-        future_third_parties,
+        level.upper(),
+        first_parties,
+        third_party_level.upper(),
+        _to_list(future_third_parties),
         use_coloredlogs,
     )
 
