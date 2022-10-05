@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import Callable, Iterator, List, TypeVar, Union, cast
+from typing import Callable, Iterator, List, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -144,9 +144,9 @@ def set_level(
             )
 
     return _set_level(
-        level.upper(),  # type: ignore[assignment]
+        level.upper(),  # type: ignore
         first_parties,
-        third_party_level.upper(),  # type: ignore[assignment]
+        third_party_level.upper(),  # type: ignore
         _to_list(future_third_parties),
         use_coloredlogs,
     )
