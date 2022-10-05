@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import Callable, Iterator, List, TypeVar, Union
+from typing import Callable, Iterator, List, TypeVar, Union, cast
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -130,15 +130,23 @@ def set_level(
             This will set the logger format and use colored text.
     """
     # convert to names (str) only
-    first_parties: List[str] = [
-        lg.name if isinstance(lg, logging.Logger) else lg
-        for lg in _to_list(first_party_loggers)
-    ]
+    first_parties: List[str] = []
+
+    for lg in _to_list(first_party_loggers):
+        if isinstance(lg, logging.Logger):
+            first_parties.append(lg.name)
+        elif isinstance(lg, str):
+            first_parties.append(lg)
+        else:
+            raise TypeError(
+                f"'first_party_loggers' must be either 'None', or "
+                f"a list of Logger instances or names: {first_party_loggers}"
+            )
 
     return _set_level(
-        level.upper(),
+        level.upper(),  # type: ignore[assignment]
         first_parties,
-        third_party_level.upper(),
+        third_party_level.upper(),  # type: ignore[assignment]
         _to_list(future_third_parties),
         use_coloredlogs,
     )
