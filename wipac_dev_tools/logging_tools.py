@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import Callable, Iterator, List, TypeVar, Union
+from typing import Callable, List, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -170,10 +170,11 @@ def _set_level(
     logging.getLogger().info(f"Root Logger: '' ({first_party_level})")
 
     # third-party
-    for log_name in sorted(set(third_parties)):
-        ancestor = log_name.split(".", maxsplit=1)[0]
-        if ancestor not in first_parties:
-            _set_and_share(ancestor, third_party_level, "Third-Party")
+    for third_party_root in sorted(
+        set(lg.split(".", maxsplit=1)[0] for lg in third_parties)
+    ):
+        if third_party_root not in first_parties:
+            _set_and_share(third_party_root, third_party_level, "Third-Party")
 
     # first-party
     for log_name in sorted(set(first_parties)):
