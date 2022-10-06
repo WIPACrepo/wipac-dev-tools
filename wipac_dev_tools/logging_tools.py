@@ -143,54 +143,67 @@ def set_level(
                 f"a list of Logger instances or names: {first_party_loggers}"
             )
 
+    third_parties = list(logging.root.manager.loggerDict) + _to_list(
+        future_third_parties
+    )
+
     return _set_level(
         level.upper(),  # type: ignore
         first_parties,
         third_party_level.upper(),  # type: ignore
-        _to_list(future_third_parties),
+        third_parties,
         use_coloredlogs,
     )
 
 
 def _set_level(
-    level: LoggerLevel,
-    first_party_loggers: List[str],
+    first_party_level: LoggerLevel,
+    first_parties: List[str],
     third_party_level: LoggerLevel,
-    future_third_parties: List[str],
+    third_parties: List[str],
     use_coloredlogs: bool,
 ) -> None:
+    third_parties = list(set(third_parties))
+    first_parties = list(set(first_parties))
+    all_known_loggers = {}
+
     # root
     if use_coloredlogs:
         try:
             import coloredlogs  # type: ignore[import]  # pylint: disable=import-outside-toplevel
 
-            coloredlogs.install(level=level)  # root
+            coloredlogs.install(level=first_party_level)  # root
         except ImportError:
             logging.getLogger().warning(
                 "set_level()'s `use_coloredlogs` was set to `True`, "
                 "but 'coloredlogs' is not installed. Proceeding with 'logging' package."
             )
-            logging.getLogger().setLevel(level)
+            logging.getLogger().setLevel(first_party_level)
     else:
-        logging.getLogger().setLevel(level)
-    logging.getLogger().info(f"Root Logger: '' ({level})")
+        logging.getLogger().setLevel(first_party_level)
+    logging.getLogger().info(f"Root Logger: '' ({first_party_level})")
 
-    # third-party
-    logset_third_parties = []
-    for log_name in sorted(
-        set(list(logging.root.manager.loggerDict) + future_third_parties)
-    ):
-        # set every ancestor until we infringe on a first-party's territory
+    # get every known logger
+    for log_name in third_parties + first_parties:
+        # Add every ancestor
         # # In theory we might be doing WAY more sets than necessary,
         # # but in reality logger hierarchy chains aren't super long.
-        # # We could just set the first ancestor, but the extra logging
-        # # can be useful for debugging.
+        # # IOW, we could just set the first ancestor, then the 1st party
+        # # but the extra logging can be useful for debugging.
         for ancestor in _get_all_ancestors(log_name):
-            if ancestor in first_party_loggers or ancestor in logset_third_parties:
-                continue
-            _set_and_share(ancestor, third_party_level, "Third-Party")
-            logset_third_parties.append(ancestor)
+            all_known_loggers[ancestor] = False
 
+    # promote first-party loggers (& their descendants)
+    for log_name in first_parties:
+        for key in all_known_loggers:
+            if key == log_name or key.startswith(log_name + "."):
+                all_known_loggers[key] = True
+
+    # third-party
+    for log_name, is_first_party in sorted(all_known_loggers.items()):
+        if not is_first_party:
+            _set_and_share(log_name, third_party_level, "Third-Party")
     # first-party (set these last to override the setting inherited via an ancestor)
-    for log_name in first_party_loggers:
-        _set_and_share(log_name, level, "First-Party")
+    for log_name, is_first_party in sorted(all_known_loggers.items()):
+        if is_first_party:
+            _set_and_share(log_name, first_party_level, "First-Party")
