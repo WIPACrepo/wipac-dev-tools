@@ -185,7 +185,7 @@ def _set_level(
         # # but in reality logger hierarchy chains aren't super long
         for ancestor in _get_all_ancestors(log_name):
             if ancestor in first_party_loggers or ancestor in logset_third_parties:
-                break
+                continue
             _set_and_share(ancestor, third_party_level, "Third-Party")
             logset_third_parties.append(ancestor)
 
