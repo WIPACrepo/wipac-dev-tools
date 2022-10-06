@@ -182,13 +182,15 @@ def _set_level(
     ):
         # set every ancestor until we infringe on a first-party's territory
         # # In theory we might be doing WAY more sets than necessary,
-        # # but in reality logger hierarchy chains aren't super long
+        # # but in reality logger hierarchy chains aren't super long.
+        # # We could just set the first ancestor, but the extra logging
+        # # can be useful for debugging.
         for ancestor in _get_all_ancestors(log_name):
             if ancestor in first_party_loggers or ancestor in logset_third_parties:
                 continue
             _set_and_share(ancestor, third_party_level, "Third-Party")
             logset_third_parties.append(ancestor)
 
-    # first-party (set these last for peace of mind)
+    # first-party (set these last to override the setting inherited via an ancestor)
     for log_name in first_party_loggers:
         _set_and_share(log_name, level, "First-Party")
