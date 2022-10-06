@@ -170,11 +170,13 @@ def _set_level(
     logging.getLogger().info(f"Root Logger: '' ({first_party_level})")
 
     # third-party
-    for third_party_root in sorted(
-        set(lg.split(".", maxsplit=1)[0] for lg in third_parties)
+    # Ex: third_party=A.B.C -> set A, if A isn't a first_party
+    # Ex: first_party=X.Y -> set X, if X isn't a first_party
+    for base_logger in sorted(
+        set(lg.split(".", maxsplit=1)[0] for lg in third_parties + first_parties)
     ):
-        if third_party_root not in first_parties:
-            _set_and_share(third_party_root, third_party_level, "Third-Party")
+        if base_logger not in first_parties:
+            _set_and_share(base_logger, third_party_level, "Third-Party")
 
     # first-party
     for log_name in sorted(set(first_parties)):
