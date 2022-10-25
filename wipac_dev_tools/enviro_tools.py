@@ -327,6 +327,14 @@ def _from_environment_as_dataclass(
 
         typ, arg_typs = field.type, None
 
+        # detect here 'Any'
+        if typ.__origin__ == Any:
+            raise ValueError(
+                f"'{field.type}' is not a supported type: "
+                f"field='{field.name}' (the 'Any' type and subclasses are not "
+                f"valid environment variable types)"
+            )
+
         # detect bare 'Final' and 'Optional'
         if isinstance(typ, _SpecialForm):
             raise ValueError(
@@ -346,7 +354,7 @@ def _from_environment_as_dataclass(
             # Ex: List[int], Dict[str,int]
             else:
                 typ, arg_typs = typ.__origin__, typ.__args__
-            if typ is Any or not (
+            if not (
                 isinstance(typ, type)
                 and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
             ):
