@@ -346,7 +346,7 @@ def _from_environment_as_dataclass(
             # Ex: List[int], Dict[str,int]
             else:
                 typ, arg_typs = typ.__origin__, typ.__args__
-            if not (
+            if typ is Any or not (
                 isinstance(typ, type)
                 and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
             ):
@@ -358,8 +358,6 @@ def _from_environment_as_dataclass(
                 )
 
         try:
-            if typ == Any:
-                raise ValueError('Any is not a legal env type')
             kwargs[field.name] = _typecast_for_dataclass(
                 env_val, typ, arg_typs, collection_sep, dict_kv_joiner
             )
