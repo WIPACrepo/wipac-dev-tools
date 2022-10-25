@@ -327,14 +327,6 @@ def _from_environment_as_dataclass(
 
         typ, arg_typs = field.type, None
 
-        # detect here 'Any'
-        if typ.__origin__ == Any:
-            raise ValueError(
-                f"'{field.type}' is not a supported type: "
-                f"field='{field.name}' (the 'Any' type and subclasses are not "
-                f"valid environment variable types)"
-            )
-
         # detect bare 'Final' and 'Optional'
         if isinstance(typ, _SpecialForm):
             raise ValueError(
@@ -364,6 +356,14 @@ def _from_environment_as_dataclass(
                     f"types must resolve to 'type' within 1 nesting, "
                     f"or 2 if using 'Final' or 'Optional')"
                 )
+
+        # detect here 'Any'
+        if typ == Any:
+            raise ValueError(
+                f"'{field.type}' is not a supported type: "
+                f"field='{field.name}' (the 'Any' type and subclasses are not "
+                f"valid environment variable types)"
+            )
 
         try:
             kwargs[field.name] = _typecast_for_dataclass(
