@@ -357,6 +357,14 @@ def _from_environment_as_dataclass(
                     f"or 2 if using 'Final' or 'Optional')"
                 )
 
+        # detect here 'Any'
+        if typ == Any:
+            raise ValueError(
+                f"'{field.type}' is not a supported type: "
+                f"field='{field.name}' (the 'Any' type and subclasses are not "
+                f"valid environment variable types)"
+            )
+
         try:
             kwargs[field.name] = _typecast_for_dataclass(
                 env_val, typ, arg_typs, collection_sep, dict_kv_joiner
