@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.6.0 (2022-10-25)
+### Feature
+* Python 3.11 ([#48](https://github.com/WIPACrepo/wipac-dev-tools/issues/48)) ([`6aec2a3`](https://github.com/WIPACrepo/wipac-dev-tools/commit/6aec2a30470c8a6bfd335941f05d08d6f2096610))
+
 ## v1.5.6 (2022-10-06)
 
 
