@@ -172,9 +172,6 @@ def _typecast_for_dataclass(
     elif typ == bool:
         return strtobool(env_val)
 
-    elif typ == Any:  # special case - Any cannot be instantiated
-        return env_val
-
     else:
         return typ(env_val)
 
@@ -364,7 +361,7 @@ def _from_environment_as_dataclass(
             kwargs[field.name] = _typecast_for_dataclass(
                 env_val, typ, arg_typs, collection_sep, dict_kv_joiner
             )
-        except ValueError as e:
+        except (TypeError,ValueError) as e:
             raise ValueError(
                 f"'{field.type}'-indicated value is not a legal value: "
                 f"var='{field.name}' value='{env_val}'"
