@@ -172,6 +172,9 @@ def _typecast_for_dataclass(
     elif typ == bool:
         return strtobool(env_val)
 
+    elif typ == Any:  # special case - Any cannot be instantiated
+        return env_val
+
     else:
         return typ(env_val)
 
