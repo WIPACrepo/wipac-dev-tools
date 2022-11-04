@@ -27,5 +27,7 @@ updates:
     commit-message:
       prefix: "dependabot: "
       # include: ""  # currently only "scope" is allowed
+    allow:
+      - dependency-type: "direct"
     versioning-strategy: increase-if-necessary  # this allows not-exactly-equals pip notations (~=, ==v1.2.*, etc.)
     open-pull-requests-limit: 1  # this is per ecosystem
