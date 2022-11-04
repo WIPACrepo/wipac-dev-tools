@@ -14,7 +14,7 @@ updates:
       timezone: "America/Chicago"
     commit-message:
       prefix: "dependabot: "
-      include: ""  # as opposed to "scope" which brings in the version numbers (excluding b/c WIPACrepo/wipac-dev-py-setup-action may inc. other deps)
+      # include: ""  # as opposed to "scope" which brings in the version numbers (excluding b/c WIPACrepo/wipac-dev-py-setup-action may inc. other deps)
     open-pull-requests-limit: 1  # this is per ecosystem
       
   - package-ecosystem: "pip"  # bump python deps
@@ -26,6 +26,6 @@ updates:
       timezone: "America/Chicago"
     commit-message:
       prefix: "dependabot: "
-      include: ""  # as opposed to "scope" which brings in the version numbers (excluding b/c WIPACrepo/wipac-dev-py-setup-action may inc. other deps)
+      # include: ""  # as opposed to "scope" which brings in the version numbers (excluding b/c WIPACrepo/wipac-dev-py-setup-action may inc. other deps)
     versioning-strategy: increase-if-necessary  # this allows not-exactly-equals pip notations (~=, ==v1.2.*, etc.)
     open-pull-requests-limit: 1  # this is per ecosystem
