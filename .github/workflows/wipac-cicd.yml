@@ -19,7 +19,9 @@ jobs:
       - uses: WIPACrepo/wipac-dev-mypy-action@v1.1
 
   py-setup:
-    if: github.actor != 'dependabot[bot]'  # dependabot can't access normal secrets
+    # dependabot can't access normal secrets
+    # we don't want to trigger an update on PR's merge to main
+    if: always() && github.actor != 'dependabot[bot]' && github.ref_type == 'branch'
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
