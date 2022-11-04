@@ -19,6 +19,7 @@ jobs:
       - uses: WIPACrepo/wipac-dev-mypy-action@v1.1
 
   py-setup:
+    if: github.actor != 'dependabot[bot]'  # dependabot can't access normal secrets
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
