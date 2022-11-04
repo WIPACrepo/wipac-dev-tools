@@ -34,6 +34,7 @@ jobs:
   py-versions:
     needs: [py-setup]
     # do job if py-setup didn't explicitly fail
+    # https://github.com/actions/runner/issues/491#issuecomment-850884422
     if: always() && (needs.py-setup.result == 'success' || needs.py-setup.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
