@@ -24,11 +24,12 @@ jobs:
       # dependabot can't access normal secrets
       # & we don't want to trigger an update on PR's merge to main
       - if: github.actor != 'dependabot[bot]' && github.ref_type == 'branch'
-        name: checkout
+        name: checkout (only for non-dependabot branches)
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: github.actor != 'dependabot[bot]' && github.ref_type == 'branch'
+        name: wipac-dev-py-setup-action (only for non-dependabot branches)
         uses: WIPACrepo/wipac-dev-py-setup-action@v1.8
         with:
           base-keywords: "WIPAC IceCube"
