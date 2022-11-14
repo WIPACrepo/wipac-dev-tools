@@ -18,7 +18,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Final  # type: ignore[misc] # 3.8+ get the real thing
+from typing_extensions import Final  # 3.8+ get the real thing
 
 from . import logging_tools
 from .strtobool import strtobool
