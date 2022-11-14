@@ -18,13 +18,10 @@ from typing import (
     cast,
 )
 
+from typing_extensions import Final  # 3.8+ get the real thing
+
 from . import logging_tools
 from .strtobool import strtobool
-
-try:
-    from typing import Final
-except ImportError:
-    from typing_extensions import Final  # type: ignore[misc]
 
 # IMPORTS for PYTHON 3.7+
 if sys.version_info >= (3, 7):
