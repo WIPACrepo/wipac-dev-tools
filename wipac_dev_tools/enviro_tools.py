@@ -20,7 +20,7 @@ from typing import (
 
 from typing_extensions import Final  # 3.8+ get the real thing
 
-from . import logging_tools
+from . import logging_tools, typing_tools
 from .strtobool import strtobool
 
 # IMPORTS for PYTHON 3.7+
@@ -299,18 +299,6 @@ def _from_environment_as_dataclass(
     if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
         raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
 
-    # some helper functions
-    def _is_optional(typ: GenericAlias) -> bool:
-        # Optional[int] *is* typing.Union[int, NoneType]
-        return (
-            typ.__origin__ == Union
-            and len(typ.__args__) == 2
-            and typ.__args__[-1] == type(None)  # noqa: E721
-        )
-
-    def _is_final(typ: GenericAlias) -> bool:
-        return bool(typ.__origin__ == Final)
-
     # iterate fields and find env vars
     kwargs: Dict[str, Any] = {}
     for field in dataclasses.fields(dclass):
@@ -322,45 +310,20 @@ def _from_environment_as_dataclass(
         except KeyError:
             continue
 
-        typ, arg_typs = field.type, None
-
-        # detect bare 'Final' and 'Optional'
-        if isinstance(typ, _SpecialForm):
+        try:
+            typ, arg_typs = typing_tools.reduce_type(field.type)
+        except typing_tools.BareSpecialFormReductionError as e:
             raise ValueError(
                 f"'{field.type}' is not a supported type: "
                 f"field='{field.name}' (any of the typing-module's SpecialForm "
                 f"types, 'Final' and 'Optional', must have a nested type attached)"
-            )
-
-        # take care of 'typing'-module types
-        if isinstance(typ, GenericAlias):
-            # Ex: Final[int], Optional[Dict[str,int]]
-            if _is_optional(typ) or _is_final(typ):
-                if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
-                    typ, arg_typs = typ.__args__[0], None
-                else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
-                    typ, arg_typs = typ.__args__[0].__origin__, typ.__args__[0].__args__
-            # Ex: List[int], Dict[str,int]
-            else:
-                typ, arg_typs = typ.__origin__, typ.__args__
-            if not (
-                isinstance(typ, type)
-                and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
-            ):
-                raise ValueError(
-                    f"'{field.type}' is not a supported type: "
-                    f"field='{field.name}' (the typing-module's alias "
-                    f"types must resolve to 'type' within 1 nesting, "
-                    f"or 2 if using 'Final' or 'Optional')"
-                )
-
-        # detect here 'Any'
-        if typ == Any:
+            ) from e
+        except typing_tools.AnyTypeReductionError as e:
             raise ValueError(
                 f"'{field.type}' is not a supported type: "
                 f"field='{field.name}' (the 'Any' type and subclasses are not "
                 f"valid environment variable types)"
-            )
+            ) from e
 
         try:
             kwargs[field.name] = _typecast_for_dataclass(
