@@ -26,12 +26,13 @@ from .strtobool import strtobool
 # IMPORTS for PYTHON 3.7+
 if sys.version_info >= (3, 7):
     import dataclasses
+    from types import UnionType
     from typing import _SpecialForm
 
     try:
         from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
     except ImportError:
-        from typing import GenericAlias  # type: ignore[attr-defined]
+        from types import GenericAlias
 
 
 RetVal = Union[str, int, float, bool]
@@ -332,8 +333,8 @@ def _from_environment_as_dataclass(
                 f"types, 'Final' and 'Optional', must have a nested type attached)"
             )
 
-        # take care of 'typing'-module types
-        if isinstance(typ, GenericAlias):
+        # take care of 'typing/types'-module types
+        if isinstance(typ, (GenericAlias, UnionType)):
             # Ex: Final[int], Optional[Dict[str,int]]
             if _is_optional(typ) or _is_final(typ):
                 if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
