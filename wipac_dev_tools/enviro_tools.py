@@ -39,6 +39,15 @@ OptionalDict = Mapping[str, Optional[RetVal]]
 KeySpec = Union[str, Sequence[str], OptionalDict]
 
 
+# ---------------------------------------------------------------------------------------
+
+
+OBFUSCATE_SUBSTRINGS = ["token", "auth", "pass", "secret"]
+
+
+# ---------------------------------------------------------------------------------------
+
+
 def _typecast(source: str, type_: type) -> RetVal:
     if type_ == bool:
         return bool(strtobool(source.lower()))
@@ -129,6 +138,9 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
             raise OSError(f"Missing environment variable '{key}'")
 
     return cast(Dict[str, RetVal], config)
+
+
+# ---------------------------------------------------------------------------------------
 
 
 def _typecast_for_dataclass(
@@ -393,6 +405,6 @@ def _from_environment_as_dataclass(
             logging.getLogger(),
             log_vars,
             prefix="(env)",
-            obfuscate_substrings=["token", "auth", "pass", "secret"],
+            obfuscate_substrings=OBFUSCATE_SUBSTRINGS,
         )
     return env_vars
