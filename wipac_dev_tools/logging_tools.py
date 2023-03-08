@@ -70,7 +70,7 @@ def log_dataclass(
     logger: Union[str, logging.Logger],
     level: LoggerLevel,
     prefix: str = "",
-    obfuscate_substrings: Optional[list] = None,
+    obfuscate_substrings: Optional[List[str]] = None,
 ) -> T:
     """Log a dataclass instance's fields and members.
 
