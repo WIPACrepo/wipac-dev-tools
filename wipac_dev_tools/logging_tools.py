@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import Callable, List, TypeVar, Union
+from typing import Callable, List, Optional, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -70,8 +70,12 @@ def log_dataclass(
     logger: Union[str, logging.Logger],
     level: LoggerLevel,
     prefix: str = "",
+    obfuscate_substrings: Optional[list] = None,
 ) -> T:
-    """Log a dataclass instance's fields and members."""
+    """Log a dataclass instance's fields and members.
+
+    `obfuscate_substrings` is case-insensitive
+    """
     import dataclasses  # imports for python 3.7+
 
     if not (dataclasses.is_dataclass(dclass) and not isinstance(dclass, type)):
@@ -79,10 +83,15 @@ def log_dataclass(
 
     logger_fn = get_logger_fn(logger, level)
 
+    if not obfuscate_substrings:
+        obfuscate_substrings = []
+    obfuscate_substrings = [o.upper() for o in obfuscate_substrings]
+
     for field in dataclasses.fields(dclass):
-        logger_fn(
-            f"{prefix+' 'if prefix else ''}{field.name}: {getattr(dclass, field.name)}"
-        )
+        val = getattr(dclass, field.name)
+        if any(s.upper() in obfuscate_substrings for s in field.name):
+            val = "***"
+        logger_fn(f"{prefix+' 'if prefix else ''}{field.name}: {val}")
 
     return dclass
 
