@@ -66,7 +66,10 @@ T = TypeVar("T")
 
 
 def log_dataclass(
-    dclass: T, logger: Union[str, logging.Logger], level: LoggerLevel
+    dclass: T,
+    logger: Union[str, logging.Logger],
+    level: LoggerLevel,
+    prefix: str = "",
 ) -> T:
     """Log a dataclass instance's fields and members."""
     import dataclasses  # imports for python 3.7+
@@ -77,7 +80,9 @@ def log_dataclass(
     logger_fn = get_logger_fn(logger, level)
 
     for field in dataclasses.fields(dclass):
-        logger_fn(f"(env) {field.name}: {getattr(dclass, field.name)}")
+        logger_fn(
+            f"{prefix+' 'if prefix else ''}{field.name}: {getattr(dclass, field.name)}"
+        )
 
     return dclass
 

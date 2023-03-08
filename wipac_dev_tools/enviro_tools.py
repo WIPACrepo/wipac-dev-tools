@@ -388,5 +388,7 @@ def _from_environment_as_dataclass(
 
     # log & return
     if log_vars:
-        logging_tools.log_dataclass(env_vars, logging.getLogger(), log_vars)
+        logging_tools.log_dataclass(
+            env_vars, logging.getLogger(), log_vars, prefix="(env)"
+        )
     return env_vars
