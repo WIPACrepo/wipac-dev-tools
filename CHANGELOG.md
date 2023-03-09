@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.6.13 (2023-03-09)
+### Other
+* Obfuscate Sensitive Env Vars ([#70](https://github.com/WIPACrepo/wipac-dev-tools/issues/70)) ([`a13b989`](https://github.com/WIPACrepo/wipac-dev-tools/commit/a13b989d340c492755a89a3bbe7376c47637ac96))
+
 ## v1.6.12 (2023-02-17)
 
 
