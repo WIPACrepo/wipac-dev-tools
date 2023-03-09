@@ -6,6 +6,7 @@ import os
 import re
 import sys
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Mapping,
@@ -33,10 +34,21 @@ if sys.version_info >= (3, 7):
     except ImportError:
         from typing import GenericAlias  # type: ignore[attr-defined]
 
+# fmt: off
+if TYPE_CHECKING:  # _typeshed only exists at runtime
+    from _typeshed import DataclassInstance  # type: ignore[attr-defined]
+    DataclassT = TypeVar("DataclassT", bound=DataclassInstance)
+else:
+    DataclassT = TypeVar("DataclassT")
+# fmt: on
+
 
 RetVal = Union[str, int, float, bool]
 OptionalDict = Mapping[str, Optional[RetVal]]
 KeySpec = Union[str, Sequence[str], OptionalDict]
+
+
+# ---------------------------------------------------------------------------------------
 
 
 def _typecast(source: str, type_: type) -> RetVal:
@@ -131,6 +143,9 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
     return cast(Dict[str, RetVal], config)
 
 
+# ---------------------------------------------------------------------------------------
+
+
 def _typecast_for_dataclass(
     env_val: str,
     typ: type,
@@ -173,15 +188,12 @@ def _typecast_for_dataclass(
         return typ(env_val)
 
 
-T = TypeVar("T")
-
-
 def from_environment_as_dataclass(
-    dclass: Type[T],
+    dclass: Type[DataclassT],
     collection_sep: Optional[str] = None,
     dict_kv_joiner: str = "=",
     log_vars: Optional[logging_tools.LoggerLevel] = "WARNING",
-) -> T:
+) -> DataclassT:
     """Obtain configuration values from the OS environment formatted in a
     dataclass.
 
@@ -278,11 +290,11 @@ def from_environment_as_dataclass(
 
 
 def _from_environment_as_dataclass(
-    dclass: Type[T],
+    dclass: Type[DataclassT],
     collection_sep: Optional[str],
     dict_kv_joiner: str,
     log_vars: Optional[logging_tools.LoggerLevel],
-) -> T:
+) -> DataclassT:
 
     # check args
     if (
@@ -388,5 +400,11 @@ def _from_environment_as_dataclass(
 
     # log & return
     if log_vars:
-        logging_tools.log_dataclass(env_vars, logging.getLogger(), log_vars)
+        logging_tools.log_dataclass(
+            env_vars,
+            logging.getLogger(),
+            log_vars,
+            prefix="(env)",
+            obfuscate_sensitive_substrings=True,
+        )
     return env_vars

@@ -2,9 +2,26 @@
 
 import argparse
 import logging
-from typing import Callable, List, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, List, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
+
+# fmt: off
+if TYPE_CHECKING:  # _typeshed only exists at runtime
+    from _typeshed import DataclassInstance  # type: ignore[attr-defined]
+    DataclassT = TypeVar("DataclassT", bound=DataclassInstance)
+else:
+    DataclassT = TypeVar("DataclassT")
+# fmt: on
+
+T = TypeVar("T")
+
+
+# ---------------------------------------------------------------------------------------
+
+
+OBFUSCATE_SUBSTRINGS_UPPER = ["TOKEN", "AUTH", "PASS", "SECRET"]
+
 
 LoggerLevel = Literal[
     "CRITICAL",
@@ -18,6 +35,9 @@ LoggerLevel = Literal[
     "info",
     "debug",
 ]
+
+
+# ---------------------------------------------------------------------------------------
 
 
 def get_logger_fn(
@@ -46,6 +66,9 @@ def log_argparse_args(
 ) -> argparse.Namespace:
     """Log the argparse args and their values at the given level.
 
+    Sensitive args (containing specific substrings, case-insensitive)
+    have their values obfuscated with '***'
+
     Return the args (Namespace) unchanged.
 
     Example:
@@ -57,18 +80,28 @@ def log_argparse_args(
     logger_fn = get_logger_fn(logger, level)
 
     for arg, val in vars(args).items():
-        logger_fn(f"{arg}: {val}")
+        if any(s in arg.upper() for s in OBFUSCATE_SUBSTRINGS_UPPER):
+            logger_fn(f"{arg}: ***")
+        else:
+            logger_fn(f"{arg}: {val}")
 
     return args
 
 
-T = TypeVar("T")
-
-
 def log_dataclass(
-    dclass: T, logger: Union[str, logging.Logger], level: LoggerLevel
-) -> T:
-    """Log a dataclass instance's fields and members."""
+    dclass: DataclassT,
+    logger: Union[str, logging.Logger],
+    level: LoggerLevel,
+    prefix: str = "",
+    obfuscate_sensitive_substrings: bool = False,
+) -> DataclassT:
+    """Log a dataclass instance's fields and members.
+
+    Arguments:
+        `obfuscate_sensitive_substrings` -
+            Sensitive args (containing specific substrings, case-insensitive)
+            have their values obfuscated with '***'
+    """
     import dataclasses  # imports for python 3.7+
 
     if not (dataclasses.is_dataclass(dclass) and not isinstance(dclass, type)):
@@ -77,7 +110,11 @@ def log_dataclass(
     logger_fn = get_logger_fn(logger, level)
 
     for field in dataclasses.fields(dclass):
-        logger_fn(f"(env) {field.name}: {getattr(dclass, field.name)}")
+        val = getattr(dclass, field.name)
+        if obfuscate_sensitive_substrings:
+            if any(s in field.name.upper() for s in OBFUSCATE_SUBSTRINGS_UPPER):
+                val = "***"
+        logger_fn(f"{prefix+' 'if prefix else ''}{field.name}: {val}")
 
     return dclass
 

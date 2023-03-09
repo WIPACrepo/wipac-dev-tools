@@ -1,5 +1,6 @@
 """Test logging tools."""
 
+import dataclasses as dc
 import logging
 import random
 import uuid
@@ -8,6 +9,8 @@ from typing import Any
 
 import pytest
 from wipac_dev_tools import logging_tools
+
+# pylint:disable=missing-class-docstring,disallowed-name,invalid-name
 
 
 @pytest.fixture()
@@ -59,14 +62,17 @@ def test_00(
 
     message = f"this is a test! ({(uuid.uuid4().hex)[:4]})"
 
-    logfn = logging_tools.get_logger_fn(logger_name, log_level)
-    logfn(message)
+    with caplog.at_level(logging.DEBUG):  # allow capturing everything that is logged
+        logfn = logging_tools.get_logger_fn(logger_name, log_level)
+        logfn(message)
 
-    present_third_party_msg = f"here's a third party logger ({(uuid.uuid4().hex)[:4]})"
-    logging.getLogger(present_third_party_name).info(present_third_party_msg)
-    #
-    future_third_party_msg = f"FUTURE 3RD PARTY ({(uuid.uuid4().hex)[:4]})"
-    logging.getLogger(future_third_party_name).warning(future_third_party_msg)
+        present_third_party_msg = (
+            f"here's a third party logger ({(uuid.uuid4().hex)[:4]})"
+        )
+        logging.getLogger(present_third_party_name).info(present_third_party_msg)
+        #
+        future_third_party_msg = f"FUTURE 3RD PARTY ({(uuid.uuid4().hex)[:4]})"
+        logging.getLogger(future_third_party_name).warning(future_third_party_msg)
 
     found_log_record = False
     found_present_third_party = False
@@ -109,3 +115,65 @@ def test_00(
         assert found_future_third_party
     else:
         assert not found_future_third_party
+
+
+def test_10__log_dataclass(caplog: Any) -> None:
+    """Test `set_level()` with multiple level cases (upper, lower."""
+    senstives = ["my_token", "AUTHOR", "secretive_number", "YouShallNotPass"]
+
+    @dc.dataclass(frozen=True)
+    class Config:
+        # sensitives
+        my_token: str
+        AUTHOR: str
+        secretive_number: str
+        YouShallNotPass: str
+        # others
+        foo: str
+        BAR: str
+        Baz: str
+
+    # give every arg the same value to keep testing logic easy
+    value = "1a2b3c4d5e6f"
+    dclass = Config(
+        my_token=value,
+        AUTHOR=value,
+        secretive_number=value,
+        YouShallNotPass=value,
+        foo=value,
+        BAR=value,
+        Baz=value,
+    )
+    prefix = "blah"
+    level = "INFO"
+    logger = "my-logger"
+
+    with caplog.at_level(logging.DEBUG):  # allow capturing everything that is logged
+        logging_tools.log_dataclass(
+            dclass,
+            logger=logger,
+            level=level,  # type: ignore[arg-type]
+            prefix=prefix,
+            obfuscate_sensitive_substrings=True,
+        )
+
+    # assert
+    checked = []
+    for record in caplog.records:
+        print(record)
+        for field in dc.fields(dclass):
+            if field.name in record.msg:
+                checked.append(field.name)
+                # check basic things
+                assert record.name == logger
+                assert record.levelname == level
+                assert record.msg.startswith(prefix + " ")
+                # check obfuscations
+                if field.name in senstives:
+                    assert "***" in record.msg and value not in record.msg
+                else:
+                    assert "***" not in record.msg and value in record.msg
+    # was everything logged?
+    assert sorted(checked) == sorted(f.name for f in dc.fields(dclass))
+
+    caplog.clear()
