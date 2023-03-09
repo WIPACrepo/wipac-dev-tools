@@ -35,7 +35,7 @@ if sys.version_info >= (3, 7):
         from typing import GenericAlias  # type: ignore[attr-defined]
 
 # fmt: off
-if TYPE_CHECKING:  # only exists at runtime
+if TYPE_CHECKING:  # _typeshed only exists at runtime
     from _typeshed import DataclassInstance  # type: ignore[attr-defined]
     DataclassT = TypeVar("DataclassT", bound=DataclassInstance)
 else:

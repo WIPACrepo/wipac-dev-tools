@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable, List, Optional, TypeVar, Union
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
 # fmt: off
-if TYPE_CHECKING:  # only exists at runtime
+if TYPE_CHECKING:  # _typeshed only exists at runtime
     from _typeshed import DataclassInstance  # type: ignore[attr-defined]
     DataclassT = TypeVar("DataclassT", bound=DataclassInstance)
 else:
