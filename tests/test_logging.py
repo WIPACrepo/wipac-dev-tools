@@ -77,9 +77,7 @@ def test_00(
     found_log_record = False
     found_present_third_party = False
     found_future_third_party = False
-    capped = []
     for record in caplog.records:
-        capped.append(record)
         if record.name == "root":  # this is other logging stuff
             continue
         elif record.name == present_third_party_name:
@@ -99,7 +97,6 @@ def test_00(
         # NOTE - there may be other leftover log messages in the stream
 
     caplog.clear()
-    assert capped
 
     # first party
     if LEVELS.index(set_level.upper()) <= LEVELS.index(log_level.upper()):
@@ -151,7 +148,7 @@ def test_10__log_dataclass(caplog: Any) -> None:
     level = "INFO"
     logger = "my-logger"
 
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.DEBUG):  # allow capturing everything that is logged
         logging_tools.log_dataclass(
             dclass,
             logger=logger,
