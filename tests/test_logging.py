@@ -1,5 +1,6 @@
 """Test logging tools."""
 
+import dataclasses as dc
 import logging
 import random
 import uuid
@@ -8,6 +9,8 @@ from typing import Any
 
 import pytest
 from wipac_dev_tools import logging_tools
+
+# pylint:disable=missing-class-docstring,disallowed-name,invalid-name
 
 
 @pytest.fixture()
@@ -109,3 +112,62 @@ def test_00(
         assert found_future_third_party
     else:
         assert not found_future_third_party
+
+
+def test_10__log_dataclass(caplog: Any) -> None:
+    """Test `set_level()` with multiple level cases (upper, lower."""
+    senstives = ["my_token", "AUTHOR", "secretive_number", "YouShallNotPass"]
+
+    @dc.dataclass(frozen=True)
+    class Config:
+        # sensitives
+        my_token: str
+        AUTHOR: str
+        secretive_number: str
+        YouShallNotPass: str
+        # others
+        foo: str
+        BAR: str
+        Baz: str
+
+    # give every arg the same value to keep testing logic easy
+    value = "1a2b3c4d5e6f"
+    dclass = Config(
+        my_token=value,
+        AUTHOR=value,
+        secretive_number=value,
+        YouShallNotPass=value,
+        foo=value,
+        BAR=value,
+        Baz=value,
+    )
+    prefix = "blah"
+    level = "INFO"
+    logger = "my-logger"
+    logging_tools.log_dataclass(
+        dclass,
+        logger=logger,
+        level=level,  # type: ignore[arg-type]
+        prefix=prefix,
+        obfuscate_sensitive_substrings=True,
+    )
+
+    # assert
+    checked = []
+    for record in caplog.records:
+        for field in dc.fields(dclass):
+            if field.name in record.msg:
+                checked.append(field.name)
+                # check basic things
+                assert record.name == logger
+                assert record.levelname == level
+                assert record.msg.startswith(prefix + " ")
+                # check obfuscations
+                if field.name in senstives:
+                    assert "***" in record.msg and value not in record.msg
+                else:
+                    assert "***" not in record.msg and value in record.msg
+    # was everything logged?
+    assert sorted(checked) == sorted(f.name for f in dc.fields(dclass))
+
+    caplog.clear()
