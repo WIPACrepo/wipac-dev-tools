@@ -20,8 +20,7 @@ T = TypeVar("T")
 # ---------------------------------------------------------------------------------------
 
 
-OBFUSCATE_SUBSTRINGS_UPPER = ["token", "auth", "pass", "secret"]
-OBFUSCATE_SUBSTRINGS_UPPER = [o.upper() for o in OBFUSCATE_SUBSTRINGS_UPPER]
+OBFUSCATE_SUBSTRINGS_UPPER = ["TOKEN", "AUTH", "PASS", "SECRET"]
 
 
 LoggerLevel = Literal[
