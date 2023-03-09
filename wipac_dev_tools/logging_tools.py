@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Callable, List, Optional, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
-if TYPE_CHECKING:
-    from _typeshed import DataclassInstance  # only exists at runtime
+if TYPE_CHECKING:  # only exists at runtime
+    from _typeshed import DataclassInstance  # type: ignore[attr-defined]
 else:
-    DataclassInstance = TypeVar("T")
+    DataclassInstance = TypeVar("T")  # pylint:disable=typevar-name-mismatch
 
 T = TypeVar("T")
 
