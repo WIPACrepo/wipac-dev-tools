@@ -34,10 +34,13 @@ if sys.version_info >= (3, 7):
     except ImportError:
         from typing import GenericAlias  # type: ignore[attr-defined]
 
+# fmt: off
 if TYPE_CHECKING:  # only exists at runtime
     from _typeshed import DataclassInstance  # type: ignore[attr-defined]
+    DataclassT = TypeVar("DataclassT", bound=DataclassInstance)
 else:
-    DataclassInstance = TypeVar("T")  # pylint:disable=typevar-name-mismatch
+    DataclassT = TypeVar("DataclassT")
+# fmt: on
 
 
 RetVal = Union[str, int, float, bool]
@@ -192,11 +195,11 @@ def _typecast_for_dataclass(
 
 
 def from_environment_as_dataclass(
-    dclass: Type[DataclassInstance],
+    dclass: Type[DataclassT],
     collection_sep: Optional[str] = None,
     dict_kv_joiner: str = "=",
     log_vars: Optional[logging_tools.LoggerLevel] = "WARNING",
-) -> DataclassInstance:
+) -> DataclassT:
     """Obtain configuration values from the OS environment formatted in a
     dataclass.
 
@@ -293,11 +296,11 @@ def from_environment_as_dataclass(
 
 
 def _from_environment_as_dataclass(
-    dclass: Type[DataclassInstance],
+    dclass: Type[DataclassT],
     collection_sep: Optional[str],
     dict_kv_joiner: str,
     log_vars: Optional[logging_tools.LoggerLevel],
-) -> DataclassInstance:
+) -> DataclassT:
 
     # check args
     if (

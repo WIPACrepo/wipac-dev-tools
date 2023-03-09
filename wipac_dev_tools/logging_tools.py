@@ -6,10 +6,13 @@ from typing import TYPE_CHECKING, Callable, List, Optional, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
+# fmt: off
 if TYPE_CHECKING:  # only exists at runtime
     from _typeshed import DataclassInstance  # type: ignore[attr-defined]
+    DataclassT = TypeVar("DataclassT", bound=DataclassInstance)
 else:
-    DataclassInstance = TypeVar("T")  # pylint:disable=typevar-name-mismatch
+    DataclassT = TypeVar("DataclassT")
+# fmt: on
 
 T = TypeVar("T")
 
@@ -71,12 +74,12 @@ def log_argparse_args(
 
 
 def log_dataclass(
-    dclass: DataclassInstance,
+    dclass: DataclassT,
     logger: Union[str, logging.Logger],
     level: LoggerLevel,
     prefix: str = "",
     obfuscate_substrings: Optional[List[str]] = None,
-) -> DataclassInstance:
+) -> DataclassT:
     """Log a dataclass instance's fields and members.
 
     `obfuscate_substrings` is case-insensitive
