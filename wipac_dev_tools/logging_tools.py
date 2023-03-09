@@ -89,7 +89,7 @@ def log_dataclass(
 
     for field in dataclasses.fields(dclass):
         val = getattr(dclass, field.name)
-        if any(s.upper() in obfuscate_substrings for s in field.name):
+        if any(s in field.name.upper() for s in obfuscate_substrings):
             val = "***"
         logger_fn(f"{prefix+' 'if prefix else ''}{field.name}: {val}")
 
