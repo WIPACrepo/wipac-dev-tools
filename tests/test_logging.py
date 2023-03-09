@@ -62,14 +62,17 @@ def test_00(
 
     message = f"this is a test! ({(uuid.uuid4().hex)[:4]})"
 
-    logfn = logging_tools.get_logger_fn(logger_name, log_level)
-    logfn(message)
+    with caplog.at_level(logging.DEBUG):  # allow capturing everything that is logged
+        logfn = logging_tools.get_logger_fn(logger_name, log_level)
+        logfn(message)
 
-    present_third_party_msg = f"here's a third party logger ({(uuid.uuid4().hex)[:4]})"
-    logging.getLogger(present_third_party_name).info(present_third_party_msg)
-    #
-    future_third_party_msg = f"FUTURE 3RD PARTY ({(uuid.uuid4().hex)[:4]})"
-    logging.getLogger(future_third_party_name).warning(future_third_party_msg)
+        present_third_party_msg = (
+            f"here's a third party logger ({(uuid.uuid4().hex)[:4]})"
+        )
+        logging.getLogger(present_third_party_name).info(present_third_party_msg)
+        #
+        future_third_party_msg = f"FUTURE 3RD PARTY ({(uuid.uuid4().hex)[:4]})"
+        logging.getLogger(future_third_party_name).warning(future_third_party_msg)
 
     found_log_record = False
     found_present_third_party = False
