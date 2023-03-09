@@ -2,9 +2,17 @@
 
 import argparse
 import logging
-from typing import Callable, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
+
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance  # only exists at runtime
+else:
+    from typing import TypeVar
+
+    DataclassInstance = TypeVar("T")
+
 
 LoggerLevel = Literal[
     "CRITICAL",
@@ -62,16 +70,13 @@ def log_argparse_args(
     return args
 
 
-T = TypeVar("T")
-
-
 def log_dataclass(
-    dclass: T,
+    dclass: DataclassInstance,
     logger: Union[str, logging.Logger],
     level: LoggerLevel,
     prefix: str = "",
     obfuscate_substrings: Optional[List[str]] = None,
-) -> T:
+) -> DataclassInstance:
     """Log a dataclass instance's fields and members.
 
     `obfuscate_substrings` is case-insensitive
