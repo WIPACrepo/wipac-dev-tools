@@ -144,13 +144,15 @@ def test_10__log_dataclass(caplog: Any) -> None:
     prefix = "blah"
     level = "INFO"
     logger = "my-logger"
-    logging_tools.log_dataclass(
-        dclass,
-        logger=logger,
-        level=level,  # type: ignore[arg-type]
-        prefix=prefix,
-        obfuscate_sensitive_substrings=True,
-    )
+
+    with caplog.at_level(logging.DEBUG):
+        logging_tools.log_dataclass(
+            dclass,
+            logger=logger,
+            level=level,  # type: ignore[arg-type]
+            prefix=prefix,
+            obfuscate_sensitive_substrings=True,
+        )
 
     # assert
     checked = []
