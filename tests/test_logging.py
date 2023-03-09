@@ -155,6 +155,7 @@ def test_10__log_dataclass(caplog: Any) -> None:
     # assert
     checked = []
     for record in caplog.records:
+        print(record)
         for field in dc.fields(dclass):
             if field.name in record.msg:
                 checked.append(field.name)
