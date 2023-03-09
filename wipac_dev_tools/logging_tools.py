@@ -2,16 +2,16 @@
 
 import argparse
 import logging
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance  # only exists at runtime
 else:
-    from typing import TypeVar
-
     DataclassInstance = TypeVar("T")
+
+T = TypeVar("T")
 
 
 LoggerLevel = Literal[
