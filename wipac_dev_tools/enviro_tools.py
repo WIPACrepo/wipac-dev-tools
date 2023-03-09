@@ -51,12 +51,6 @@ KeySpec = Union[str, Sequence[str], OptionalDict]
 # ---------------------------------------------------------------------------------------
 
 
-OBFUSCATE_SUBSTRINGS = ["token", "auth", "pass", "secret"]
-
-
-# ---------------------------------------------------------------------------------------
-
-
 def _typecast(source: str, type_: type) -> RetVal:
     if type_ == bool:
         return bool(strtobool(source.lower()))
@@ -411,6 +405,6 @@ def _from_environment_as_dataclass(
             logging.getLogger(),
             log_vars,
             prefix="(env)",
-            obfuscate_substrings=OBFUSCATE_SUBSTRINGS,
+            obfuscate_sensitive_substrings=True,
         )
     return env_vars
