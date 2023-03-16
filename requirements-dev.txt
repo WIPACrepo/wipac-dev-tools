@@ -14,7 +14,7 @@ charset-normalizer==3.1.0
     # via requests
 exceptiongroup==1.1.0
     # via pytest
-filelock==3.9.0
+filelock==3.10.0
     # via pytest-mypy
 flake8==6.0.0
     # via pytest-flake8
