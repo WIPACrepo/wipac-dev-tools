@@ -12,9 +12,9 @@ certifi==2022.12.7
     # via requests
 charset-normalizer==3.1.0
     # via requests
-exceptiongroup==1.1.0
+exceptiongroup==1.1.1
     # via pytest
-filelock==3.9.0
+filelock==3.10.7
     # via pytest-mypy
 flake8==6.0.0
     # via pytest-flake8
@@ -55,5 +55,5 @@ typing-extensions==4.5.0
     # via
     #   mypy
     #   wipac-dev-tools (setup.py)
-urllib3==1.26.14
+urllib3==1.26.15
     # via requests
