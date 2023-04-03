@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.6.14 (2023-04-03)
+### Other
+* Update wipac-cicd.yml ([#76](https://github.com/WIPACrepo/wipac-dev-tools/issues/76)) ([`dc2e61a`](https://github.com/WIPACrepo/wipac-dev-tools/commit/dc2e61a6b4b189b22242d52a757a93bec3940c00))
+
 ## v1.6.13 (2023-03-09)
 ### Other
 * Obfuscate Sensitive Env Vars ([#70](https://github.com/WIPACrepo/wipac-dev-tools/issues/70)) ([`a13b989`](https://github.com/WIPACrepo/wipac-dev-tools/commit/a13b989d340c492755a89a3bbe7376c47637ac96))
