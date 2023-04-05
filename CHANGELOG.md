@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.6.15 (2023-04-05)
+### Other
+* Fix WIPAC GHA Package Versions ([#77](https://github.com/WIPACrepo/wipac-dev-tools/issues/77)) ([`06cd213`](https://github.com/WIPACrepo/wipac-dev-tools/commit/06cd21375fccc8407d5d0e9c709d1feb69b16982))
+
 ## v1.6.14 (2023-04-03)
 ### Other
 * Update wipac-cicd.yml ([#76](https://github.com/WIPACrepo/wipac-dev-tools/issues/76)) ([`dc2e61a`](https://github.com/WIPACrepo/wipac-dev-tools/commit/dc2e61a6b4b189b22242d52a757a93bec3940c00))
