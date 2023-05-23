@@ -45,7 +45,7 @@ pytest-flake8==1.1.1
     # via wipac-dev-tools (setup.py)
 pytest-mypy==0.10.3
     # via wipac-dev-tools (setup.py)
-requests==2.28.2
+requests==2.31.0
     # via wipac-dev-tools (setup.py)
 tomli==2.0.1
     # via
