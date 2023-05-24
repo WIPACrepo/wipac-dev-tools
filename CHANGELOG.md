@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.6.16 (2023-05-24)
+### Other
+* Bump pv-versions action to v2.1 ([`13c4690`](https://github.com/WIPACrepo/wipac-dev-tools/commit/13c4690599e971d1aa26fb6e30c9b67799d4c850))
+
 ## v1.6.15 (2023-04-05)
 ### Other
 * Fix WIPAC GHA Package Versions ([#77](https://github.com/WIPACrepo/wipac-dev-tools/issues/77)) ([`06cd213`](https://github.com/WIPACrepo/wipac-dev-tools/commit/06cd21375fccc8407d5d0e9c709d1feb69b16982))
