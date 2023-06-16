@@ -7,7 +7,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from typing import Any, Dict, FrozenSet, List, Optional, Set
+from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
 
 from typing_extensions import Final  # 3.8+ get the real thing
 from wipac_dev_tools import (  # noqa # pylint: disable=E0401,C0413
@@ -502,6 +502,53 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, {"bar": "2", "baz": "3", "foo": "1"})
 
+        def test_070__union_none__int(self) -> None:
+            """Test normal use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Union[None, int]
+
+            os.environ["FOO"] = "1"
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, 1)
+
+            del os.environ["FOO"]
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, None)
+
+        def test_071__union_none__bool(self) -> None:
+            """Test normal use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Union[None, bool]
+
+            os.environ["FOO"] = "True"
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, True)
+
+            del os.environ["FOO"]
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, None)
+
+        def test_071__union_none__dict(self) -> None:
+            """Test normal use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Union[None, Dict[str, int]]
+
+            os.environ["FOO"] = "foo=1 bar=2 baz=3"
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, {"bar": 2, "baz": 3, "foo": 1})
+
+            del os.environ["FOO"]
+            config = from_environment_as_dataclass(Config)
+            self.assertEqual(config.FOO, None)
+
+        # TODO: add `|`-tests for py 3.11
+
         def test_100_error__missing_required(self) -> None:
             """Test error use case."""
             # Missing
@@ -648,6 +695,38 @@ if sys.version_info >= (3, 7):
 
             os.environ["FOO"] = "foo bar baz"
             with self.assertRaises(ValueError):
+                from_environment_as_dataclass(Config)
+
+        def test_170__union__not_none_2tuple(self) -> None:
+            """Test error use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Union[int, bool]
+
+            with self.assertRaises(TypeError):
+                from_environment_as_dataclass(Config)
+
+        def test_171__union__not_none_2tuple(self) -> None:
+            """Test error use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Union[int, str]
+
+            with self.assertRaises(TypeError):
+                from_environment_as_dataclass(Config)
+
+        # TODO: add `|`-tests for py 3.11
+
+        def test_171__union__not_none_2tuple(self) -> None:
+            """Test error use case."""
+
+            @dc.dataclass(frozen=True)
+            class Config:
+                FOO: Union[None, int, str]
+
+            with self.assertRaises(TypeError):
                 from_environment_as_dataclass(Config)
 
         def test_200_convert(self) -> None:
