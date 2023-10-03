@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.7.0 (2023-10-03)
+
+### Other
+
+* Python 3.12 and Use `WIPACrepo/wipac-dev-py-setup-action@v2.6` ([#84](https://github.com/WIPACrepo/wipac-dev-tools/issues/84)) ([`7093abb`](https://github.com/WIPACrepo/wipac-dev-tools/commit/7093abb17eafadff9f75b0ff55efb7d5e348818f))
+
 ## v1.6.16 (2023-05-24)
 ### Other
 * Bump pv-versions action to v2.1 ([`13c4690`](https://github.com/WIPACrepo/wipac-dev-tools/commit/13c4690599e971d1aa26fb6e30c9b67799d4c850))
