@@ -384,7 +384,7 @@ def _from_environment_as_dataclass(
             ) from e
 
     try:
-        env_vars = dclass(**kwargs)
+        env_vars: DataclassT = dclass(**kwargs)
     except TypeError as e:
         m = re.fullmatch(
             r".*__init__\(\) missing \d+ required positional argument(?P<s>s?): (?P<args>.+)",
@@ -406,4 +406,4 @@ def _from_environment_as_dataclass(
             prefix="(env)",
             obfuscate_sensitive_substrings=True,
         )
-    return env_vars  # type: ignore[no-any-return]
+    return env_vars
