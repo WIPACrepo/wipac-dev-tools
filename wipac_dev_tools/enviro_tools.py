@@ -295,7 +295,6 @@ def _from_environment_as_dataclass(
     dict_kv_joiner: str,
     log_vars: Optional[logging_tools.LoggerLevel],
 ) -> DataclassT:
-
     # check args
     if (
         (dict_kv_joiner == collection_sep)
@@ -407,4 +406,4 @@ def _from_environment_as_dataclass(
             prefix="(env)",
             obfuscate_sensitive_substrings=True,
         )
-    return env_vars
+    return env_vars  # type: ignore[no-any-return]
