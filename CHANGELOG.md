@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.7.1 (2023-10-25)
+
+### Other
+
+* Bump `WIPACrepo/wipac-dev-py-setup-action` ([#86](https://github.com/WIPACrepo/wipac-dev-tools/issues/86)) ([`f5d8f1f`](https://github.com/WIPACrepo/wipac-dev-tools/commit/f5d8f1fd2db73d5a2134c04312e52a84fe1c88e2))
+
 ## v1.7.0 (2023-10-03)
 
 ### Other
