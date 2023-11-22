@@ -16,7 +16,7 @@ __all__ = [
 ]
 
 # version is a human-readable version number.
-__version__ = "1.7.1"
+__version__ = "1.8.0"
 
 # version_info is a four-tuple for programmatic comparison. The first
 # three numbers are the components of the version number. The fourth
