@@ -15,6 +15,8 @@ def test_00() -> None:
         actual = data_safety_tools.obfuscate_value_if_sensitive(name, unimportant_value)
         print(actual)
         if name in senstives:
+            assert data_safety_tools.is_name_sensitive(name)
             assert actual == "***"
         else:
+            assert not data_safety_tools.is_name_sensitive(name)
             assert actual == unimportant_value
