@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.8.1 (2023-11-22)
+
+### Other
+
+* Make `sensitive_data_tools.is_name_sensitive()` ([#88](https://github.com/WIPACrepo/wipac-dev-tools/issues/88)) ([`dabea36`](https://github.com/WIPACrepo/wipac-dev-tools/commit/dabea36e80e74c10e461b64106375beb0aa264af))
+
 ## v1.8.0 (2023-11-22)
 
 
