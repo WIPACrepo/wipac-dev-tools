@@ -6,9 +6,11 @@ from typing import TYPE_CHECKING, Callable, List, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
+from .data_safety_tools import obfuscate_value_if_sensitive
+
 # fmt: off
 if TYPE_CHECKING:  # _typeshed only exists at runtime
-    from _typeshed import DataclassInstance  # type: ignore[attr-defined]
+    from _typeshed import DataclassInstance
     DataclassT = TypeVar("DataclassT", bound=DataclassInstance)
 else:
     DataclassT = TypeVar("DataclassT")
@@ -18,9 +20,6 @@ T = TypeVar("T")
 
 
 # ---------------------------------------------------------------------------------------
-
-
-OBFUSCATE_SUBSTRINGS_UPPER = ["TOKEN", "AUTH", "PASS", "SECRET"]
 
 
 LoggerLevel = Literal[
@@ -80,10 +79,7 @@ def log_argparse_args(
     logger_fn = get_logger_fn(logger, level)
 
     for arg, val in vars(args).items():
-        if any(s in arg.upper() for s in OBFUSCATE_SUBSTRINGS_UPPER):
-            logger_fn(f"{arg}: ***")
-        else:
-            logger_fn(f"{arg}: {val}")
+        logger_fn(f"{arg}: {obfuscate_value_if_sensitive(arg, val)}")
 
     return args
 
@@ -112,8 +108,7 @@ def log_dataclass(
     for field in dataclasses.fields(dclass):
         val = getattr(dclass, field.name)
         if obfuscate_sensitive_substrings:
-            if any(s in field.name.upper() for s in OBFUSCATE_SUBSTRINGS_UPPER):
-                val = "***"
+            val = obfuscate_value_if_sensitive(field.name, val)
         logger_fn(f"{prefix+' 'if prefix else ''}{field.name}: {val}")
 
     return dclass
@@ -193,7 +188,7 @@ def _set_level(
     # root
     if use_coloredlogs:
         try:
-            import coloredlogs  # type: ignore[import]  # pylint: disable=import-outside-toplevel
+            import coloredlogs  # type: ignore[import-untyped]  # pylint: disable=import-outside-toplevel
 
             coloredlogs.install(level=first_party_level)  # root
         except ImportError:
