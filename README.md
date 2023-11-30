@@ -14,7 +14,7 @@ _Available for Python 3.6+_
 ```
 def set_level(
     level: LoggerLevel,
-    first_party_loggers: Union[None, str, logging.Logger, List[Union[str, logging.Logger]]] = None,
+    first_party_loggers: Union[None, str, logging.Logger, List[LogggerObjectOrName]] = None,
     third_party_level: LoggerLevel = "WARNING",
     future_third_parties: Union[None, str, List[str]] = None,
     use_coloredlogs: bool = False,

@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import TYPE_CHECKING, Callable, List, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -17,6 +17,8 @@ else:
 # fmt: on
 
 T = TypeVar("T")
+
+LogggerObjectOrName = Union[str, logging.Logger]
 
 
 # ---------------------------------------------------------------------------------------
@@ -86,7 +88,7 @@ def log_argparse_args(
 
 def log_dataclass(
     dclass: DataclassT,
-    logger: Union[str, logging.Logger],
+    logger: LogggerObjectOrName,
     level: LoggerLevel,
     prefix: str = "",
     obfuscate_sensitive_substrings: bool = False,
@@ -131,7 +133,7 @@ def _set_and_share(log_name: str, level: LoggerLevel, text: str) -> None:
 def set_level(
     level: LoggerLevel,
     first_party_loggers: Union[
-        None, str, logging.Logger, List[Union[str, logging.Logger]]
+        None, LogggerObjectOrName, List[LogggerObjectOrName]
     ] = None,
     third_party_level: LoggerLevel = "WARNING",
     future_third_parties: Union[None, str, List[str]] = None,
