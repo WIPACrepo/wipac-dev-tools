@@ -182,11 +182,11 @@ def set_level(
             ) from e
 
     return _set_level(
-        level.upper(),  # type: ignore
-        first_parties,
-        third_party_level.upper(),  # type: ignore
-        list(logging.root.manager.loggerDict) + _to_list(future_third_parties),
-        use_coloredlogs,
+        first_party_level=level.upper(),  # type: ignore
+        first_parties=first_parties,
+        third_party_level=third_party_level.upper(),  # type: ignore
+        future_third_parties=_to_list(future_third_parties),
+        use_coloredlogs=use_coloredlogs,
         specialty_loggers=(
             {_logger_to_name(k): v for k, v in specialty_loggers.items()}
             if specialty_loggers
@@ -199,7 +199,7 @@ def _set_level(
     first_party_level: LoggerLevel,
     first_parties: List[str],
     third_party_level: LoggerLevel,
-    third_parties: List[str],
+    future_third_parties: List[str],
     use_coloredlogs: bool,
     specialty_loggers: Dict[str, LoggerLevel],
 ) -> None:
@@ -219,15 +219,19 @@ def _set_level(
         logging.getLogger().setLevel(first_party_level)
     logging.getLogger().info(f"Root Logger: '' ({first_party_level})")
 
-    all_base_loggers = set(
+    all_known_base_loggers = set(
         lg.split(".", maxsplit=1)[0]
-        for lg in third_parties + first_parties + list(specialty_loggers.keys())
+        for lg in first_parties
+        + list(logging.root.manager.loggerDict)
+        + future_third_parties
+        + list(specialty_loggers.keys())
     )
 
-    # third-party
-    # Ex: third_party=A.B.C -> set A, if A isn't a first_party
-    # Ex: first_party=X.Y -> set X, if X isn't a first_party
-    for base_logger in sorted(all_base_loggers):
+    # base-loggers (including third-parties)
+    # Ex: some_logger=A.B.C -> base_logger=A -> set A,
+    #       only if A isn't a first_party/specialty_logger.
+    #       Note: If A.B is claimed, that's okay; it'll be set later on
+    for base_logger in sorted(all_known_base_loggers):
         if base_logger in first_parties + list(specialty_loggers.keys()):
             continue
         _set_and_share(base_logger, third_party_level, "Third-Party")
