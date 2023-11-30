@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import TYPE_CHECKING, Callable, List, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -17,6 +17,8 @@ else:
 # fmt: on
 
 T = TypeVar("T")
+
+LogggerObjectOrName = Union[str, logging.Logger]
 
 
 # ---------------------------------------------------------------------------------------
@@ -86,7 +88,7 @@ def log_argparse_args(
 
 def log_dataclass(
     dclass: DataclassT,
-    logger: Union[str, logging.Logger],
+    logger: LogggerObjectOrName,
     level: LoggerLevel,
     prefix: str = "",
     obfuscate_sensitive_substrings: bool = False,
@@ -123,6 +125,15 @@ def _to_list(pseudo_list: Union[None, T, List[T]]) -> List[T]:
         return pseudo_list
 
 
+def _logger_to_name(logger: LogggerObjectOrName) -> str:
+    if isinstance(logger, logging.Logger):
+        return logger.name
+    elif isinstance(logger, str):
+        return logger
+    else:
+        raise TypeError("not Logger object or str")
+
+
 def _set_and_share(log_name: str, level: LoggerLevel, text: str) -> None:
     logging.getLogger(log_name).setLevel(level)
     logging.getLogger().info(f"{text} Logger: '{log_name}' ({level})")
@@ -131,14 +142,14 @@ def _set_and_share(log_name: str, level: LoggerLevel, text: str) -> None:
 def set_level(
     level: LoggerLevel,
     first_party_loggers: Union[
-        None, str, logging.Logger, List[Union[str, logging.Logger]]
+        None, LogggerObjectOrName, List[LogggerObjectOrName]
     ] = None,
     third_party_level: LoggerLevel = "WARNING",
     future_third_parties: Union[None, str, List[str]] = None,
+    specialty_loggers: Optional[Dict[LogggerObjectOrName, LoggerLevel]] = None,
     use_coloredlogs: bool = False,
 ) -> None:
-    """Set the level of the root logger, first-party loggers, and third-party
-    loggers.
+    """Set the level of loggers of various precedence.
 
     The root logger and first-party logger(s) are set to the same level (`level`).
 
@@ -150,31 +161,33 @@ def set_level(
         `third_party_level`
             the desired logging level for any other (currently) available loggers, case-insensitive
         `future_third_parties`
-            additional third party logger(s) which have not yet been created
+            additional third party logger(s) which have not yet been created (at call time)
+        `specialty_loggers`
+            additional loggers, each paired with a logging level, which are not
+            considered first-party nor third-party loggers. **These have the highest precedence**
         `use_coloredlogs`
             if True, will import and use the `coloredlogs` package.
             This will set the logger format and use colored text.
     """
-    # convert to names (str) only
-    first_parties: List[str] = []
-
-    for lg in _to_list(first_party_loggers):
-        if isinstance(lg, logging.Logger):
-            first_parties.append(lg.name)
-        elif isinstance(lg, str):
-            first_parties.append(lg)
-        else:
-            raise TypeError(
-                f"'first_party_loggers' must be either 'None', or "
-                f"a list of Logger instances or names: {first_party_loggers}"
-            )
-
     return _set_level(
-        level.upper(),  # type: ignore
-        first_parties,
-        third_party_level.upper(),  # type: ignore
-        list(logging.root.manager.loggerDict) + _to_list(future_third_parties),
-        use_coloredlogs,
+        first_party_level=level.upper(),  # type: ignore
+        #
+        first_parties=list(
+            _logger_to_name(lg)  # type: ignore[arg-type]
+            for lg in _to_list(first_party_loggers)
+        ),
+        #
+        third_party_level=third_party_level.upper(),  # type: ignore
+        #
+        future_third_parties=_to_list(future_third_parties),
+        #
+        use_coloredlogs=use_coloredlogs,
+        #
+        specialty_loggers=(
+            {_logger_to_name(k): v for k, v in specialty_loggers.items()}
+            if specialty_loggers
+            else {}
+        ),
     )
 
 
@@ -182,10 +195,11 @@ def _set_level(
     first_party_level: LoggerLevel,
     first_parties: List[str],
     third_party_level: LoggerLevel,
-    third_parties: List[str],
+    future_third_parties: List[str],
     use_coloredlogs: bool,
+    specialty_loggers: Dict[str, LoggerLevel],
 ) -> None:
-    # root
+    # set root -> first_party_level
     if use_coloredlogs:
         try:
             import coloredlogs  # type: ignore[import-untyped]  # pylint: disable=import-outside-toplevel
@@ -201,15 +215,27 @@ def _set_level(
         logging.getLogger().setLevel(first_party_level)
     logging.getLogger().info(f"Root Logger: '' ({first_party_level})")
 
-    # third-party
-    # Ex: third_party=A.B.C -> set A, if A isn't a first_party
-    # Ex: first_party=X.Y -> set X, if X isn't a first_party
-    for base_logger in sorted(
-        set(lg.split(".", maxsplit=1)[0] for lg in third_parties + first_parties)
-    ):
-        if base_logger not in first_parties:
-            _set_and_share(base_logger, third_party_level, "Third-Party")
+    all_known_base_loggers = set(
+        lg.split(".", maxsplit=1)[0]
+        for lg in first_parties
+        + list(logging.root.manager.loggerDict)
+        + future_third_parties
+        + list(specialty_loggers.keys())
+    )
+
+    # base-loggers (including third-parties)
+    # Ex: some_logger=A.B.C -> base_logger=A -> set A,
+    #       only if A isn't a first_party/specialty_logger.
+    #       Note: If A.B is claimed, that's okay; it'll be set later on
+    for base_logger in sorted(all_known_base_loggers):
+        if base_logger in first_parties + list(specialty_loggers.keys()):
+            continue
+        _set_and_share(base_logger, third_party_level, "Third-Party")
 
     # first-party
     for log_name in sorted(set(first_parties)):
         _set_and_share(log_name, first_party_level, "First-Party")
+
+    # specialty loggers
+    for log_name, level in sorted(specialty_loggers.items()):
+        _set_and_share(log_name, level, "Specialty")

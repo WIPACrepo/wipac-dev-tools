@@ -14,13 +14,15 @@ _Available for Python 3.6+_
 ```
 def set_level(
     level: LoggerLevel,
-    first_party_loggers: Union[None, str, logging.Logger, List[Union[str, logging.Logger]]] = None,
+    first_party_loggers: Union[
+        None, LogggerObjectOrName, List[LogggerObjectOrName]
+    ] = None,
     third_party_level: LoggerLevel = "WARNING",
     future_third_parties: Union[None, str, List[str]] = None,
+    specialty_loggers: Optional[Dict[LogggerObjectOrName, LoggerLevel]] = None,
     use_coloredlogs: bool = False,
 ) -> None:
-    """Set the level of the root logger, first-party loggers, and third-party
-    loggers.
+    """Set the level of loggers of various precedence.
 
     The root logger and first-party logger(s) are set to the same level (`level`).
 
@@ -32,7 +34,10 @@ def set_level(
         `third_party_level`
             the desired logging level for any other (currently) available loggers, case-insensitive
         `future_third_parties`
-            additional third party logger(s) which have not yet been created
+            additional third party logger(s) which have not yet been created (at call time)
+        `specialty_loggers`
+            additional loggers, each paired with a logging level, which are not
+            considered first-party nor third-party loggers. **These have the highest precedence**
         `use_coloredlogs`
             if True, will import and use the `coloredlogs` package.
             This will set the logger format and use colored text.
