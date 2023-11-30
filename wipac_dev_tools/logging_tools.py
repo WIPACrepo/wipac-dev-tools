@@ -175,7 +175,7 @@ def set_level(
     first_parties: List[str] = []
     for lg in _to_list(first_party_loggers):
         try:
-            first_parties.append(_logger_to_name(lg))
+            first_parties.append(_logger_to_name(lg))  # type: ignore[arg-type]
         except TypeError as e:
             raise TypeError(
                 f"'first_party_loggers' must be either 'None', or "
