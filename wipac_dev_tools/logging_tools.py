@@ -125,6 +125,15 @@ def _to_list(pseudo_list: Union[None, T, List[T]]) -> List[T]:
         return pseudo_list
 
 
+def _logger_to_name(logger: LogggerObjectOrName) -> str:
+    if isinstance(logger, logging.Logger):
+        return logger.name
+    elif isinstance(logger, str):
+        return logger
+    else:
+        raise TypeError("not Logger object or str")
+
+
 def _set_and_share(log_name: str, level: LoggerLevel, text: str) -> None:
     logging.getLogger(log_name).setLevel(level)
     logging.getLogger().info(f"{text} Logger: '{log_name}' ({level})")
@@ -137,6 +146,7 @@ def set_level(
     ] = None,
     third_party_level: LoggerLevel = "WARNING",
     future_third_parties: Union[None, str, List[str]] = None,
+    specialty_loggers: Optional[Dict[LogggerObjectOrName, LoggerLevel]] = None,
     use_coloredlogs: bool = False,
 ) -> None:
     """Set the level of the root logger, first-party loggers, and third-party
@@ -153,23 +163,24 @@ def set_level(
             the desired logging level for any other (currently) available loggers, case-insensitive
         `future_third_parties`
             additional third party logger(s) which have not yet been created
+        `specialty_loggers`
+            additional loggers, each paired with a logging level, which are not
+            considered first-party nor third-party loggers
         `use_coloredlogs`
             if True, will import and use the `coloredlogs` package.
             This will set the logger format and use colored text.
     """
     # convert to names (str) only
-    first_parties: List[str] = []
 
+    first_parties: List[str] = []
     for lg in _to_list(first_party_loggers):
-        if isinstance(lg, logging.Logger):
-            first_parties.append(lg.name)
-        elif isinstance(lg, str):
-            first_parties.append(lg)
-        else:
+        try:
+            first_parties.append(_logger_to_name(lg))
+        except TypeError as e:
             raise TypeError(
                 f"'first_party_loggers' must be either 'None', or "
                 f"a list of Logger instances or names: {first_party_loggers}"
-            )
+            ) from e
 
     return _set_level(
         level.upper(),  # type: ignore
@@ -177,6 +188,11 @@ def set_level(
         third_party_level.upper(),  # type: ignore
         list(logging.root.manager.loggerDict) + _to_list(future_third_parties),
         use_coloredlogs,
+        specialty_loggers=(
+            {_logger_to_name(k): v for k, v in specialty_loggers.items()}
+            if specialty_loggers
+            else {}
+        ),
     )
 
 
@@ -186,6 +202,7 @@ def _set_level(
     third_party_level: LoggerLevel,
     third_parties: List[str],
     use_coloredlogs: bool,
+    specialty_loggers: Dict[str, LoggerLevel],
 ) -> None:
     # root
     if use_coloredlogs:
