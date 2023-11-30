@@ -149,8 +149,7 @@ def set_level(
     specialty_loggers: Optional[Dict[LogggerObjectOrName, LoggerLevel]] = None,
     use_coloredlogs: bool = False,
 ) -> None:
-    """Set the level of the root logger, first-party loggers, and third-party
-    loggers.
+    """Set the level of loggers of various precedence.
 
     The root logger and first-party logger(s) are set to the same level (`level`).
 
@@ -162,10 +161,10 @@ def set_level(
         `third_party_level`
             the desired logging level for any other (currently) available loggers, case-insensitive
         `future_third_parties`
-            additional third party logger(s) which have not yet been created
+            additional third party logger(s) which have not yet been created (at call time)
         `specialty_loggers`
             additional loggers, each paired with a logging level, which are not
-            considered first-party nor third-party loggers
+            considered first-party nor third-party loggers. **These have the highest precedence**
         `use_coloredlogs`
             if True, will import and use the `coloredlogs` package.
             This will set the logger format and use colored text.
@@ -204,7 +203,7 @@ def _set_level(
     use_coloredlogs: bool,
     specialty_loggers: Dict[str, LoggerLevel],
 ) -> None:
-    # root
+    # set root -> first_party_level
     if use_coloredlogs:
         try:
             import coloredlogs  # type: ignore[import-untyped]  # pylint: disable=import-outside-toplevel
@@ -220,15 +219,23 @@ def _set_level(
         logging.getLogger().setLevel(first_party_level)
     logging.getLogger().info(f"Root Logger: '' ({first_party_level})")
 
+    all_base_loggers = set(
+        lg.split(".", maxsplit=1)[0]
+        for lg in third_parties + first_parties + list(specialty_loggers.keys())
+    )
+
     # third-party
     # Ex: third_party=A.B.C -> set A, if A isn't a first_party
     # Ex: first_party=X.Y -> set X, if X isn't a first_party
-    for base_logger in sorted(
-        set(lg.split(".", maxsplit=1)[0] for lg in third_parties + first_parties)
-    ):
-        if base_logger not in first_parties:
-            _set_and_share(base_logger, third_party_level, "Third-Party")
+    for base_logger in sorted(all_base_loggers):
+        if base_logger in first_parties + list(specialty_loggers.keys()):
+            continue
+        _set_and_share(base_logger, third_party_level, "Third-Party")
 
     # first-party
     for log_name in sorted(set(first_parties)):
         _set_and_share(log_name, first_party_level, "First-Party")
+
+    # specialty loggers
+    for log_name, level in sorted(specialty_loggers.items()):
+        _set_and_share(log_name, level, "Specialty")
