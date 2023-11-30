@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.8.2 (2023-11-30)
+
+### Other
+
+* Add `specialty_loggers` to `set_level()` ([#89](https://github.com/WIPACrepo/wipac-dev-tools/issues/89)) ([`95fa8ba`](https://github.com/WIPACrepo/wipac-dev-tools/commit/95fa8bad27361596f0ac73cb7b46beb81ecc0b83))
+
 ## v1.8.1 (2023-11-22)
 
 ### Other
