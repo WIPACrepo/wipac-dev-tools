@@ -172,7 +172,10 @@ def set_level(
     return _set_level(
         first_party_level=level.upper(),  # type: ignore
         #
-        first_parties=list(_logger_to_name(lg) for lg in _to_list(first_party_loggers)),
+        first_parties=list(
+            _logger_to_name(lg)  # type: ignore[arg-type]
+            for lg in _to_list(first_party_loggers)
+        ),
         #
         third_party_level=third_party_level.upper(),  # type: ignore
         #
