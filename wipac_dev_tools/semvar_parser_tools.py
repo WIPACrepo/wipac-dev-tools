@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import requests
 import semantic_version  # type: ignore[import-untyped]
@@ -34,14 +34,14 @@ def get_latest_py3_release() -> Tuple[int, int]:
 def list_all_majmin_versions(
     major: int,
     semvar_range: str,
-    max_minor: int,
+    max_minor: int = 99,
 ) -> List[Tuple[int, int]]:
     """Get a list of the matching major-minor versions for the semvar range.
 
     Example:
-        major: 3  semvar_range: >=3.5.1,<3.9    max_minor: 99  -> [3.6, 3.7, 3.8]
-        major: 3  semvar_range: >=3.5.1         max_minor: 8   -> [3.6, 3.7, 3.8]
-        major: 3  semvar_range: >=3,<3.6,!=3.3  max_minor: 99  -> [3.0, 3.1, 3.2, 3.4, 3.5]
+        major: 3  semvar_range: >=3.5.1,<3.9    max_minor: default  -> [3.6, 3.7, 3.8]
+        major: 3  semvar_range: >=3.5.1         max_minor: 8        -> [3.6, 3.7, 3.8]
+        major: 3  semvar_range: >=3,<3.6,!=3.3  max_minor: default  -> [3.0, 3.1, 3.2, 3.4, 3.5]
     """
     spec = semantic_version.SimpleSpec(semvar_range.replace(" ", ""))
 
@@ -50,5 +50,5 @@ def list_all_majmin_versions(
     )
 
     all_of_em = [(int(v.major), int(v.minor)) for v in filtered]
-    LOGGER.info(f"supported Python releases: {all_of_em}")
+    LOGGER.info(f"matching major-minor versions: {all_of_em}")
     return all_of_em
