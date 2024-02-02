@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import Tuple
+from typing import List, Tuple
 
 import requests
 import semantic_version  # type: ignore[import-untyped]
@@ -31,7 +31,7 @@ def get_latest_py3_release() -> Tuple[int, int]:
     return int(version.split(".")[0]), int(version.split(".")[1])
 
 
-def list_py3_releases(semvar_range: str) -> list[Tuple[int, int]]:
+def list_py3_releases(semvar_range: str) -> List[Tuple[int, int]]:
     """Get a list of the matching python3 releases for the semvar range."""
     spec = semantic_version.SimpleSpec(semvar_range.replace(" ", ""))
     LOGGER.info(f"getting the max supported python3 release for {spec}")
