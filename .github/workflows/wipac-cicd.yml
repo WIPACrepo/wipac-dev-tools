@@ -73,7 +73,7 @@ jobs:
       - name: Pytest
         run: |
           pip install --upgrade pip wheel setuptools pytest
-          pip install .
+          pip install .[dev]
           pytest -vvvv tests
 
   release:
