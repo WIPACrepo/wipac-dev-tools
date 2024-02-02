@@ -18,7 +18,7 @@ def test_available() -> None:
     }
     assert set(wipac_dev_tools.__all__) == all_of_em
 
-    # look at dir()
+    # look at dir() -- includes the non-explicitly exported
     availables = set(dir(wipac_dev_tools))
     availables = {a for a in availables if not a.startswith("__")}
 
@@ -26,4 +26,5 @@ def test_available() -> None:
         "version_info",
         "enviro_tools",
         "setup_tools",
+        "semvar_parser_tools",
     }
