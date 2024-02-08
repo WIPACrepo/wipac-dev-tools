@@ -26,5 +26,5 @@ def test_available() -> None:
         "version_info",
         "enviro_tools",
         "setup_tools",
-        "semvar_parser_tools",
+        "semver_parser_tools",
     }
