@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.9.1 (2024-02-08)
+
+### Other
+
+* Correct Naming: `semver_parser_tools.py` ([#92](https://github.com/WIPACrepo/wipac-dev-tools/issues/92)) ([`445da2e`](https://github.com/WIPACrepo/wipac-dev-tools/commit/445da2eaed1fda5d24eac91130b359718e92d6fa))
+
 ## v1.9.0 (2024-02-02)
 
 
