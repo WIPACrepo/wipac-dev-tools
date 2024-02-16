@@ -70,7 +70,7 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: WIPACrepo/wipac-dev-py-setup-action@v3.1
+        uses: WIPACrepo/wipac-dev-py-setup-action@toml
         with:
           base-keywords: WIPAC IceCube
 
