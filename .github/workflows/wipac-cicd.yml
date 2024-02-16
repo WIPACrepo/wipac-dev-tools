@@ -48,13 +48,17 @@ jobs:
         # dependabot can't access normal secrets
         #   & don't run non-branch triggers (like tags)
         #   & we don't want to trigger an update on PR's merge to main/master/default (which is a branch)
-        if: |
-          github.actor != 'dependabot[bot]' &&
-          github.ref_type == 'branch' &&
-          format('refs/heads/{0}', github.event.repository.default_branch) != github.ref
         run: |
-          echo "OKAY_BRANCH=true" >> "$GITHUB_OUTPUT"
-          echo "yes, this branch is compatible"
+          if [[ ${{github.actor}} != 'dependabot[bot]' && \
+              ${{github.ref_type}} == 'branch' && \
+              ${{format('refs/heads/{0}', github.event.repository.default_branch)}} != ${{github.ref}} \
+          ]]; then
+            echo "OKAY_BRANCH=true" >> "$GITHUB_OUTPUT"
+            echo "yes, this branch is compatible"
+          else
+            echo "OKAY_BRANCH=false" >> "$GITHUB_OUTPUT"
+            echo "no, this branch is incompatible"
+          fi
 
   py-setup:
     needs: [writable-branch-detect]
