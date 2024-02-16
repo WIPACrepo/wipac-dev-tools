@@ -49,7 +49,8 @@ jobs:
         #   & don't run non-branch triggers (like tags)
         #   & we don't want to trigger an update on PR's merge to main/master/default (which is a branch)
         run: |
-          if [[ ${{github.actor}} != 'dependabot[bot]' && \
+          if [[ \
+              ${{github.actor}} != 'dependabot[bot]' && \
               ${{github.ref_type}} == 'branch' && \
               ${{format('refs/heads/{0}', github.event.repository.default_branch)}} != ${{github.ref}} \
           ]]; then
