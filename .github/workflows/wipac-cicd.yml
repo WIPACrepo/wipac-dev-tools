@@ -59,11 +59,11 @@ jobs:
     needs: [writable-branch-detect]
     runs-on: ubuntu-latest
     steps:
-      - if: needs.job1.writable-branch-detect.OKAY_BRANCH == 'true'
+      - if: needs.writable-branch-detect.outputs.OKAY_BRANCH == 'true'
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      - if: needs.job1.writable-branch-detect.OKAY_BRANCH == 'true'
+      - if: needs.writable-branch-detect.outputs.OKAY_BRANCH == 'true'
         uses: WIPACrepo/wipac-dev-py-setup-action@v3.1
         with:
           base-keywords: WIPAC IceCube
@@ -72,11 +72,11 @@ jobs:
     needs: [writable-branch-detect]
     runs-on: ubuntu-latest
     steps:
-      - if: needs.job1.writable-branch-detect.OKAY_BRANCH == 'true'
+      - if: needs.writable-branch-detect.outputs.OKAY_BRANCH == 'true'
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      - if: needs.job1.writable-branch-detect.OKAY_BRANCH == 'true'
+      - if: needs.writable-branch-detect.outputs.OKAY_BRANCH == 'true'
         uses: WIPACrepo/wipac-dev-py-dependencies-action@v1.1
 
   ######################################################################################
