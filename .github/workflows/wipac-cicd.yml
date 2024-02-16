@@ -54,6 +54,7 @@ jobs:
           format('refs/heads/{0}', github.event.repository.default_branch) != github.ref
         run: |
           echo "OKAY_BRANCH=true" >> "$GITHUB_OUTPUT"
+          echo "yes, this branch is compatible"
 
   py-setup:
     needs: [writable-branch-detect]
