@@ -1,6 +1,6 @@
 name: wipac ci/cd
 
-on: [push]
+on: [ push ]
 
 jobs:
 
@@ -23,7 +23,7 @@ jobs:
       - uses: WIPACrepo/wipac-dev-flake8-action@v1.0
 
   mypy:
-    needs: [py-versions]
+    needs: [ py-versions ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -62,7 +62,7 @@ jobs:
           fi
 
   py-setup:
-    needs: [writable-branch-detect]
+    needs: [ writable-branch-detect ]
     runs-on: ubuntu-latest
     steps:
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
@@ -73,10 +73,10 @@ jobs:
         uses: WIPACrepo/wipac-dev-py-setup-action@toml
         with:
           python_min: 3.8
-          base-keywords: WIPAC
+          keywords: WIPAC python tools utilities
 
   py-dependencies:
-    needs: [writable-branch-detect]
+    needs: [ writable-branch-detect ]
     runs-on: ubuntu-latest
     steps:
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
@@ -89,7 +89,7 @@ jobs:
   ######################################################################################
 
   tests:
-    needs: [py-versions]
+    needs: [ py-versions ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -111,25 +111,25 @@ jobs:
   release:
     # only run on main/master/default
     if: format('refs/heads/{0}', github.event.repository.default_branch) == github.ref
-    needs: [flake8, mypy, py-setup, py-dependencies, tests]
+    needs: [ flake8, mypy, py-setup, py-dependencies, tests ]
     runs-on: ubuntu-latest
     concurrency: release  # prevent any possible race conditions
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    # Python-Package Version Bump
-    - uses: python-semantic-release/python-semantic-release@master
-      id: release
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-    # PyPI Release
-    - uses: pypa/gh-action-pypi-publish@release/v1
-      if: steps.release.outputs.released == 'true'
-      with:
-        password: ${{ secrets.PYPI_TOKEN }}
-    # GitHub Release
-    - uses: python-semantic-release/upload-to-gh-release@main
-      if: steps.release.outputs.released == 'true'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      # Python-Package Version Bump
+      - uses: python-semantic-release/python-semantic-release@master
+        id: release
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      # PyPI Release
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        if: steps.release.outputs.released == 'true'
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+      # GitHub Release
+      - uses: python-semantic-release/upload-to-gh-release@main
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
