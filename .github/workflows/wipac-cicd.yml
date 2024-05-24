@@ -73,6 +73,9 @@ jobs:
         uses: WIPACrepo/wipac-dev-py-setup-action@toml
         with:
           python_min: 3.8
+          pypi_name: wipac-dev-tools
+          author: WIPAC Developers
+          author_email: developers@icecube.wisc.edu
           keywords: WIPAC python tools utilities
 
   py-dependencies:
