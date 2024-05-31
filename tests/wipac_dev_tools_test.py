@@ -24,6 +24,7 @@ def test_available() -> None:
 
     assert availables == all_of_em | {
         "version_info",
+        "importlib_metadata",
         "enviro_tools",
         "setup_tools",
         "semver_parser_tools",
