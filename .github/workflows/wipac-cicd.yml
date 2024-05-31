@@ -70,7 +70,7 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: WIPACrepo/wipac-dev-py-setup-action@toml-pkg-version-fix
+        uses: WIPACrepo/wipac-dev-py-setup-action@v4.0
         with:
           python_min: 3.8
           pypi_name: wipac-dev-tools
