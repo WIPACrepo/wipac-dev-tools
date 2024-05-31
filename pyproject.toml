@@ -14,6 +14,10 @@ readme = "README.md"
 classifiers = ["Development Status :: 5 - Production/Stable", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12"]
 requires-python = ">=3.8, <3.13"
 
+[[project.authors]]
+name = "WIPAC Developers"
+email = "developers@icecube.wisc.edu"
+
 [project.find]
 namespaces = false
 
@@ -38,4 +42,5 @@ patch_tags = ["[patch]", "[fix]", " ", "!", "#", "$", "%", "&", "'", "(", ")", "
 "*" = ["py.typed"]
 
 [tool.setuptools.packages.find]
+namespaces = false
 exclude = ["test", "tests", "doc", "docs", "resource", "resources", "example", "examples"]
