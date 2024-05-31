@@ -1,6 +1,6 @@
 name: wipac ci/cd
 
-on: [push]
+on: [ push ]
 
 jobs:
 
@@ -9,29 +9,29 @@ jobs:
     outputs:
       matrix: ${{ steps.versions.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: versions
-        uses: WIPACrepo/wipac-dev-py-versions-action@v2.2
+        uses: WIPACrepo/wipac-dev-py-versions-action@v2.3
 
   ######################################################################################
 
   flake8:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
       - uses: WIPACrepo/wipac-dev-flake8-action@v1.0
 
   mypy:
-    needs: [py-versions]
+    needs: [ py-versions ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py3 }}
       - uses: WIPACrepo/wipac-dev-mypy-action@v2.0
@@ -62,41 +62,45 @@ jobs:
           fi
 
   py-setup:
-    needs: [writable-branch-detect]
+    needs: [ writable-branch-detect ]
     runs-on: ubuntu-latest
     steps:
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: WIPACrepo/wipac-dev-py-setup-action@v3.1
+        uses: WIPACrepo/wipac-dev-py-setup-action@v4.0
         with:
-          base-keywords: WIPAC IceCube
+          python_min: 3.8
+          pypi_name: wipac-dev-tools
+          author: WIPAC Developers
+          author_email: developers@icecube.wisc.edu
+          keywords: WIPAC python tools utilities
 
   py-dependencies:
-    needs: [writable-branch-detect]
+    needs: [ writable-branch-detect ]
     runs-on: ubuntu-latest
     steps:
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: WIPACrepo/wipac-dev-py-dependencies-action@v1.1
+        uses: WIPACrepo/wipac-dev-py-dependencies-action@v1.2
 
   ######################################################################################
 
   tests:
-    needs: [py-versions]
+    needs: [ py-versions ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py3 }}
       - name: Pytest
@@ -110,25 +114,25 @@ jobs:
   release:
     # only run on main/master/default
     if: format('refs/heads/{0}', github.event.repository.default_branch) == github.ref
-    needs: [flake8, mypy, py-setup, py-dependencies, tests]
+    needs: [ flake8, mypy, py-setup, py-dependencies, tests ]
     runs-on: ubuntu-latest
     concurrency: release  # prevent any possible race conditions
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    # Python-Package Version Bump
-    - uses: python-semantic-release/python-semantic-release@master
-      id: release
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-    # PyPI Release
-    - uses: pypa/gh-action-pypi-publish@release/v1
-      if: steps.release.outputs.released == 'true'
-      with:
-        password: ${{ secrets.PYPI_TOKEN }}
-    # GitHub Release
-    - uses: python-semantic-release/upload-to-gh-release@main
-      if: steps.release.outputs.released == 'true'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Python-Package Version Bump
+      - uses: python-semantic-release/python-semantic-release@v9.8.0
+        id: release
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      # PyPI Release
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        if: steps.release.outputs.released == 'true'
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+      # GitHub Release
+      - uses: python-semantic-release/upload-to-gh-release@v9.8.0
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
