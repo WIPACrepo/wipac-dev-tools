@@ -14,7 +14,6 @@ filelock==3.14.0
 flake8==7.0.0
 humanfriendly==10.0
 idna==3.7
-importlib_metadata==7.1.0
 iniconfig==2.0.0
 mccabe==0.7.0
 mypy==1.10.0
@@ -32,7 +31,6 @@ setuptools==69.5.1
 typing_extensions==4.12.2
 urllib3==2.2.1
 wheel==0.43.0
-zipp==3.19.2
 ########################################################################
 #  pipdeptree
 ########################################################################
@@ -69,5 +67,3 @@ semantic-version==2.10.0
 setuptools==69.5.1
 wheel==0.43.0
 wipac-dev-tools
-└── importlib_metadata [required: Any, installed: 7.1.0]
-    └── zipp [required: >=0.5, installed: 3.19.2]
