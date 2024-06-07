@@ -1,7 +1,5 @@
 """Init."""
 
-import importlib_metadata
-
 from . import argparse_tools, data_safety_tools, logging_tools
 from .enviro_tools import from_environment, from_environment_as_dataclass  # noqa
 from .setup_tools import SetupShop  # noqa
@@ -18,7 +16,7 @@ __all__ = [
 ]
 
 # version is a human-readable version number.
-__version__ = importlib_metadata.version(__package__ or __name__)
+__version__ = "1.10.4"
 
 
 # version_info is a four-tuple for programmatic comparison. The first
