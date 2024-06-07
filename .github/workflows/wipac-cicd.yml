@@ -127,7 +127,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       # PyPI Release
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@v1.8.11
         if: steps.psr-psr.outputs.released == 'true'
         with:
           password: ${{ secrets.PYPI_TOKEN }}
