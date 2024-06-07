@@ -2,6 +2,21 @@
 
 
 
+## v1.10.1 (2024-06-07)
+
+###  
+
+* Lower `python-semantic-release` GHAs to `v8.7.0` (#98)
+
+* Lower `python-semantic-release` GHAs to `v8.7.0`
+
+* &lt;bot&gt; update dependencies*.log files(s)
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`d4a076b`](https://github.com/WIPACrepo/wipac-dev-tools/commit/d4a076b329726004cf855185112de2f870b6b537))
+
+
 ## v1.10.0 (2024-05-31)
 
 ###  
