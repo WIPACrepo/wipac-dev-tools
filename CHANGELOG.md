@@ -2,6 +2,13 @@
 
 
 
+## v1.10.3 (2024-06-07)
+
+###  
+
+* Use `WIPACrepo/wipac-dev-py-setup-action@psr-dist-build` ([`995d776`](https://github.com/WIPACrepo/wipac-dev-tools/commit/995d7760485cf7648461b67a1691cbe9586b0954))
+
+
 ## v1.10.2 (2024-06-07)
 
 ###  
