@@ -2,6 +2,31 @@
 
 
 
+## v1.10.4 (2024-06-07)
+
+###  
+
+* Use `WIPACrepo/wipac-dev-py-setup-action@psr-dist-build` - 3 (#100)
+
+* Use `WIPACrepo/wipac-dev-py-setup-action@psr-dist-build` - 3
+
+* &lt;bot&gt; update pyproject.toml
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`a090926`](https://github.com/WIPACrepo/wipac-dev-tools/commit/a0909268327cf2621612ccd88e2704b98f13de31))
+
+* Use `WIPACrepo/wipac-dev-py-setup-action@psr-dist-build` - 2 (#99)
+
+* Use `WIPACrepo/wipac-dev-py-setup-action@psr-dist-build` - 2
+
+* &lt;bot&gt; update pyproject.toml
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`16a6297`](https://github.com/WIPACrepo/wipac-dev-tools/commit/16a62976a9675b3305dd21d24629857876e955d8))
+
+
 ## v1.10.3 (2024-06-07)
 
 ###  
