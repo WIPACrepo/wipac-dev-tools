@@ -2,6 +2,43 @@
 
 
 
+## v1.10.5 (2024-06-07)
+
+###  
+
+* Use `WIPACrepo/wipac-dev-py-setup-action` Followup Fixes (#101)
+
+* Use `WIPACrepo/wipac-dev-py-setup-action` Followup Fixes
+
+* &lt;bot&gt; update dependencies*.log files(s)
+
+* no longer need `importlib_metadata`
+
+* &lt;bot&gt; update dependencies*.log files(s)
+
+* `dependencies = [&#34;typing_extensions&#34;, &#34;requests&#34;]`
+
+* &lt;bot&gt; update dependencies*.log files(s)
+
+* &lt;bot&gt; update pyproject.toml
+
+* &lt;bot&gt; add py.typed file(s)
+
+* &lt;bot&gt; add py.typed file(s)
+
+* use `WIPACrepo/wipac-dev-py-versions-action@reqs`
+
+* no longer need `importlib_metadata` - 2
+
+* use `WIPACrepo/wipac-dev-py-versions-action@v2.4`
+
+* use `WIPACrepo/wipac-dev-py-setup-action@v4.0`
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`8e062f7`](https://github.com/WIPACrepo/wipac-dev-tools/commit/8e062f79e380017cd9d692784a6f5101e149c4f1))
+
+
 ## v1.10.4 (2024-06-07)
 
 ###  
