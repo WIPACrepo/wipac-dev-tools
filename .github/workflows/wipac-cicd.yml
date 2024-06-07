@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: versions
-        uses: WIPACrepo/wipac-dev-py-versions-action@v2.3
+        uses: WIPACrepo/wipac-dev-py-versions-action@reqs
 
   ######################################################################################
 
