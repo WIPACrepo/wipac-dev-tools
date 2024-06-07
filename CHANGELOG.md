@@ -2,6 +2,21 @@
 
 
 
+## v1.10.6 (2024-06-07)
+
+###  
+
+* Bump CI Package Versions (#102)
+
+* Bump CI Package Versions
+
+* &lt;bot&gt; update dependencies*.log files(s)
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`568df31`](https://github.com/WIPACrepo/wipac-dev-tools/commit/568df3178f3ae107bb3997d335c151fbecdb5ad6))
+
+
 ## v1.10.5 (2024-06-07)
 
 ###  
