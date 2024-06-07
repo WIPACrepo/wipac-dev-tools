@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = ["WIPAC", "python", "tools", "utilities"]
 classifiers = ["Development Status :: 5 - Production/Stable", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12"]
 requires-python = ">=3.8, <3.13"
-dependencies = ["importlib-metadata"]
+dependencies = ["typing_extensions", "requests"]
 
 [[project.authors]]
 name = "WIPAC Developers"
@@ -32,6 +32,7 @@ Source = "https://github.com/WIPACrepo/wipac-dev-tools"
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
+version_variables = ["wipac_dev_tools/__init__.py:__version__"]
 commit_parser = "emoji"
 build_command = "pip install build && python -m build"
 

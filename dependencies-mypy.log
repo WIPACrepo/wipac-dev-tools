@@ -14,7 +14,6 @@ filelock==3.14.0
 flake8==7.0.0
 humanfriendly==10.0
 idna==3.7
-importlib_metadata==7.1.0
 iniconfig==2.0.0
 mccabe==0.7.0
 mypy==1.10.0
@@ -29,10 +28,9 @@ pytest-mypy==0.10.3
 requests==2.32.3
 semantic-version==2.10.0
 setuptools==69.5.1
-typing_extensions==4.12.1
+typing_extensions==4.12.2
 urllib3==2.2.1
 wheel==0.43.0
-zipp==3.19.2
 ########################################################################
 #  pipdeptree
 ########################################################################
@@ -55,19 +53,18 @@ pytest-mypy==0.10.3
 ├── filelock [required: >=3.0, installed: 3.14.0]
 ├── mypy [required: >=0.900, installed: 1.10.0]
 │   ├── mypy-extensions [required: >=1.0.0, installed: 1.0.0]
-│   └── typing_extensions [required: >=4.1.0, installed: 4.12.1]
+│   └── typing_extensions [required: >=4.1.0, installed: 4.12.2]
 └── pytest [required: >=6.2, installed: 8.2.2]
     ├── iniconfig [required: Any, installed: 2.0.0]
     ├── packaging [required: Any, installed: 24.0]
     └── pluggy [required: >=1.5,<2.0, installed: 1.5.0]
-requests==2.32.3
-├── certifi [required: >=2017.4.17, installed: 2024.6.2]
-├── charset-normalizer [required: >=2,<4, installed: 3.3.2]
-├── idna [required: >=2.5,<4, installed: 3.7]
-└── urllib3 [required: >=1.21.1,<3, installed: 2.2.1]
 semantic-version==2.10.0
 setuptools==69.5.1
 wheel==0.43.0
 wipac-dev-tools
-└── importlib_metadata [required: Any, installed: 7.1.0]
-    └── zipp [required: >=0.5, installed: 3.19.2]
+├── requests [required: Any, installed: 2.32.3]
+│   ├── certifi [required: >=2017.4.17, installed: 2024.6.2]
+│   ├── charset-normalizer [required: >=2,<4, installed: 3.3.2]
+│   ├── idna [required: >=2.5,<4, installed: 3.7]
+│   └── urllib3 [required: >=1.21.1,<3, installed: 2.2.1]
+└── typing_extensions [required: Any, installed: 4.12.2]
