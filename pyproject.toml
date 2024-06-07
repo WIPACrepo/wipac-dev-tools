@@ -34,6 +34,8 @@ Source = "https://github.com/WIPACrepo/wipac-dev-tools"
 version_toml = ["pyproject.toml:project.version"]
 commit_parser = "emoji"
 
+
+
 [tool.semantic_release.commit_parser_options]
 major_tags = ["[major]"]
 minor_tags = ["[minor]", "[feature]"]
