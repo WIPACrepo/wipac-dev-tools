@@ -10,11 +10,11 @@ importlib_metadata==7.1.0
 semantic-version==2.10.0
 setuptools==69.5.1
 wheel==0.43.0
-zipp==3.19.1
+zipp==3.19.2
 ########################################################################
 #  pipdeptree
 ########################################################################
-pipdeptree==2.21.0
+pipdeptree==2.22.0
 ├── packaging [required: >=23.1, installed: 24.0]
 └── pip [required: >=23.1.2, installed: 24.0]
 semantic-version==2.10.0
@@ -22,4 +22,4 @@ setuptools==69.5.1
 wheel==0.43.0
 wipac-dev-tools
 └── importlib_metadata [required: Any, installed: 7.1.0]
-    └── zipp [required: >=0.5, installed: 3.19.1]
+    └── zipp [required: >=0.5, installed: 3.19.2]

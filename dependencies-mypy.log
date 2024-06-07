@@ -7,7 +7,7 @@
 #  pip freeze
 ########################################################################
 attrs==23.2.0
-certifi==2024.2.2
+certifi==2024.6.2
 charset-normalizer==3.3.2
 coloredlogs==15.0.1
 filelock==3.14.0
@@ -23,22 +23,22 @@ packaging==24.0
 pluggy==1.5.0
 pycodestyle==2.11.1
 pyflakes==3.2.0
-pytest==8.2.1
+pytest==8.2.2
 pytest-flake8==1.1.1
 pytest-mypy==0.10.3
 requests==2.32.3
 semantic-version==2.10.0
 setuptools==69.5.1
-typing_extensions==4.12.0
+typing_extensions==4.12.1
 urllib3==2.2.1
 wheel==0.43.0
-zipp==3.19.1
+zipp==3.19.2
 ########################################################################
 #  pipdeptree
 ########################################################################
 coloredlogs==15.0.1
 └── humanfriendly [required: >=9.1, installed: 10.0]
-pipdeptree==2.21.0
+pipdeptree==2.22.0
 ├── packaging [required: >=23.1, installed: 24.0]
 └── pip [required: >=23.1.2, installed: 24.0]
 pytest-flake8==1.1.1
@@ -46,7 +46,7 @@ pytest-flake8==1.1.1
 │   ├── mccabe [required: >=0.7.0,<0.8.0, installed: 0.7.0]
 │   ├── pycodestyle [required: >=2.11.0,<2.12.0, installed: 2.11.1]
 │   └── pyflakes [required: >=3.2.0,<3.3.0, installed: 3.2.0]
-└── pytest [required: >=7.0, installed: 8.2.1]
+└── pytest [required: >=7.0, installed: 8.2.2]
     ├── iniconfig [required: Any, installed: 2.0.0]
     ├── packaging [required: Any, installed: 24.0]
     └── pluggy [required: >=1.5,<2.0, installed: 1.5.0]
@@ -55,13 +55,13 @@ pytest-mypy==0.10.3
 ├── filelock [required: >=3.0, installed: 3.14.0]
 ├── mypy [required: >=0.900, installed: 1.10.0]
 │   ├── mypy-extensions [required: >=1.0.0, installed: 1.0.0]
-│   └── typing_extensions [required: >=4.1.0, installed: 4.12.0]
-└── pytest [required: >=6.2, installed: 8.2.1]
+│   └── typing_extensions [required: >=4.1.0, installed: 4.12.1]
+└── pytest [required: >=6.2, installed: 8.2.2]
     ├── iniconfig [required: Any, installed: 2.0.0]
     ├── packaging [required: Any, installed: 24.0]
     └── pluggy [required: >=1.5,<2.0, installed: 1.5.0]
 requests==2.32.3
-├── certifi [required: >=2017.4.17, installed: 2024.2.2]
+├── certifi [required: >=2017.4.17, installed: 2024.6.2]
 ├── charset-normalizer [required: >=2,<4, installed: 3.3.2]
 ├── idna [required: >=2.5,<4, installed: 3.7]
 └── urllib3 [required: >=1.21.1,<3, installed: 2.2.1]
@@ -70,4 +70,4 @@ setuptools==69.5.1
 wheel==0.43.0
 wipac-dev-tools
 └── importlib_metadata [required: Any, installed: 7.1.0]
-    └── zipp [required: >=0.5, installed: 3.19.1]
+    └── zipp [required: >=0.5, installed: 3.19.2]
