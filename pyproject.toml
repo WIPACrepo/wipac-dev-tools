@@ -32,6 +32,7 @@ Source = "https://github.com/WIPACrepo/wipac-dev-tools"
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
+version_variables = ["wipac_dev_tools/__init__.py:__version__"]
 commit_parser = "emoji"
 build_command = "pip install build && python -m build"
 
