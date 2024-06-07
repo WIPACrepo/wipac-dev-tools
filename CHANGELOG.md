@@ -2,6 +2,13 @@
 
 
 
+## v1.10.2 (2024-06-07)
+
+###  
+
+* Pin `pypa/gh-action-pypi-publish` GHA to `v1.8.11` ([`b824e18`](https://github.com/WIPACrepo/wipac-dev-tools/commit/b824e18b7ac819f2bea02a28e6bb8bae1e18ed97))
+
+
 ## v1.10.1 (2024-06-07)
 
 ###  
