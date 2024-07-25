@@ -20,7 +20,7 @@ packaging==24.1
 pluggy==1.5.0
 pycodestyle==2.9.1
 pyflakes==2.5.0
-pytest==8.3.1
+pytest==8.3.2
 pytest-flake8==1.2.2
 pytest-mypy==0.10.3
 requests==2.32.3
@@ -40,7 +40,7 @@ pytest-flake8==1.2.2
 │   ├── mccabe [required: >=0.7.0,<0.8.0, installed: 0.7.0]
 │   ├── pycodestyle [required: >=2.9.0,<2.10.0, installed: 2.9.1]
 │   └── pyflakes [required: >=2.5.0,<2.6.0, installed: 2.5.0]
-└── pytest [required: >=7.0, installed: 8.3.1]
+└── pytest [required: >=7.0, installed: 8.3.2]
     ├── iniconfig [required: Any, installed: 2.0.0]
     ├── packaging [required: Any, installed: 24.1]
     └── pluggy [required: >=1.5,<2, installed: 1.5.0]
@@ -50,7 +50,7 @@ pytest-mypy==0.10.3
 ├── mypy [required: >=0.900, installed: 1.11.0]
 │   ├── mypy-extensions [required: >=1.0.0, installed: 1.0.0]
 │   └── typing_extensions [required: >=4.6.0, installed: 4.12.2]
-└── pytest [required: >=6.2, installed: 8.3.1]
+└── pytest [required: >=6.2, installed: 8.3.2]
     ├── iniconfig [required: Any, installed: 2.0.0]
     ├── packaging [required: Any, installed: 24.1]
     └── pluggy [required: >=1.5,<2, installed: 1.5.0]
