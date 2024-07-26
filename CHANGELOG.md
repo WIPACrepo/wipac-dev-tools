@@ -2,6 +2,27 @@
 
 
 
+## v1.10.7 (2024-07-26)
+
+###  
+
+* Use `WIPACrepo/wipac-dev-py-dependencies-action@v2.0` (#103)
+
+* use `WIPACrepo/wipac-dev-py-dependencies-action@image`
+
+* &lt;bot&gt; update dependencies*.log files(s)
+
+* &lt;bot&gt; update dependencies*.log files(s)
+
+* &lt;bot&gt; update dependencies*.log files(s)
+
+* use `WIPACrepo/wipac-dev-py-dependencies-action@v2.0`
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`593bcf5`](https://github.com/WIPACrepo/wipac-dev-tools/commit/593bcf554b9afe6c7bfc3cb2779a08a9f4b96f32))
+
+
 ## v1.10.6 (2024-06-07)
 
 ###  
