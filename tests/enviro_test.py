@@ -370,7 +370,7 @@ if sys.version_info >= (3, 7):
         ],
     )
     @pytest.mark.usefixtures("isolated_env")
-    def test_023__set_int(self, typo) -> None:
+    def test_023__set_int(typo) -> None:
         """Test normal use case."""
 
         @dc.dataclass(frozen=True)
