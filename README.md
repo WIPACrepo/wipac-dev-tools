@@ -1,16 +1,19 @@
 <!--- Top of README Badges (automated) --->
 [![PyPI](https://img.shields.io/pypi/v/wipac-dev-tools)](https://pypi.org/project/wipac-dev-tools/) [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/WIPACrepo/wipac-dev-tools?include_prereleases)](https://github.com/WIPACrepo/wipac-dev-tools/) [![PyPI - License](https://img.shields.io/pypi/l/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/blob/main/LICENSE) [![Lines of code](https://img.shields.io/tokei/lines/github/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/) [![GitHub issues](https://img.shields.io/github/issues/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aopen) [![GitHub pull requests](https://img.shields.io/github/issues-pr/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/pulls?q=is%3Apr+sort%3Aupdated-desc+is%3Aopen)
 <!--- End of README Badges (automated) --->
-# wipac-dev-tools
-Common, basic, and reusable development tools
 
+# wipac-dev-tools
+
+Common, basic, and reusable development tools
 
 ## Utilities
 
 ### Logging Tools
 
 #### `wipac_dev_tools.logging_tools.set_level()`
+
 _Available for Python 3.6+_
+
 ```
 def set_level(
     level: LoggerLevel,
@@ -45,7 +48,9 @@ def set_level(
 ```
 
 #### `wipac_dev_tools.logging_tools.log_argparse_args()`
+
 _Available for Python 3.6+_
+
 ```
 def log_argparse_args(
     args: argparse.Namespace,
@@ -64,11 +69,12 @@ def log_argparse_args(
     """
 ```
 
-
 ### Environment Variable Tool(s)
 
 #### `wipac_dev_tools.from_environment()`
+
 _Available for Python 3.6+_
+
 ```
 def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
     """Obtain configuration values from the OS environment.
@@ -128,7 +134,9 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
 ```
 
 #### `wipac_dev_tools.from_environment_as_dataclass()`
-_Available for Python 3.7+_
+
+_Available for Python >=3.9_
+
 ```
 def from_environment_as_dataclass(
     dclass: Type[T],
@@ -224,6 +232,7 @@ def from_environment_as_dataclass(
 ```
 
 #### `wipac_dev_tools.strtobool()`
+
 ```
 def strtobool(string: str) -> bool:
     """Smart-cast a string to a bool using common-sense interpretations.

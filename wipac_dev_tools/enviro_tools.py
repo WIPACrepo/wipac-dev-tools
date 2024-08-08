@@ -25,8 +25,8 @@ from typing_extensions import Final  # 3.8+ get the real thing
 from . import logging_tools
 from .strtobool import strtobool
 
-# IMPORTS for PYTHON 3.7+
-if sys.version_info >= (3, 7):
+# IMPORTS for PYTHON >=3.9
+if sys.version_info >= (3, 9):
     import dataclasses
     from typing import _SpecialForm
 
@@ -281,13 +281,13 @@ def from_environment_as_dataclass(
         ValueError - If an indicated value is not a legal value
         TypeError - If an argument or indicated value is not a legal type
     """
-    if sys.version_info >= (3, 7):
+    if sys.version_info >= (3, 9):
         return _from_environment_as_dataclass(
             dclass, collection_sep, dict_kv_joiner, log_vars
         )
     else:
         raise NotImplementedError(
-            "Sorry, from_environment_as_dataclass() is only available for 3.7+"
+            "Sorry, from_environment_as_dataclass() is only available for >=3.9"
         )
 
 

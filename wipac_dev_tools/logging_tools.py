@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypeVar, Union
+from typing import Callable, Dict, List, Optional, TYPE_CHECKING, TypeVar, Union
 
 from typing_extensions import Literal  # will redirect to Typing for 3.8+
 
@@ -100,7 +100,7 @@ def log_dataclass(
             Sensitive args (containing specific substrings, case-insensitive)
             have their values obfuscated with '***'
     """
-    import dataclasses  # imports for python 3.7+
+    import dataclasses  # imports for python >=3.9
 
     if not (dataclasses.is_dataclass(dclass) and not isinstance(dclass, type)):
         raise TypeError(f"Expected instantiated dataclass: 'dclass' ({dclass})")

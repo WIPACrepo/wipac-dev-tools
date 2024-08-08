@@ -17,7 +17,7 @@ from wipac_dev_tools import (  # noqa # pylint: disable=E0401,C0413
     from_environment_as_dataclass,
 )
 
-if sys.version_info >= (3, 7):
+if sys.version_info >= (3, 9):
     import dataclasses as dc
 
 
@@ -151,9 +151,9 @@ class FromEnvironmentTest(unittest.TestCase):
 
 
 ###############################################################################
-# PYTHON 3.7+
+# PYTHON >=3.9
 ###############################################################################
-if sys.version_info >= (3, 7):
+if sys.version_info >= (3, 9):
 
     # Test from_environment_as_dataclass()
 
@@ -739,7 +739,7 @@ if sys.version_info >= (3, 7):
 
 
 ###############################################################################
-# PYTHON <3.7
+# NOT SUPPORTED FOR PYTHON VERSION
 ###############################################################################
 else:
 
