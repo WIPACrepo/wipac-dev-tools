@@ -34,9 +34,6 @@ if sys.version_info >= (3, 9):
         from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
     except ImportError:
         from typing import GenericAlias  # type: ignore[attr-defined]
-else:
-    # this purely just helps imports from complaining about "NameError: name 'dataclasses' is not defined"
-    dataclasses = Any
 
 # fmt: off
 if TYPE_CHECKING:  # _typeshed only exists at runtime
