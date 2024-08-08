@@ -9,7 +9,9 @@ import tempfile
 import unittest
 from typing import Any, Dict, FrozenSet, List, Optional, Set
 
+import pytest
 from typing_extensions import Final  # 3.8+ get the real thing
+
 from wipac_dev_tools import (  # noqa # pylint: disable=E0401,C0413
     from_environment,
     from_environment_as_dataclass,
@@ -17,9 +19,6 @@ from wipac_dev_tools import (  # noqa # pylint: disable=E0401,C0413
 
 if sys.version_info >= (3, 7):
     import dataclasses as dc
-
-
-# pylint:disable=missing-class-docstring,disallowed-name,invalid-name
 
 
 class FromEnvironmentTest(unittest.TestCase):
@@ -352,12 +351,19 @@ if sys.version_info >= (3, 7):
             config = from_environment_as_dataclass(Config)
             self.assertEqual(config.FOO, {"bar", "baz", "foo"})
 
-        def test_023__set_int(self) -> None:
+        @pytest.mark.parametrize(
+            "typo",
+            [
+                Set[int],
+                set[int],
+            ],
+        )
+        def test_023__set_int(self, typo) -> None:
             """Test normal use case."""
 
             @dc.dataclass(frozen=True)
             class Config:
-                FOO: Set[int]
+                FOO: typo  # type: ignore
 
             os.environ["FOO"] = "123 456 789 123"
             config = from_environment_as_dataclass(Config)

@@ -6,12 +6,12 @@ import os
 import re
 import sys
 from typing import (
-    TYPE_CHECKING,
     Any,
     Dict,
     Mapping,
     Optional,
     Sequence,
+    TYPE_CHECKING,
     Tuple,
     Type,
     TypeVar,
