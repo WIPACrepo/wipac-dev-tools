@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import sys
+import types
 from typing import (
     Any,
     Dict,
@@ -295,8 +296,6 @@ def deconstruct_typehint(
 ) -> Tuple[type, Optional[Tuple[type, ...]]]:
     """Take a type hint and return its type and its arguments' types."""
     typ, arg_typs = field.type, None
-    print(typ)
-    print(type(typ))
 
     # some helper functions
     def _is_optional(typ: GenericAlias) -> bool:
@@ -319,8 +318,9 @@ def deconstruct_typehint(
         )
 
     # take care of 'typing'-module types
-    if isinstance(typ, GenericAlias):
-        print(typ)
+    # typing.GenericAlias -> Dict, List, ...
+    # types.GenericAlias -> dict[int,str], list[bool], ...
+    if isinstance(typ, (GenericAlias, types.GenericAlias)):
         if _is_optional(typ) or _is_final(typ):
             # Ex: Final[int], Optional[Dict[str,int]]
             if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
@@ -352,7 +352,6 @@ def deconstruct_typehint(
             f"valid environment variable types)"
         )
 
-    print(typ, arg_typs)
     return typ, arg_typs
 
 
