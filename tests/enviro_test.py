@@ -351,7 +351,7 @@ if sys.version_info >= (3, 7):
 
         @dc.dataclass(frozen=True)
         class Config:
-            FOO: typo
+            FOO: typo  # type: ignore
 
         os.environ["FOO"] = "123 456 789"
         config = from_environment_as_dataclass(Config)

@@ -154,6 +154,7 @@ def _typecast_for_dataclass(
     dict_kv_joiner: str,
 ) -> Any:
     """Collect the typecast value."""
+    print(typ, arg_typs)
     if typ == list:
         _list = env_val.split(collection_sep)
         if arg_typs:
