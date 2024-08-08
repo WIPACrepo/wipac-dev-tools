@@ -2,6 +2,13 @@
 
 
 
+## v1.12.0 (2024-08-08)
+
+### [minor]
+
+* Bump Python Min to 3.9 [minor] (#104) ([`3c38d0b`](https://github.com/WIPACrepo/wipac-dev-tools/commit/3c38d0b11f842323f336cb81a32f365da00653ac))
+
+
 ## v1.11.0 (2024-08-08)
 
 ### [minor]
