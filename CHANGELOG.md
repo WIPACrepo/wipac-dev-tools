@@ -2,6 +2,23 @@
 
 
 
+## v1.11.0 (2024-08-08)
+
+### [minor]
+
+* Deprecate `use_coloredlogs` and Replace with `formatter` [minor] (#105)
+
+* Deprecate `use_coloredlogs` and Replace with Similar Formatter
+
+* &lt;bot&gt; update dependencies*.log files(s)
+
+* Add `formatter`
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`fe247c4`](https://github.com/WIPACrepo/wipac-dev-tools/commit/fe247c4eb49495ba0d285144b74a66b73ea4d0ab))
+
+
 ## v1.10.7 (2024-07-26)
 
 ###  
