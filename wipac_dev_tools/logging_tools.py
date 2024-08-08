@@ -1,10 +1,11 @@
 """Common tools to supplement/assist the standard logging package."""
 
 import argparse
+import dataclasses
 import logging
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING, TypeVar, Union
 
-from typing_extensions import Literal  # will redirect to Typing for 3.8+
+from typing_extensions import Literal
 
 from .data_safety_tools import obfuscate_value_if_sensitive
 
@@ -100,8 +101,6 @@ def log_dataclass(
             Sensitive args (containing specific substrings, case-insensitive)
             have their values obfuscated with '***'
     """
-    import dataclasses  # imports for python 3.7+
-
     if not (dataclasses.is_dataclass(dclass) and not isinstance(dclass, type)):
         raise TypeError(f"Expected instantiated dataclass: 'dclass' ({dclass})")
 

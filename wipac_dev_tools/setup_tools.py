@@ -5,12 +5,7 @@ import os
 import pprint
 import re
 import sys
-from typing import Any, Dict, List, Optional, Tuple
-
-try:
-    from typing import TypedDict
-except ImportError:  # pre-3.8 support
-    TypedDict = Dict[str, Any]
+from typing import List, Optional, Tuple, TypedDict
 
 PythonVersion = Tuple[int, int]
 
