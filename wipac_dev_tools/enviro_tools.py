@@ -1,10 +1,10 @@
 """Module to support parsing environment variables."""
 
 
+import dataclasses
 import logging
 import os
 import re
-import sys
 import types
 from typing import (
     Any,
@@ -17,23 +17,19 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    _SpecialForm,
     cast,
 )
 
-from typing_extensions import Final  # 3.8+ get the real thing
+from typing_extensions import Final
 
 from . import logging_tools
 from .strtobool import strtobool
 
-# IMPORTS for PYTHON >=3.9
-if sys.version_info >= (3, 9):
-    import dataclasses
-    from typing import _SpecialForm
-
-    try:
-        from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
-    except ImportError:
-        from typing import GenericAlias  # type: ignore[attr-defined]
+try:
+    from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
+except ImportError:
+    from typing import GenericAlias  # type: ignore[attr-defined]
 
 # fmt: off
 if TYPE_CHECKING:  # _typeshed only exists at runtime
@@ -281,18 +277,13 @@ def from_environment_as_dataclass(
         ValueError - If an indicated value is not a legal value
         TypeError - If an argument or indicated value is not a legal type
     """
-    if sys.version_info >= (3, 9):
-        return _from_environment_as_dataclass(
-            dclass, collection_sep, dict_kv_joiner, log_vars
-        )
-    else:
-        raise NotImplementedError(
-            "Sorry, from_environment_as_dataclass() is only available for >=3.9"
-        )
+    return _from_environment_as_dataclass(
+        dclass, collection_sep, dict_kv_joiner, log_vars
+    )
 
 
 def deconstruct_typehint(
-    field: "dataclasses.Field",  # have to use "" so to not trigger import issues with py 3.8
+    field: dataclasses.Field,
 ) -> Tuple[type, Optional[Tuple[type, ...]]]:
     """Take a type hint and return its type and its arguments' types."""
     typ, arg_typs = field.type, None
