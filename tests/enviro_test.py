@@ -171,7 +171,7 @@ def isolated_env():
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass__real_life_example() -> None:
+def test__real_life_example() -> None:
     """An example of a realistic, robust usage."""
 
     class EvenState:
@@ -209,7 +209,7 @@ def test_from_environment_as_dataclass__real_life_example() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_000__str() -> None:
+def test_000__str() -> None:
     """Test normal use case."""
     # str
     @dc.dataclass(frozen=True)
@@ -222,7 +222,7 @@ def test_from_environment_as_dataclass_000__str() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_002__int() -> None:
+def test_002__int() -> None:
     """Test normal use case."""
     # int
     @dc.dataclass(frozen=True)
@@ -236,7 +236,7 @@ def test_from_environment_as_dataclass_002__int() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_003__float() -> None:
+def test_003__float() -> None:
     """Test normal use case."""
     # float
     @dc.dataclass(frozen=True)
@@ -250,7 +250,7 @@ def test_from_environment_as_dataclass_003__float() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_004__float_from_int() -> None:
+def test_004__float_from_int() -> None:
     """Test normal use case."""
     # float - from int
     @dc.dataclass(frozen=True)
@@ -264,7 +264,7 @@ def test_from_environment_as_dataclass_004__float_from_int() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_005__float_engineering() -> None:
+def test_005__float_engineering() -> None:
     """Test normal use case."""
     # float - engineering notation
     @dc.dataclass(frozen=True)
@@ -278,7 +278,7 @@ def test_from_environment_as_dataclass_005__float_engineering() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_006__bool_true() -> None:
+def test_006__bool_true() -> None:
     """Test normal use case."""
     # bool - true
     @dc.dataclass(frozen=True)
@@ -304,7 +304,7 @@ def test_from_environment_as_dataclass_006__bool_true() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_007__bool_false() -> None:
+def test_007__bool_false() -> None:
     """Test normal use case."""
     # bool - false
     @dc.dataclass(frozen=True)
@@ -330,7 +330,7 @@ def test_from_environment_as_dataclass_007__bool_false() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_020__list() -> None:
+def test_020__list() -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -350,7 +350,7 @@ def test_from_environment_as_dataclass_020__list() -> None:
     ],
 )
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_021__list_int(typo) -> None:
+def test_021__list_int(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -363,7 +363,7 @@ def test_from_environment_as_dataclass_021__list_int(typo) -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_022__set() -> None:
+def test_022__set() -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -383,7 +383,7 @@ def test_from_environment_as_dataclass_022__set() -> None:
     ],
 )
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_023__set_int(typo) -> None:
+def test_023__set_int(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -396,7 +396,7 @@ def test_from_environment_as_dataclass_023__set_int(typo) -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_024__dict() -> None:
+def test_024__dict() -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -416,7 +416,7 @@ def test_from_environment_as_dataclass_024__dict() -> None:
     ],
 )
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_025__dict_str_int(typo) -> None:
+def test_025__dict_str_int(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -429,7 +429,7 @@ def test_from_environment_as_dataclass_025__dict_str_int(typo) -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_026__frozen_set() -> None:
+def test_026__frozen_set() -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -449,7 +449,7 @@ def test_from_environment_as_dataclass_026__frozen_set() -> None:
     ],
 )
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_027__frozen_int(typo) -> None:
+def test_027__frozen_int(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -462,7 +462,7 @@ def test_from_environment_as_dataclass_027__frozen_int(typo) -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_028__class() -> None:
+def test_028__class() -> None:
     """Test normal use case."""
 
     class OneArgClass:
@@ -479,7 +479,7 @@ def test_from_environment_as_dataclass_028__class() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_029__dict_class_int() -> None:
+def test_029__dict_class_int() -> None:
     """Test normal use case."""
 
     class OneArgClass:
@@ -504,7 +504,7 @@ def test_from_environment_as_dataclass_029__dict_class_int() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_050__final_int() -> None:
+def test_050__final_int() -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -517,7 +517,7 @@ def test_from_environment_as_dataclass_050__final_int() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_051__final_dict_str_int() -> None:
+def test_051__final_dict_str_int() -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -530,7 +530,7 @@ def test_from_environment_as_dataclass_051__final_dict_str_int() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_052__optional_bool() -> None:
+def test_052__optional_bool() -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -543,7 +543,7 @@ def test_from_environment_as_dataclass_052__optional_bool() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_053__optional_dict_str_int() -> None:
+def test_053__optional_dict_str_int() -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -556,7 +556,7 @@ def test_from_environment_as_dataclass_053__optional_dict_str_int() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_054__optional_dict() -> None:
+def test_054__optional_dict() -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
@@ -569,7 +569,7 @@ def test_from_environment_as_dataclass_054__optional_dict() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_100_error__missing_required() -> None:
+def test_100_error__missing_required() -> None:
     """Test error use case."""
     # Missing
     @dc.dataclass(frozen=True)
@@ -581,7 +581,7 @@ def test_from_environment_as_dataclass_100_error__missing_required() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_101_error__int() -> None:
+def test_101_error__int() -> None:
     """Test error use case."""
     # Bad Type - int
     @dc.dataclass(frozen=True)
@@ -594,7 +594,7 @@ def test_from_environment_as_dataclass_101_error__int() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_102_error__float() -> None:
+def test_102_error__float() -> None:
     """Test error use case."""
     # Bad Type - float
     @dc.dataclass(frozen=True)
@@ -607,7 +607,7 @@ def test_from_environment_as_dataclass_102_error__float() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_103_error__bool() -> None:
+def test_103_error__bool() -> None:
     """Test error use case."""
 
     @dc.dataclass(frozen=True)
@@ -630,7 +630,7 @@ def test_from_environment_as_dataclass_103_error__bool() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_104_error__bytes() -> None:
+def test_104_error__bytes() -> None:
     """Test error use case."""
     # using a bytes, this is similar to any multi-arg built-in type
     @dc.dataclass(frozen=True)
@@ -643,7 +643,7 @@ def test_from_environment_as_dataclass_104_error__bytes() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_105_error__overly_nested_type_alias() -> None:
+def test_105_error__overly_nested_type_alias() -> None:
     """Test error use case."""
     # using a bytes, this is similar to any multi-arg built-in type
     @dc.dataclass(frozen=True)
@@ -662,7 +662,7 @@ def test_from_environment_as_dataclass_105_error__overly_nested_type_alias() -> 
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_106__dict_delims() -> None:
+def test_106__dict_delims() -> None:
     """Test error use case."""
 
     @dc.dataclass(frozen=True)
@@ -679,7 +679,7 @@ def test_from_environment_as_dataclass_106__dict_delims() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_107__dict_delims() -> None:
+def test_107__dict_delims() -> None:
     """Test error use case."""
 
     @dc.dataclass(frozen=True)
@@ -696,7 +696,7 @@ def test_from_environment_as_dataclass_107__dict_delims() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_108_error__bytes() -> None:
+def test_108_error__bytes() -> None:
     """Test error use case."""
 
     @dc.dataclass(frozen=True)
@@ -710,7 +710,7 @@ def test_from_environment_as_dataclass_108_error__bytes() -> None:
 
 # NOTE: mypy crashes with an un-typed non-initialized 'Final'
 # see https://github.com/python/mypy/issues/10090
-# def test_from_environment_as_dataclass_109_error__final_only() -> None:
+# def test_109_error__final_only() -> None:
 #     """Test error use case."""
 
 #     @dc.dataclass(frozen=True)
@@ -723,7 +723,7 @@ def test_from_environment_as_dataclass_108_error__bytes() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_110_error__any() -> None:
+def test_110_error__any() -> None:
     """Test error use case."""
 
     @dc.dataclass(frozen=True)
@@ -736,7 +736,7 @@ def test_from_environment_as_dataclass_110_error__any() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_200_convert() -> None:
+def test_200_convert() -> None:
     """Test conversion cases."""
     with pytest.raises(TypeError):
         from_environment_as_dataclass(None)  # type: ignore
@@ -750,7 +750,7 @@ def test_from_environment_as_dataclass_200_convert() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_from_environment_as_dataclass_300_post_init__int_range() -> None:
+def test_300_post_init__int_range() -> None:
     """Test post-init processing."""
 
     @dc.dataclass(frozen=True)
