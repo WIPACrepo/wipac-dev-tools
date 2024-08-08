@@ -154,7 +154,7 @@ def _typecast_for_dataclass(
     dict_kv_joiner: str,
 ) -> Any:
     """Collect the typecast value."""
-    print(typ, arg_typs)
+
     if typ == list:
         _list = env_val.split(collection_sep)
         if arg_typs:
@@ -318,6 +318,7 @@ def deconstruct_typehint(
 
     # take care of 'typing'-module types
     if isinstance(typ, GenericAlias):
+        print(typ)
         if _is_optional(typ) or _is_final(typ):
             # Ex: Final[int], Optional[Dict[str,int]]
             if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
