@@ -295,6 +295,8 @@ def deconstruct_typehint(
 ) -> Tuple[type, Optional[Tuple[type, ...]]]:
     """Take a type hint and return its type and its arguments' types."""
     typ, arg_typs = field.type, None
+    print(typ)
+    print(type(typ))
 
     # some helper functions
     def _is_optional(typ: GenericAlias) -> bool:
