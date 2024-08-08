@@ -6,17 +6,15 @@
 ########################################################################
 #  pip freeze
 ########################################################################
-attrs==23.2.0
+attrs==24.2.0
 certifi==2024.7.4
 charset-normalizer==3.3.2
-coloredlogs==15.0.1
 filelock==3.15.4
 flake8==5.0.4
-humanfriendly==10.0
 idna==3.7
 iniconfig==2.0.0
 mccabe==0.7.0
-mypy==1.11.0
+mypy==1.11.1
 mypy-extensions==1.0.0
 packaging==24.1
 pluggy==1.5.0
@@ -27,18 +25,16 @@ pytest-flake8==1.2.2
 pytest-mypy==0.10.3
 requests==2.32.3
 semantic-version==2.10.0
-setuptools==71.1.0
+setuptools==72.1.0
 typing_extensions==4.12.2
 urllib3==2.2.2
-wheel==0.43.0
+wheel==0.44.0
 ########################################################################
 #  pipdeptree
 ########################################################################
-coloredlogs==15.0.1
-└── humanfriendly [required: >=9.1, installed: 10.0]
 pipdeptree==2.23.1
 ├── packaging [required: >=23.1, installed: 24.1]
-└── pip [required: >=23.1.2, installed: 24.1.2]
+└── pip [required: >=23.1.2, installed: 24.2]
 pytest-flake8==1.2.2
 ├── flake8 [required: >=5,<6, installed: 5.0.4]
 │   ├── mccabe [required: >=0.7.0,<0.8.0, installed: 0.7.0]
@@ -49,9 +45,9 @@ pytest-flake8==1.2.2
     ├── packaging [required: Any, installed: 24.1]
     └── pluggy [required: >=1.5,<2, installed: 1.5.0]
 pytest-mypy==0.10.3
-├── attrs [required: >=19.0, installed: 23.2.0]
+├── attrs [required: >=19.0, installed: 24.2.0]
 ├── filelock [required: >=3.0, installed: 3.15.4]
-├── mypy [required: >=0.900, installed: 1.11.0]
+├── mypy [required: >=0.900, installed: 1.11.1]
 │   ├── mypy-extensions [required: >=1.0.0, installed: 1.0.0]
 │   └── typing_extensions [required: >=4.6.0, installed: 4.12.2]
 └── pytest [required: >=6.2, installed: 8.3.2]
@@ -59,8 +55,8 @@ pytest-mypy==0.10.3
     ├── packaging [required: Any, installed: 24.1]
     └── pluggy [required: >=1.5,<2, installed: 1.5.0]
 semantic-version==2.10.0
-setuptools==71.1.0
-wheel==0.43.0
+setuptools==72.1.0
+wheel==0.44.0
 wipac-dev-tools
 ├── requests [required: Any, installed: 2.32.3]
 │   ├── certifi [required: >=2017.4.17, installed: 2024.7.4]
