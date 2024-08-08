@@ -295,7 +295,7 @@ def from_environment_as_dataclass(
 
 
 def deconstruct_typehint(
-    field: dataclasses.Field,
+    field: "dataclasses.Field",  # have to use "" so to not trigger import issues with py 3.8
 ) -> Tuple[type, Optional[Tuple[type, ...]]]:
     """Take a type hint and return its type and its arguments' types."""
     typ, arg_typs = field.type, None
