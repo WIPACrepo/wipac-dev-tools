@@ -138,6 +138,16 @@ def _set_and_share(log_name: str, level: LoggerLevel, text: str) -> None:
     logging.getLogger().info(f"{text} Logger: '{log_name}' ({level})")
 
 
+class WIPACDevToolsFormatter(logging.Formatter):
+    """A fairly detailed formatter that is similar to coloredlogs's format."""
+
+    def __init__(self):
+        super().__init__(
+            "%(asctime)s.%(msecs)03d [%(levelname)8s] %(name)s[%(process)d] %(message)s <%(filename)s:%(lineno)s/%(funcName)s()>",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+
+
 def set_level(
     level: LoggerLevel,
     first_party_loggers: Union[
@@ -147,6 +157,7 @@ def set_level(
     future_third_parties: Union[None, str, List[str]] = None,
     specialty_loggers: Optional[Dict[LogggerObjectOrName, LoggerLevel]] = None,
     use_coloredlogs: bool = False,
+    formatter: Union[WIPACDevToolsFormatter, logging.Formatter, None] = None,
 ) -> None:
     """Set the level of loggers of various precedence.
 
@@ -165,9 +176,18 @@ def set_level(
             additional loggers, each paired with a logging level, which are not
             considered first-party nor third-party loggers. **These have the highest precedence**
         `use_coloredlogs`
-            if True, will import and use the `coloredlogs` package.
-            This will set the logger format and use colored text.
+            *DEPRECATED* -- will use the WIPACDevToolsFormatter formatter
+        `formatter`
+            a logging.Formatter instance to use for all logging, use `WIPACDevToolsFormatter()`
+            for a fairly detailed logger
     """
+    if use_coloredlogs:
+        logging.getLogger().warning(
+            "set_level()'s `use_coloredlogs` is DEPRECATED (use `formatter=WIPACDevToolsFormatter()`). "
+            "Proceeding with vanilla 'logging' package with a similar formatter."
+        )
+        formatter = WIPACDevToolsFormatter()
+
     return _set_level(
         first_party_level=level.upper(),  # type: ignore
         #
@@ -180,7 +200,7 @@ def set_level(
         #
         future_third_parties=_to_list(future_third_parties),
         #
-        use_coloredlogs=use_coloredlogs,
+        formatter=formatter,
         #
         specialty_loggers=(
             {_logger_to_name(k): v for k, v in specialty_loggers.items()}
@@ -195,23 +215,15 @@ def _set_level(
     first_parties: List[str],
     third_party_level: LoggerLevel,
     future_third_parties: List[str],
-    use_coloredlogs: bool,
+    formatter: Union[WIPACDevToolsFormatter, logging.Formatter, None],
     specialty_loggers: Dict[str, LoggerLevel],
 ) -> None:
     # set root -> first_party_level
-    if use_coloredlogs:
-        try:
-            import coloredlogs  # type: ignore[import-untyped]  # pylint: disable=import-outside-toplevel
-
-            coloredlogs.install(level=first_party_level)  # root
-        except ImportError:
-            logging.getLogger().warning(
-                "set_level()'s `use_coloredlogs` was set to `True`, "
-                "but 'coloredlogs' is not installed. Proceeding with 'logging' package."
-            )
-            logging.getLogger().setLevel(first_party_level)
-    else:
-        logging.getLogger().setLevel(first_party_level)
+    if formatter:
+        hand = logging.StreamHandler()
+        hand.setFormatter(formatter)
+        logging.getLogger().addHandler(hand)
+    logging.getLogger().setLevel(first_party_level)
     logging.getLogger().info(f"Root Logger: '' ({first_party_level})")
 
     all_known_base_loggers = set(
