@@ -338,13 +338,20 @@ if sys.version_info >= (3, 7):
         config = from_environment_as_dataclass(Config)
         assert config.FOO == ["foo", "bar", "baz"]
 
+    @pytest.mark.parametrize(
+        "typo",
+        [
+            List[int],
+            list[int],
+        ],
+    )
     @pytest.mark.usefixtures("isolated_env")
-    def test_021__list_int() -> None:
+    def test_021__list_int(typo) -> None:
         """Test normal use case."""
 
         @dc.dataclass(frozen=True)
         class Config:
-            FOO: List[int]
+            FOO: typo
 
         os.environ["FOO"] = "123 456 789"
         config = from_environment_as_dataclass(Config)
@@ -393,13 +400,20 @@ if sys.version_info >= (3, 7):
         config = from_environment_as_dataclass(Config)
         assert config.FOO == {"bar": "2", "baz": "3", "foo": "1"}
 
+    @pytest.mark.parametrize(
+        "typo",
+        [
+            Dict[str, int],
+            dict[str, int],
+        ],
+    )
     @pytest.mark.usefixtures("isolated_env")
-    def test_025__dict_str_int() -> None:
+    def test_025__dict_str_int(typo) -> None:
         """Test normal use case."""
 
         @dc.dataclass(frozen=True)
         class Config:
-            FOO: Dict[str, int]
+            FOO: typo  # type: ignore
 
         os.environ["FOO"] = "foo=1 bar=2 baz=3"
         config = from_environment_as_dataclass(Config)
@@ -417,13 +431,20 @@ if sys.version_info >= (3, 7):
         config = from_environment_as_dataclass(Config)
         assert config.FOO == frozenset({"bar", "baz", "foo"})
 
+    @pytest.mark.parametrize(
+        "typo",
+        [
+            FrozenSet[int],
+            frozenset[int],
+        ],
+    )
     @pytest.mark.usefixtures("isolated_env")
-    def test_027__frozen_int() -> None:
+    def test_027__frozen_int(typo) -> None:
         """Test normal use case."""
 
         @dc.dataclass(frozen=True)
         class Config:
-            FOO: FrozenSet[int]
+            FOO: typo  # type: ignore
 
         os.environ["FOO"] = "123 456 789 123"
         config = from_environment_as_dataclass(Config)

@@ -317,15 +317,18 @@ def deconstruct_typehint(
 
     # take care of 'typing'-module types
     if isinstance(typ, GenericAlias):
-        # Ex: Final[int], Optional[Dict[str,int]]
         if _is_optional(typ) or _is_final(typ):
+            # Ex: Final[int], Optional[Dict[str,int]]
             if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
                 typ, arg_typs = typ.__args__[0], None
             else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
                 typ, arg_typs = typ.__args__[0].__origin__, typ.__args__[0].__args__
-        # Ex: List[int], Dict[str,int]
         else:
+            # Ex:
+            #   List[int]     -> list, [int]
+            #   dict[str,int] -> dict, [str,int]
             typ, arg_typs = typ.__origin__, typ.__args__
+
         if not (
             isinstance(typ, type)
             and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
