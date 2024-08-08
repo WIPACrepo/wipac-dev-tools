@@ -299,7 +299,7 @@ if sys.version_info >= (3, 7):
         ):
             os.environ["FOO"] = t
             config = from_environment_as_dataclass(Config)
-            assert config.FOO == True
+            assert config.FOO is True
 
     @pytest.mark.usefixtures("isolated_env")
     def test_007__bool_false() -> None:
@@ -324,7 +324,7 @@ if sys.version_info >= (3, 7):
         ):
             os.environ["FOO"] = f
             config = from_environment_as_dataclass(Config)
-            assert config.FOO == False
+            assert config.FOO is False
 
     @pytest.mark.usefixtures("isolated_env")
     def test_020__list() -> None:
@@ -503,7 +503,7 @@ if sys.version_info >= (3, 7):
 
         os.environ["FOO"] = "T"
         config = from_environment_as_dataclass(Config)
-        assert config.FOO == True
+        assert config.FOO is True
 
     @pytest.mark.usefixtures("isolated_env")
     def test_053__optional_dict_str_int() -> None:
