@@ -352,6 +352,7 @@ def deconstruct_typehint(
             f"valid environment variable types)"
         )
 
+    print(typ, arg_typs)
     return typ, arg_typs
 
 
