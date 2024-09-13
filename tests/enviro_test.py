@@ -5,9 +5,10 @@ import dataclasses as dc
 import os
 import pathlib
 import shutil
+import sys
 import tempfile
 import unittest
-from typing import Any, Dict, FrozenSet, List, Optional, Set
+from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 from typing_extensions import Final
@@ -529,39 +530,96 @@ def test_051__final_dict_str_int() -> None:
     assert config.FOO == {"bar": 2, "baz": 3, "foo": 1}
 
 
+if sys.version_info >= (3, 10):
+    # this trips up the py <3.9 interpreter
+    extra_params = [
+        bool | None,
+        None | bool,
+    ]
+else:
+    extra_params = []  # type: ignore[var-annotated]
+
+
+@pytest.mark.parametrize(
+    "typo",
+    [
+        Optional[bool],
+        Union[bool, None],
+        Union[None, bool],
+    ]
+    + extra_params,  # type: ignore
+)
 @pytest.mark.usefixtures("isolated_env")
-def test_052__optional_bool() -> None:
+def test_060__optional_bool(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Optional[bool]
+        FOO: typo  # type: ignore
 
     os.environ["FOO"] = "T"
     config = from_environment_as_dataclass(Config)
     assert config.FOO is True
 
 
+if sys.version_info >= (3, 10):
+    # this trips up the py <3.9 interpreter
+    extra_params = [
+        Dict[str, int] | None,
+        None | Dict[str, int],
+    ]
+else:
+    extra_params = []
+
+
+@pytest.mark.parametrize(
+    "typo",
+    [
+        Optional[Dict[str, int]],
+        Union[Dict[str, int], None],
+        Union[None, Dict[str, int]],
+    ]
+    + extra_params,  # type: ignore
+)
 @pytest.mark.usefixtures("isolated_env")
-def test_053__optional_dict_str_int() -> None:
+def test_061__optional_dict_str_int(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Optional[Dict[str, int]]
+        FOO: typo  # type: ignore
 
     os.environ["FOO"] = "foo=1 bar=2 baz=3"
     config = from_environment_as_dataclass(Config)
     assert config.FOO == {"bar": 2, "baz": 3, "foo": 1}
 
 
+if sys.version_info >= (3, 10):
+    # this trips up the py <3.9 interpreter
+    extra_params = [
+        dict | None,
+        None | dict,
+    ]
+else:
+    extra_params = []
+
+
+@pytest.mark.parametrize(
+    "typo",
+    [
+        Optional[dict],
+        Union[dict, None],
+        Union[None, dict],
+    ]
+    + extra_params,  # type: ignore
+)
 @pytest.mark.usefixtures("isolated_env")
-def test_054__optional_dict() -> None:
+def test_062__optional_dict(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Optional[dict]
+        FOO: typo  # type: ignore
 
     os.environ["FOO"] = "foo=1 bar=2 baz=3"
     config = from_environment_as_dataclass(Config)
@@ -655,9 +713,9 @@ def test_105_error__overly_nested_type_alias() -> None:
         from_environment_as_dataclass(Config)
     assert str(cm.value) == (
         "'typing.List[typing.Dict[str, int]]' is not a "
-        "supported type: field='FOO' (the typing-module's alias types "
-        "must resolve to 'type' within 1 nesting, or 2 if using "
-        "'Final' or 'Optional')"
+        "supported type: field='FOO' (typehints "
+        "must resolve to 'type' within 1 nesting, or "
+        "2 if using 'Final', 'Optional', or a None-'Union' pairing)"
     )
 
 
