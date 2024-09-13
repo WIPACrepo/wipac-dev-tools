@@ -2,6 +2,13 @@
 
 
 
+## v1.12.1 (2024-09-13)
+
+###  
+
+* Env Vars: Add Support for `|`-syntax Optional Types (#106) ([`90f7653`](https://github.com/WIPACrepo/wipac-dev-tools/commit/90f7653075d172e0b5dcf72bdeb3fae66bf770e2))
+
+
 ## v1.12.0 (2024-08-08)
 
 ### [minor]
