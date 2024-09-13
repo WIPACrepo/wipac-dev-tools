@@ -5,6 +5,7 @@ import dataclasses
 import logging
 import os
 import re
+import sys
 import types
 from typing import (
     Any,
@@ -356,7 +357,7 @@ def deconstruct_typehint(
         #   List[int]     -> list, [int]
         #   dict[str,int] -> dict, [str,int]
         typ_origin, typ_args = field.type.__origin__, field.type.__args__
-    elif isinstance(field.type, types.UnionType):
+    elif sys.version_info >= (3, 10) and isinstance(field.type, types.UnionType):
         # Ex:
         #   None | int, bool | str, ...
         typ_origin, typ_args = Union, field.type.__args__

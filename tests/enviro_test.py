@@ -537,7 +537,7 @@ if sys.version_info >= (3, 10):
         None | bool,
     ]
 else:
-    extra_params = []
+    extra_params = []  # type: ignore[var-annotated]
 
 
 @pytest.mark.parametrize(
