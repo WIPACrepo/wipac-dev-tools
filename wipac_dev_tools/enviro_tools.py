@@ -282,7 +282,10 @@ def from_environment_as_dataclass(
     )
 
 
-def _resolve_optional(typ_origin, typ_args):
+def _resolve_optional(
+    typ_origin: Any,  # at this point, types kind of break down since there is no common base-type among the many variations
+    typ_args: tuple,
+):
     # Optional[bool] *is* typing.Union[bool, NoneType]
     # similarly...
     #   Optional[bool]
@@ -300,7 +303,10 @@ def _resolve_optional(typ_origin, typ_args):
         return None
 
 
-def _resolve_final(typ_origin, typ_args):
+def _resolve_final(
+    typ_origin: Any,  # at this point, types kind of break down since there is no common base-type among the many variations
+    typ_args: tuple,
+):
     if typ_origin == Final:
         return typ_args[0]
     else:
@@ -308,25 +314,25 @@ def _resolve_final(typ_origin, typ_args):
 
 
 def _check_invalid_typehints(
-    check_typehint,
+    typ_origin: Any,  # at this point, types kind of break down since there is no common base-type among the many variations
     typ_args: tuple,
     field: dataclasses.Field,
 ):
-    if isinstance(check_typehint, _SpecialForm) and not typ_args:
+    if isinstance(typ_origin, _SpecialForm) and not typ_args:
         # ERROR: detect bare 'Final' and 'Optional'
         raise ValueError(
             f"'{field.type}' is not a supported type: "
             f"field='{field.name}' (any of the typing-module's SpecialForm "
             f"types, 'Final' and 'Optional', must have a nested type attached)"
         )
-    elif check_typehint is Any:
+    elif typ_origin is Any:
         # ERROR: Any is not ok
         raise ValueError(
             f"'{field.type}' is not a supported type: "
             f"field='{field.name}' (the 'Any' type and subclasses are not "
             f"valid environment variable types)"
         )
-    elif check_typehint == Union and (len(typ_args) != 2 or type(None) not in typ_args):
+    elif typ_origin == Union and (len(typ_args) != 2 or type(None) not in typ_args):
         # ERROR: disallowed Union usage (only single w/ None ok)
         raise ValueError(
             f"'{field.type}' is not a supported type: "
