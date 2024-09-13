@@ -307,19 +307,46 @@ def _resolve_final(typ_origin, typ_args):
         return None
 
 
-def deconstruct_typehint(
+def _check_invalid_typehints(
+    check_typehint,
+    typ_args: tuple,
     field: dataclasses.Field,
-) -> Tuple[type, Optional[Tuple[type, ...]]]:
-    """Take a type hint and return its type and its arguments' types."""
-
-    if isinstance(field.type, _SpecialForm):
+):
+    if isinstance(check_typehint, _SpecialForm):
         # ERROR: detect bare 'Final' and 'Optional'
         raise ValueError(
             f"'{field.type}' is not a supported type: "
             f"field='{field.name}' (any of the typing-module's SpecialForm "
             f"types, 'Final' and 'Optional', must have a nested type attached)"
         )
-    elif isinstance(field.type, (GenericAlias, types.GenericAlias)):
+    elif check_typehint is Any:
+        # ERROR: Any is not ok
+        raise ValueError(
+            f"'{field.type}' is not a supported type: "
+            f"field='{field.name}' (the 'Any' type and subclasses are not "
+            f"valid environment variable types)"
+        )
+    elif check_typehint == Union and (len(typ_args) != 2 or type(None) not in typ_args):
+        # ERROR: disallowed Union usage (only single w/ None ok)
+        raise ValueError(
+            f"'{field.type}' is not a supported type: "
+            f"field='{field.name}' (the only allowed 'Union' type "
+            f"is one that makes a single-typed value optional, ex: "
+            f"'Union[bool, None]', 'Union[None, dict[str,int]]', "
+            f"'int | None', or 'None | str'"
+            ")"
+        )
+    # fall-through: okay
+
+
+def deconstruct_typehint(
+    field: dataclasses.Field,
+) -> Tuple[type, Optional[Tuple[type, ...]]]:
+    """Take a type hint and return its type and its arguments' types."""
+
+    _check_invalid_typehints(field.type, tuple(), field)
+
+    if isinstance(field.type, (GenericAlias, types.GenericAlias)):
         # Ex:
         #   List[int]     -> list, [int]
         #   dict[str,int] -> dict, [str,int]
@@ -338,21 +365,11 @@ def deconstruct_typehint(
             f"'{field.type}' is not a supported type: field='{field.name}'"
         )
 
+    _check_invalid_typehints(typ_origin, typ_args, field)
+
     #
     # every typehint that is left is some kind of wrapper. iow, not a primitive
     #
-
-    # pre-validate
-    if typ_origin == Union and (len(typ_args) != 2 or type(None) not in typ_args):
-        # ERROR: disallowed Union usage (only single w/ None ok)
-        raise ValueError(
-            f"'{field.type}' is not a supported type: "
-            f"field='{field.name}' (the only allowed 'Union' type "
-            f"is one that makes a single-typed value optional, ex: "
-            f"'Union[bool, None]', 'Union[None, dict[str,int]]', "
-            f"'int | None', or 'None | str'"
-            ")"
-        )
 
     # resolve nesting, get a workable type
     if (inner := _resolve_optional(typ_origin, typ_args)) or (
@@ -367,14 +384,7 @@ def deconstruct_typehint(
     #
     # validate what we got, then return
     #
-
-    if typ_origin == Any:
-        # ERROR: Any is not ok
-        raise ValueError(
-            f"'{field.type}' is not a supported type: "
-            f"field='{field.name}' (the 'Any' type and subclasses are not "
-            f"valid environment variable types)"
-        )
+    _check_invalid_typehints(typ_origin, typ_args, field)
     too_nested_error_msg = (
         f"'{field.type}' is not a supported type: field='{field.name}' "
         f"(typehints must resolve to 'type' within 1 nesting, "
