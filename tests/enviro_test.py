@@ -7,7 +7,7 @@ import pathlib
 import shutil
 import tempfile
 import unittest
-from typing import Any, Dict, FrozenSet, List, Optional, Set
+from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 from typing_extensions import Final
@@ -529,39 +529,69 @@ def test_051__final_dict_str_int() -> None:
     assert config.FOO == {"bar": 2, "baz": 3, "foo": 1}
 
 
+@pytest.mark.parametrize(
+    "typo",
+    [
+        Optional[bool],
+        Union[bool, None],
+        Union[None, bool],
+        bool | None,
+        None | bool,
+    ],
+)
 @pytest.mark.usefixtures("isolated_env")
-def test_052__optional_bool() -> None:
+def test_060__optional_bool(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Optional[bool]
+        FOO: typo  # type: ignore
 
     os.environ["FOO"] = "T"
     config = from_environment_as_dataclass(Config)
     assert config.FOO is True
 
 
+@pytest.mark.parametrize(
+    "typo",
+    [
+        Optional[Dict[str, int]],
+        Union[Dict[str, int], None],
+        Union[None, Dict[str, int]],
+        Dict[str, int] | None,
+        None | Dict[str, int],
+    ],
+)
 @pytest.mark.usefixtures("isolated_env")
-def test_053__optional_dict_str_int() -> None:
+def test_061__optional_dict_str_int(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Optional[Dict[str, int]]
+        FOO: typo  # type: ignore
 
     os.environ["FOO"] = "foo=1 bar=2 baz=3"
     config = from_environment_as_dataclass(Config)
     assert config.FOO == {"bar": 2, "baz": 3, "foo": 1}
 
 
+@pytest.mark.parametrize(
+    "typo",
+    [
+        Optional[dict],
+        Union[dict, None],
+        Union[None, dict],
+        dict | None,
+        None | dict,
+    ],
+)
 @pytest.mark.usefixtures("isolated_env")
-def test_054__optional_dict() -> None:
+def test_062__optional_dict(typo) -> None:
     """Test normal use case."""
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Optional[dict]
+        FOO: typo  # type: ignore
 
     os.environ["FOO"] = "foo=1 bar=2 baz=3"
     config = from_environment_as_dataclass(Config)
