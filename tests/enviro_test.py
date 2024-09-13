@@ -5,6 +5,7 @@ import dataclasses as dc
 import os
 import pathlib
 import shutil
+import sys
 import tempfile
 import unittest
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
@@ -529,15 +530,24 @@ def test_051__final_dict_str_int() -> None:
     assert config.FOO == {"bar": 2, "baz": 3, "foo": 1}
 
 
+if sys.version_info >= (3, 10):
+    # this trips up the py <3.9 interpreter
+    extra_params = [
+        bool | None,
+        None | bool,
+    ]
+else:
+    extra_params = []
+
+
 @pytest.mark.parametrize(
     "typo",
     [
         Optional[bool],
         Union[bool, None],
         Union[None, bool],
-        bool | None,
-        None | bool,
-    ],
+    ]
+    + extra_params,  # type: ignore
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_060__optional_bool(typo) -> None:
@@ -552,15 +562,24 @@ def test_060__optional_bool(typo) -> None:
     assert config.FOO is True
 
 
+if sys.version_info >= (3, 10):
+    # this trips up the py <3.9 interpreter
+    extra_params = [
+        Dict[str, int] | None,
+        None | Dict[str, int],
+    ]
+else:
+    extra_params = []
+
+
 @pytest.mark.parametrize(
     "typo",
     [
         Optional[Dict[str, int]],
         Union[Dict[str, int], None],
         Union[None, Dict[str, int]],
-        Dict[str, int] | None,
-        None | Dict[str, int],
-    ],
+    ]
+    + extra_params,  # type: ignore
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_061__optional_dict_str_int(typo) -> None:
@@ -575,15 +594,24 @@ def test_061__optional_dict_str_int(typo) -> None:
     assert config.FOO == {"bar": 2, "baz": 3, "foo": 1}
 
 
+if sys.version_info >= (3, 10):
+    # this trips up the py <3.9 interpreter
+    extra_params = [
+        dict | None,
+        None | dict,
+    ]
+else:
+    extra_params = []
+
+
 @pytest.mark.parametrize(
     "typo",
     [
         Optional[dict],
         Union[dict, None],
         Union[None, dict],
-        dict | None,
-        None | dict,
-    ],
+    ]
+    + extra_params,  # type: ignore
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_062__optional_dict(typo) -> None:
