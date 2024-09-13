@@ -297,7 +297,7 @@ def _resolve_optional(
         and len(typ.__args__) == 2
         and type(None) in typ.__args__  # doesn't matter where None is
     ):
-        return next(x for x in typ.__args__ if x is not type(None))
+        return next(x for x in typ.__args__ if x is not type(None))  # get the non-None
     else:
         return None
 
@@ -313,48 +313,65 @@ def deconstruct_typehint(
     field: dataclasses.Field,
 ) -> Tuple[type, Optional[Tuple[type, ...]]]:
     """Take a type hint and return its type and its arguments' types."""
-    typ, arg_typs = field.type, None
 
-    # detect bare 'Final' and 'Optional'
-    if isinstance(typ, _SpecialForm):
+    if isinstance(field.type, _SpecialForm):
+        # ERROR: detect bare 'Final' and 'Optional'
         raise ValueError(
             f"'{field.type}' is not a supported type: "
             f"field='{field.name}' (any of the typing-module's SpecialForm "
             f"types, 'Final' and 'Optional', must have a nested type attached)"
         )
+    elif isinstance(field.type, (GenericAlias, types.GenericAlias)):
+        # Ex:
+        #   List[int]     -> list, [int]
+        #   dict[str,int] -> dict, [str,int]
+        typ_origin, typ_args = field.type.__origin__, field.type.__args__
+    elif isinstance(field.type, types.UnionType):
+        # Ex:
+        #   None | int, bool | str, ...
+        typ_origin, typ_args = Union, field.type.__args__
+    elif isinstance(field.type, type):
+        # Ex:
+        #   bool, str, int, ...
+        return field.type, None
+    else:
+        # ERROR: ???
+        raise ValueError(
+            f"'{field.type}' is not a supported type: field='{field.name}'"
+        )
 
-    # take care of 'typing'-module types
-    # typing.GenericAlias -> Dict, List, ...
-    # types.GenericAlias -> dict[int,str], list[bool], ...
-    if isinstance(typ, (GenericAlias, types.GenericAlias)):
+    #
+    # every typehint that is left is some kind of wrapper. iow, not a primitive
+    #
 
-        # pre-validate
-        if typ.__origin__ == Union and (
-            len(typ.__args__) != 2 or type(None) not in typ.__args__
-        ):
-            raise ValueError(
-                f"'{field.type}' is not a supported type: "
-                f"field='{field.name}' (the only allowed 'Union' type "
-                f"is one that makes a single-typed value optional, ex: "
-                f"'Union[bool, None]', 'Union[None, dict[str,int]]', 'int | None', or 'None | str'"
-                ")"
-            )
+    # pre-validate
+    if typ_origin == Union and (len(typ_args) != 2 or type(None) not in typ_args):
+        # ERROR: disallowed Union usage (only single w/ None ok)
+        raise ValueError(
+            f"'{field.type}' is not a supported type: "
+            f"field='{field.name}' (the only allowed 'Union' type "
+            f"is one that makes a single-typed value optional, ex: "
+            f"'Union[bool, None]', 'Union[None, dict[str,int]]', "
+            f"'int | None', or 'None | str'"
+            ")"
+        )
 
-        # get real type
-        if (inner := _resolve_optional(typ)) or (inner := _resolve_final(typ)):
-            # Ex: Final[int], Optional[Dict[str,int]]
-            if isinstance(inner, type):  # Ex: Final[int], Optional[int]
-                typ, arg_typs = inner, None
-            else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
-                typ, arg_typs = inner.__origin__, inner.__args__
-        else:
-            # Ex:
-            #   List[int]     -> list, [int]
-            #   dict[str,int] -> dict, [str,int]
-            typ, arg_typs = typ.__origin__, typ.__args__
+    # resolve nesting, get a workable type
+    if (inner := _resolve_optional(typ_origin)) or (
+        inner := _resolve_final(typ_origin)
+    ):
+        # Ex: Final[int], Optional[Dict[str,int]]
+        if isinstance(inner, type):  # Ex: Final[int], Optional[int]
+            typ_origin, typ_args = inner, None
+        else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
+            typ_origin, typ_args = inner.__origin__, inner.__args__
 
-    # validate what we got
-    if typ == Any:  # special message for Any type
+    #
+    # validate what we got, then return
+    #
+
+    if typ_origin == Any:
+        # ERROR: Any is not ok
         raise ValueError(
             f"'{field.type}' is not a supported type: "
             f"field='{field.name}' (the 'Any' type and subclasses are not "
@@ -365,12 +382,12 @@ def deconstruct_typehint(
         f"(typehints must resolve to 'type' within 1 nesting, "
         f"or 2 if using 'Final', 'Optional', or a None-'Union' pairing)"
     )
-    if not isinstance(typ, type):
+    if not isinstance(typ_origin, type):
         raise ValueError(too_nested_error_msg)
-    if arg_typs and not (all(isinstance(x, type) for x in arg_typs)):
+    if typ_args and not (all(isinstance(x, type) for x in typ_args)):
         raise ValueError(too_nested_error_msg)
 
-    return typ, arg_typs
+    return typ_origin, typ_args
 
 
 def _from_environment_as_dataclass(
