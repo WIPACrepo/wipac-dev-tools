@@ -685,9 +685,9 @@ def test_105_error__overly_nested_type_alias() -> None:
         from_environment_as_dataclass(Config)
     assert str(cm.value) == (
         "'typing.List[typing.Dict[str, int]]' is not a "
-        "supported type: field='FOO' (the typing-module's alias types "
-        "must resolve to 'type' within 1 nesting, or 2 if using "
-        "'Final' or 'Optional')"
+        "supported type: field='FOO' (typehints "
+        "must resolve to 'type' within 1 nesting, or "
+        "2 if using 'Final', 'Optional', or a None-'Union' pairing)"
     )
 
 

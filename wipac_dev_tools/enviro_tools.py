@@ -361,10 +361,9 @@ def deconstruct_typehint(
             f"valid environment variable types)"
         )
     too_nested_error_msg = (
-        f"'{field.type}' is not a supported type: "
-        f"field='{field.name}' (the typing-module's alias "
-        f"types must resolve to 'type' within 1 nesting, "
-        f"or 2 if using 'Final' or 'Optional' [or None-'Union'])"
+        f"'{field.type}' is not a supported type: field='{field.name}' "
+        f"(typehints must resolve to 'type' within 1 nesting, "
+        f"or 2 if using 'Final', 'Optional', or a None-'Union' pairing)"
     )
     if not isinstance(typ, type):
         raise ValueError(too_nested_error_msg)
