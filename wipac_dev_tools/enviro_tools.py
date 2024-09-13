@@ -282,9 +282,7 @@ def from_environment_as_dataclass(
     )
 
 
-def _resolve_optional(
-    typ: GenericAlias,
-) -> Union[GenericAlias, types.GenericAlias, None]:
+def _resolve_optional(typ_origin, typ_args):
     # Optional[bool] *is* typing.Union[bool, NoneType]
     # similarly...
     #   Optional[bool]
@@ -293,18 +291,18 @@ def _resolve_optional(
     #   bool | None
     #   None | bool
     if (
-        typ.__origin__ == Union
-        and len(typ.__args__) == 2
-        and type(None) in typ.__args__  # doesn't matter where None is
+        typ_origin == Union
+        and len(typ_args) == 2
+        and type(None) in typ_args  # doesn't matter where None is
     ):
-        return next(x for x in typ.__args__ if x is not type(None))  # get the non-None
+        return next(x for x in typ_args if x is not type(None))  # get the non-None
     else:
         return None
 
 
-def _resolve_final(typ: GenericAlias) -> Union[GenericAlias, types.GenericAlias, None]:
-    if typ.__origin__ == Final:
-        return typ.__args__[0]
+def _resolve_final(typ_origin, typ_args):
+    if typ_origin == Final:
+        return typ_args[0]
     else:
         return None
 
@@ -357,8 +355,8 @@ def deconstruct_typehint(
         )
 
     # resolve nesting, get a workable type
-    if (inner := _resolve_optional(typ_origin)) or (
-        inner := _resolve_final(typ_origin)
+    if (inner := _resolve_optional(typ_origin, typ_args)) or (
+        inner := _resolve_final(typ_origin, typ_args)
     ):
         # Ex: Final[int], Optional[Dict[str,int]]
         if isinstance(inner, type):  # Ex: Final[int], Optional[int]
