@@ -282,23 +282,38 @@ def from_environment_as_dataclass(
     )
 
 
+def _extract_optional(
+    typ: GenericAlias,
+) -> Union[GenericAlias, types.GenericAlias, None]:
+    # Optional[bool] *is* typing.Union[bool, NoneType]
+    # similarly...
+    #   Optional[bool]
+    #   Union[bool, None]
+    #   Union[None, bool]
+    #   bool | None
+    #   None | bool
+    if (
+        typ.__origin__ == Union
+        and len(typ.__args__) == 2
+        and type(None) in typ.__args__  # doesn't matter where None is
+    ):
+        return next(x for x in typ.__args__ if x is not type(None))
+    else:
+        return None
+
+
+def _extract_final(typ: GenericAlias) -> Union[GenericAlias, types.GenericAlias, None]:
+    if typ.__origin__ == Final:
+        return typ.__args__[0]
+    else:
+        return None
+
+
 def deconstruct_typehint(
     field: dataclasses.Field,
 ) -> Tuple[type, Optional[Tuple[type, ...]]]:
     """Take a type hint and return its type and its arguments' types."""
     typ, arg_typs = field.type, None
-
-    # some helper functions
-    def _is_optional(typ: GenericAlias) -> bool:
-        # Optional[int] *is* typing.Union[int, NoneType]
-        return (
-            typ.__origin__ == Union
-            and len(typ.__args__) == 2
-            and typ.__args__[-1] == type(None)  # noqa: E721
-        )
-
-    def _is_final(typ: GenericAlias) -> bool:
-        return bool(typ.__origin__ == Final)
 
     # detect bare 'Final' and 'Optional'
     if isinstance(typ, _SpecialForm):
@@ -312,12 +327,12 @@ def deconstruct_typehint(
     # typing.GenericAlias -> Dict, List, ...
     # types.GenericAlias -> dict[int,str], list[bool], ...
     if isinstance(typ, (GenericAlias, types.GenericAlias)):
-        if _is_optional(typ) or _is_final(typ):
+        if (inner := _extract_optional(typ)) or (inner := _extract_final(typ)):
             # Ex: Final[int], Optional[Dict[str,int]]
-            if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
-                typ, arg_typs = typ.__args__[0], None
+            if isinstance(inner, type):  # Ex: Final[int], Optional[int]
+                typ, arg_typs = inner, None
             else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
-                typ, arg_typs = typ.__args__[0].__origin__, typ.__args__[0].__args__
+                typ, arg_typs = inner.__origin__, inner.__args__
         else:
             # Ex:
             #   List[int]     -> list, [int]
