@@ -282,7 +282,7 @@ def from_environment_as_dataclass(
     )
 
 
-def _extract_optional(
+def _resolve_optional(
     typ: GenericAlias,
 ) -> Union[GenericAlias, types.GenericAlias, None]:
     # Optional[bool] *is* typing.Union[bool, NoneType]
@@ -302,7 +302,7 @@ def _extract_optional(
         return None
 
 
-def _extract_final(typ: GenericAlias) -> Union[GenericAlias, types.GenericAlias, None]:
+def _resolve_final(typ: GenericAlias) -> Union[GenericAlias, types.GenericAlias, None]:
     if typ.__origin__ == Final:
         return typ.__args__[0]
     else:
@@ -341,7 +341,7 @@ def deconstruct_typehint(
             )
 
         # get real type
-        if (inner := _extract_optional(typ)) or (inner := _extract_final(typ)):
+        if (inner := _resolve_optional(typ)) or (inner := _resolve_final(typ)):
             # Ex: Final[int], Optional[Dict[str,int]]
             if isinstance(inner, type):  # Ex: Final[int], Optional[int]
                 typ, arg_typs = inner, None
@@ -353,25 +353,23 @@ def deconstruct_typehint(
             #   dict[str,int] -> dict, [str,int]
             typ, arg_typs = typ.__origin__, typ.__args__
 
-        # validate what we got
-        if not (
-            isinstance(typ, type)
-            and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
-        ):
-            raise ValueError(
-                f"'{field.type}' is not a supported type: "
-                f"field='{field.name}' (the typing-module's alias "
-                f"types must resolve to 'type' within 1 nesting, "
-                f"or 2 if using 'Final' or 'Optional')"
-            )
-
-    # detect here 'Any'
-    if typ == Any:
+    # validate what we got
+    if typ == Any:  # special message for Any type
         raise ValueError(
             f"'{field.type}' is not a supported type: "
             f"field='{field.name}' (the 'Any' type and subclasses are not "
             f"valid environment variable types)"
         )
+    too_nested_error_msg = (
+        f"'{field.type}' is not a supported type: "
+        f"field='{field.name}' (the typing-module's alias "
+        f"types must resolve to 'type' within 1 nesting, "
+        f"or 2 if using 'Final' or 'Optional' [or None-'Union'])"
+    )
+    if not isinstance(typ, type):
+        raise ValueError(too_nested_error_msg)
+    if arg_typs and not (all(isinstance(x, type) for x in arg_typs)):
+        raise ValueError(too_nested_error_msg)
 
     return typ, arg_typs
 
