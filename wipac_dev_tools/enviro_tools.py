@@ -312,7 +312,7 @@ def _check_invalid_typehints(
     typ_args: tuple,
     field: dataclasses.Field,
 ):
-    if isinstance(check_typehint, _SpecialForm):
+    if isinstance(check_typehint, _SpecialForm) and not typ_args:
         # ERROR: detect bare 'Final' and 'Optional'
         raise ValueError(
             f"'{field.type}' is not a supported type: "
@@ -343,7 +343,6 @@ def deconstruct_typehint(
     field: dataclasses.Field,
 ) -> Tuple[type, Optional[Tuple[type, ...]]]:
     """Take a type hint and return its type and its arguments' types."""
-
     _check_invalid_typehints(field.type, tuple(), field)
 
     if isinstance(field.type, (GenericAlias, types.GenericAlias)):
