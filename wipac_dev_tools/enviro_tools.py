@@ -327,6 +327,20 @@ def deconstruct_typehint(
     # typing.GenericAlias -> Dict, List, ...
     # types.GenericAlias -> dict[int,str], list[bool], ...
     if isinstance(typ, (GenericAlias, types.GenericAlias)):
+
+        # pre-validate
+        if typ.__origin__ == Union and (
+            len(typ.__args__) != 2 or type(None) not in typ.__args__
+        ):
+            raise ValueError(
+                f"'{field.type}' is not a supported type: "
+                f"field='{field.name}' (the only allowed 'Union' type "
+                f"is one that makes a single-typed value optional, ex: "
+                f"'Union[bool, None]', 'Union[None, dict[str,int]]', 'int | None', or 'None | str'"
+                ")"
+            )
+
+        # get real type
         if (inner := _extract_optional(typ)) or (inner := _extract_final(typ)):
             # Ex: Final[int], Optional[Dict[str,int]]
             if isinstance(inner, type):  # Ex: Final[int], Optional[int]
@@ -339,6 +353,7 @@ def deconstruct_typehint(
             #   dict[str,int] -> dict, [str,int]
             typ, arg_typs = typ.__origin__, typ.__args__
 
+        # validate what we got
         if not (
             isinstance(typ, type)
             and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
