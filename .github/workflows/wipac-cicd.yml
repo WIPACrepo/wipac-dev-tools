@@ -70,7 +70,7 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: WIPACrepo/wipac-dev-py-setup-action@v4.0
+        uses: WIPACrepo/wipac-dev-py-setup-action@v4.1
         with:
           python_min: 3.9
           pypi_name: wipac-dev-tools
@@ -88,6 +88,8 @@ jobs:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
         uses: WIPACrepo/wipac-dev-py-dependencies-action@v2.0
+        with:
+          use_directory: true
 
   ######################################################################################
 
