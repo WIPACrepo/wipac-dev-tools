@@ -2,6 +2,15 @@
 
 
 
+## v1.13.0 (2024-10-09)
+
+### [minor]
+
+* Upgrades: Python 3.13 + CI Package Mgmt [minor] (#107)
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`a10532b`](https://github.com/WIPACrepo/wipac-dev-tools/commit/a10532b245e0b8820124079f2e434e7d1923f95c))
+
+
 ## v1.12.1 (2024-09-13)
 
 ###  
