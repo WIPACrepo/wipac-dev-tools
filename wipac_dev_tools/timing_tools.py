@@ -14,7 +14,7 @@ class IntervalTimer:
 
     def __init__(self, seconds: float, logger: logging.Logger) -> None:
         self.seconds = seconds
-        self._last_time = time.time()
+        self._last_time = time.monotonic()
         self.logger = logger
 
     def fastforward(self):
@@ -54,9 +54,9 @@ class IntervalTimer:
 
         If the interval has elapsed, the internal timer is reset to the current time.
         """
-        diff = time.time() - self._last_time
+        diff = time.monotonic() - self._last_time
         if diff >= self.seconds:
-            self._last_time = time.time()
+            self._last_time = time.monotonic()
             self.logger.debug(
                 f"At least {self.seconds}s have elapsed (actually {diff}s)."
             )
