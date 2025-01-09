@@ -1,6 +1,6 @@
 """Init."""
 
-from . import argparse_tools, data_safety_tools, logging_tools
+from . import argparse_tools, data_safety_tools, logging_tools, timing_tools
 from .enviro_tools import from_environment, from_environment_as_dataclass  # noqa
 from .setup_tools import SetupShop  # noqa
 from .strtobool import strtobool
@@ -13,6 +13,7 @@ __all__ = [
     "strtobool",
     "argparse_tools",
     "data_safety_tools",
+    "timing_tools",
 ]
 
 # version is a human-readable version number.
