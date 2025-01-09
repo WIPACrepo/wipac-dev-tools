@@ -15,6 +15,7 @@ def test_available() -> None:
         "strtobool",
         "argparse_tools",
         "data_safety_tools",
+        "timing_tools",
     }
     assert set(wipac_dev_tools.__all__) == all_of_em
 
