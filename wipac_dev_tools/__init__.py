@@ -13,6 +13,7 @@ __all__ = [
     "strtobool",
     "argparse_tools",
     "data_safety_tools",
+    "timing_tools",
 ]
 
 # version is a human-readable version number.
