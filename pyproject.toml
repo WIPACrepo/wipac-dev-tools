@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-version = "1.13.0"
+version = "1.14.0"
 name = "wipac-dev-tools"
 description = "Common, basic, and reusable development tools"
 readme = "README.md"

@@ -2,6 +2,15 @@
 
 
 
+## v1.14.0 (2025-01-09)
+
+### [minor]
+
+* Add `timing_tool.IntervalTimer` [minor] (#108)
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`c27e542`](https://github.com/WIPACrepo/wipac-dev-tools/commit/c27e5424cd21e2fc6d093e93009ae3312a1a6c85))
+
+
 ## v1.13.0 (2024-10-09)
 
 ### [minor]
