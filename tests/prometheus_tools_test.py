@@ -2,7 +2,7 @@ from pprint import pprint
 
 import pytest
 from prometheus_client import REGISTRY, GC_COLLECTOR, PLATFORM_COLLECTOR, PROCESS_COLLECTOR
-from wipac_dev_tools import prometheus
+from wipac_dev_tools import prometheus_tools as prometheus
 
 # disable these for testing
 REGISTRY.unregister(GC_COLLECTOR)
