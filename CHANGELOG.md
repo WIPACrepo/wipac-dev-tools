@@ -2,6 +2,34 @@
 
 
 
+## v1.15.0 (2025-01-14)
+
+### [minor]
+
+* add prometheus global label wrapper [minor] (#109)
+
+Add global / common labels for prometheus metrics.
+
+Example usage::
+
+        metrics = GlobalLabels({&#34;instance&#34;: &#34;test-abc&#34;, &#34;part&#34;: &#34;a&#34;})
+        c = metrics.counter(&#34;thing&#34;, &#34;The Thing&#34;)
+        c.inc()
+        # will have labels for instance and part
+
+        c2 = metrics.counter(&#34;thing&#34;, &#34;Thing 2&#34;, {&#34;part&#34;: &#34;b&#34;})
+        c2.inc()
+        # will have labels for instance and part, with part=b
+
+        c3 = metrics.counter(&#34;thing&#34;, &#34;Thing 2&#34;, {&#34;extra&#34;: &#34;test&#34;})
+        c3.inc()
+        # will have labels for instance, part, and extra
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`4abaa64`](https://github.com/WIPACrepo/wipac-dev-tools/commit/4abaa64eb25d18caedfc96be3802aaad6ca8ba8d))
+
+
 ## v1.14.0 (2025-01-09)
 
 ### [minor]
