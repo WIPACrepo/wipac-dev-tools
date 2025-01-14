@@ -14,6 +14,7 @@ __all__ = [
     "argparse_tools",
     "data_safety_tools",
     "timing_tools",
+    "prometheus"
 ]
 
 # version is a human-readable version number.
