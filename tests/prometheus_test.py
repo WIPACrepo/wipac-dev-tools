@@ -28,7 +28,7 @@ def test_counter():
         "foo": "bar"
     })
     assert metric == 1
-    
+
 
 def test_counter_extra_labels():
     gl = prometheus.GlobalLabels({"foo": "bar"})
@@ -116,7 +116,7 @@ def test_enum():
         "test": "start"
     })
     assert metric == 0
-    
+
     metric = REGISTRY.get_sample_value('test', {
         "foo": "bar",
         "test": "stop"

@@ -1,4 +1,4 @@
-from functools import partialmethod, wraps
+from functools import partialmethod
 
 from prometheus_client import (
     Counter,
