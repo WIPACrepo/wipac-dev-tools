@@ -1,3 +1,5 @@
+"""Tools for Prometheus monitoring."""
+
 from functools import partialmethod
 
 from prometheus_client import (
