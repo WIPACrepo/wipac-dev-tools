@@ -129,11 +129,11 @@ def test_prom_wrapper():
     class A:
         def __init__(self):
             self.prom = prometheus.GlobalLabels({"foo": "bar"})
-        
+
         @prometheus.PromWrapper(lambda self: self.prom.gauge('ggg'))
         def test_gauge(self, g):
             g.set(123)
-    
+
     A().test_gauge()
 
     pprint(list(REGISTRY.collect()))
@@ -151,7 +151,7 @@ async def test_prom_wrapper_async():
         @prometheus.AsyncPromWrapper(lambda self: self.prom.gauge('ggg'))
         async def test_gauge(self, g):
             g.set(123)
-    
+
     await A().test_gauge()
 
     pprint(list(REGISTRY.collect()))
