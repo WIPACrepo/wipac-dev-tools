@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from functools import partialmethod, wraps
-from typing import Any
+from typing import Any, Union
 
 from prometheus_client import (
     Counter,
@@ -47,14 +47,14 @@ class GlobalLabels:
         c3.inc()
         # will have labels for instance, part, and extra
     """
-    def __init__(self, labels: dict | None = None):
+    def __init__(self, labels: Union[dict, None] = None):
         self.common_labels = labels if labels else {}
 
     def _wrap(self,
               cls: Callable[..., Any],
               name: str,
-              documentation: str | None = None,
-              labels: dict | list | None = None,
+              documentation: Union[str, None] = None,
+              labels: Union[dict, list, None] = None,
               finalize: bool = True,
               **kwargs,
     ) -> Any:
