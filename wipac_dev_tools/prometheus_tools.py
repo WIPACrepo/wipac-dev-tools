@@ -50,13 +50,14 @@ class GlobalLabels:
     def __init__(self, labels: Union[dict, None] = None):
         self.common_labels = labels if labels else {}
 
-    def _wrap(self,
-              cls: Callable[..., Any],
-              name: str,
-              documentation: Union[str, None] = None,
-              labels: Union[dict, list, None] = None,
-              finalize: bool = True,
-              **kwargs,
+    def _wrap(
+        self,
+        cls: Callable[..., Any],
+        name: str,
+        documentation: Union[str, None] = None,
+        labels: Union[dict, list, None] = None,
+        finalize: bool = True,
+        **kwargs,
     ) -> Any:
         all_labels = self.common_labels.copy()
         if labels:
