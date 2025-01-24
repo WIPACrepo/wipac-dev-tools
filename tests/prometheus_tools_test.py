@@ -1,4 +1,5 @@
 from pprint import pprint
+import time
 
 import pytest
 from prometheus_client import REGISTRY, GC_COLLECTOR, PLATFORM_COLLECTOR, PROCESS_COLLECTOR
@@ -122,3 +123,75 @@ def test_enum():
         "test": "stop"
     })
     assert metric == 1
+
+
+def test_prom_wrapper():
+    class A:
+        def __init__(self):
+            self.prom = prometheus.GlobalLabels({"foo": "bar"})
+
+        @prometheus.PromWrapper(lambda self: self.prom.gauge('ggg'))
+        def test_gauge(self, g):
+            g.set(123)
+
+    A().test_gauge()
+
+    pprint(list(REGISTRY.collect()))
+    metric = REGISTRY.get_sample_value('ggg', {
+        "foo": "bar"
+    })
+    assert metric == 123
+
+
+async def test_prom_wrapper_async():
+    class A:
+        def __init__(self):
+            self.prom = prometheus.GlobalLabels({"foo": "bar"})
+
+        @prometheus.AsyncPromWrapper(lambda self: self.prom.gauge('ggg'))
+        async def test_gauge(self, g):
+            g.set(123)
+
+    await A().test_gauge()
+
+    pprint(list(REGISTRY.collect()))
+    metric = REGISTRY.get_sample_value('ggg', {
+        "foo": "bar"
+    })
+    assert metric == 123
+
+
+def test_prom_timer():
+    class A:
+        def __init__(self):
+            self.prom = prometheus.GlobalLabels({"foo": "bar"})
+
+        @prometheus.PromTimer(lambda self: self.prom.histogram('ggg'))
+        def test_timer(self):
+            time.sleep(.1)
+
+    A().test_timer()
+
+    pprint(list(REGISTRY.collect()))
+    metric = REGISTRY.get_sample_value('ggg_sum', {
+        "foo": "bar"
+    })
+    assert .1 <= metric <= .11
+
+
+async def test_prom_timer_async():
+    class A:
+        def __init__(self):
+            self.prom = prometheus.GlobalLabels({"foo": "bar"})
+
+        @prometheus.AsyncPromTimer(lambda self: self.prom.histogram('ggg'))
+        async def test_timer(self):
+            time.sleep(.1)
+
+    await A().test_timer()
+
+    pprint(list(REGISTRY.collect()))
+    metric = REGISTRY.get_sample_value('ggg_sum', {
+        "foo": "bar"
+    })
+    assert .1 <= metric <= .11
