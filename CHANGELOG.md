@@ -2,6 +2,19 @@
 
 
 
+## v1.15.1 (2025-01-24)
+
+###  
+
+* Add decorators for prometheus (#110)
+
+Decorators and other helpers for prometheus monitoring.
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`74143ce`](https://github.com/WIPACrepo/wipac-dev-tools/commit/74143cee4a416f2597df4fd78974ef7f86d6b737))
+
+
 ## v1.15.0 (2025-01-14)
 
 ### [minor]
