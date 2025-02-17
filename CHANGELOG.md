@@ -2,6 +2,15 @@
 
 
 
+## v1.15.2 (2025-02-17)
+
+###  
+
+* `IntervalTimer`: Allow Passing Logger Name (#111)
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`d0fe282`](https://github.com/WIPACrepo/wipac-dev-tools/commit/d0fe282f8afe1a1a45402f4b5b919ef46a7d32a0))
+
+
 ## v1.15.1 (2025-01-24)
 
 ###  
