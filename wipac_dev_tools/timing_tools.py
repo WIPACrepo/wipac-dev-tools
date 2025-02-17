@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+from typing import Union
 
 
 class IntervalTimer:
@@ -12,7 +13,7 @@ class IntervalTimer:
     mechanisms to wait until a specified time interval has passed.
     """
 
-    def __init__(self, seconds: float, logger: logging.Logger | str) -> None:
+    def __init__(self, seconds: float, logger: Union[logging.Logger, str]) -> None:
         self.seconds = seconds
         self._last_time = time.monotonic()
 
