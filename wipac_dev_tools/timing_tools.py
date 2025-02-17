@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+from typing import Union
 
 
 class IntervalTimer:
@@ -12,10 +13,14 @@ class IntervalTimer:
     mechanisms to wait until a specified time interval has passed.
     """
 
-    def __init__(self, seconds: float, logger: logging.Logger) -> None:
+    def __init__(self, seconds: float, logger: Union[logging.Logger, str]) -> None:
         self.seconds = seconds
         self._last_time = time.monotonic()
-        self.logger = logger
+
+        if isinstance(logger, logging.Logger):
+            self.logger = logger
+        else:
+            self.logger = logging.getLogger(logger)
 
     def fastforward(self):
         """Reset the timer so that the next call to `has_interval_elapsed` will return True.

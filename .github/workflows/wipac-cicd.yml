@@ -49,6 +49,7 @@ jobs:
         #   & don't run non-branch triggers (like tags)
         #   & we don't want to trigger an update on PR's merge to main/master/default (which is a branch)
         run: |
+          set -euo pipefail
           if [[ \
               ${{github.actor}} != 'dependabot[bot]' && \
               ${{github.ref_type}} == 'branch' && \
@@ -107,6 +108,7 @@ jobs:
           python-version: ${{ matrix.py3 }}
       - name: Pytest
         run: |
+          set -euo pipefail
           pip install --upgrade pip wheel setuptools pytest
           pip install .[dev]
           pytest -vvvv tests
