@@ -86,7 +86,7 @@ jobs:
           pypi_name: wipac-dev-tools
           author: WIPAC Developers
           author_email: developers@icecube.wisc.edu
-          keywords: "['WIPAC', 'python', 'tools', 'utilities']"
+          keywords: '["WIPAC", "python", "tools", "utilities"]'
 
   py-dependencies:
     needs: [ writable-branch-detect ]
