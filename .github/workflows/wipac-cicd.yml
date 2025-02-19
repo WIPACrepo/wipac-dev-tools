@@ -11,16 +11,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: versions
-        uses: WIPACrepo/wipac-dev-py-versions-action@v2.4
+        uses: WIPACrepo/wipac-dev-py-versions-action@v2.5
 
   ######################################################################################
 
   flake8:
+    needs: [ py-versions ]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - uses: WIPACrepo/wipac-dev-flake8-action@v1.0
+        with:
+          python-version: ${{ matrix.py3 }}
+      - uses: WIPACrepo/wipac-dev-flake8-action@v1.2
+        with:
+          max-complexity: 10  # ideal is ~10-15
 
   mypy:
     needs: [ py-versions ]
@@ -43,7 +52,7 @@ jobs:
     outputs:
       OKAY: ${{ steps.detect.outputs.OKAY }}
     steps:
-      - name: is this a non-dependabot branch?
+      - name: is this a bot-writable branch?
         id: detect
         # dependabot can't access normal secrets
         #   & don't run non-branch triggers (like tags)
@@ -71,13 +80,13 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: WIPACrepo/wipac-dev-py-setup-action@v4.1
+        uses: WIPACrepo/wipac-dev-py-setup-action@v4.3
         with:
           python_min: 3.9
           pypi_name: wipac-dev-tools
           author: WIPAC Developers
           author_email: developers@icecube.wisc.edu
-          keywords: WIPAC python tools utilities
+          keywords: "WIPAC, python tools, utilities"
 
   py-dependencies:
     needs: [ writable-branch-detect ]
@@ -88,7 +97,7 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: WIPACrepo/wipac-dev-py-dependencies-action@v2.0
+        uses: WIPACrepo/wipac-dev-py-dependencies-action@v2.1
         with:
           use_directory: true
 
