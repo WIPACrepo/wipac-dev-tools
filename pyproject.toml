@@ -7,7 +7,7 @@ version = "1.15.2"
 name = "wipac-dev-tools"
 description = "Common, basic, and reusable development tools"
 readme = "README.md"
-keywords = ["WIPAC python tools utilities"]
+keywords = ["WIPAC", "python tools", "utilities"]
 classifiers = ["Development Status :: 5 - Production/Stable", "Programming Language :: Python :: 3.9", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13"]
 requires-python = ">=3.9, <3.14"
 dependencies = ["typing_extensions", "requests"]
