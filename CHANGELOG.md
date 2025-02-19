@@ -2,6 +2,15 @@
 
 
 
+## v1.15.3 (2025-02-19)
+
+###  
+
+* Bump GHA Packages (#112)
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`2d26f94`](https://github.com/WIPACrepo/wipac-dev-tools/commit/2d26f9431a43ba24c89fc7f5124df4e3de5560c7))
+
+
 ## v1.15.2 (2025-02-17)
 
 ###  
