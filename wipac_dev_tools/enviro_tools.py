@@ -1,6 +1,5 @@
 """Module to support parsing environment variables."""
 
-
 import dataclasses
 import logging
 import os
@@ -404,13 +403,7 @@ def deconstruct_typehint(
     return typ_origin, typ_args
 
 
-def _from_environment_as_dataclass(
-    dclass: Type[DataclassT],
-    collection_sep: Optional[str],
-    dict_kv_joiner: str,
-    log_vars: Optional[logging_tools.LoggerLevel],
-) -> DataclassT:
-    # check args
+def _validate_delimiters(collection_sep: Optional[str], dict_kv_joiner: str) -> None:
     if (
         (dict_kv_joiner == collection_sep)
         or (not collection_sep and " " in dict_kv_joiner)  # collection_sep=None is \s+
@@ -420,6 +413,16 @@ def _from_environment_as_dataclass(
             r"'collection_sep' ('None'='\s+') cannot overlap with 'dict_kv_joiner': "
             f"'{collection_sep}' & '{dict_kv_joiner}'"
         )
+
+
+def _from_environment_as_dataclass(
+    dclass: Type[DataclassT],
+    collection_sep: Optional[str],
+    dict_kv_joiner: str,
+    log_vars: Optional[logging_tools.LoggerLevel],
+) -> DataclassT:
+    # check args
+    _validate_delimiters(collection_sep, dict_kv_joiner)
 
     # type-check dclass
     if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
