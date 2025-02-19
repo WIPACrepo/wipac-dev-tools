@@ -80,7 +80,7 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: WIPACrepo/wipac-dev-py-setup-action@keywords-spacing
+        uses: WIPACrepo/wipac-dev-py-setup-action@v4.3
         with:
           python_min: 3.9
           pypi_name: wipac-dev-tools
