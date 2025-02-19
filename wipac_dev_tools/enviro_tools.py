@@ -43,6 +43,7 @@ else:
 RetVal = Union[str, int, float, bool]
 OptionalDict = Mapping[str, Optional[RetVal]]
 KeySpec = Union[str, Sequence[str], OptionalDict]
+sdict = Dict[str, Any]
 
 
 # ---------------------------------------------------------------------------------------
@@ -415,6 +416,27 @@ def _validate_delimiters(collection_sep: Optional[str], dict_kv_joiner: str) -> 
         )
 
 
+def _validate_is_non_instantiated_dataclass(dclass: Type[DataclassT]) -> None:
+    if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
+        raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
+
+
+def _cast_to_dataclass(dclass: Type[DataclassT], env_var_attrs: sdict) -> DataclassT:
+    try:
+        return cast(DataclassT, dclass(**env_var_attrs))
+    except TypeError as e:
+        m = re.fullmatch(
+            r".*__init__\(\) missing \d+ required positional argument(?P<s>s?): (?P<args>.+)",
+            str(e),
+        )  # in 3.10 the class's qualname is used before "__init__()..."
+        if m:
+            raise OSError(
+                f"Missing required environment variable{m.groupdict()['s']}: "
+                f"{m.groupdict()['args']}"
+            ) from e
+        raise  # some other kind of TypeError
+
+
 def _from_environment_as_dataclass(
     dclass: Type[DataclassT],
     collection_sep: Optional[str],
@@ -423,13 +445,10 @@ def _from_environment_as_dataclass(
 ) -> DataclassT:
     # check args
     _validate_delimiters(collection_sep, dict_kv_joiner)
-
-    # type-check dclass
-    if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
-        raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
+    _validate_is_non_instantiated_dataclass(dclass)
 
     # iterate fields and find env vars
-    kwargs: Dict[str, Any] = {}
+    env_var_attrs: sdict = {}
     for field in dataclasses.fields(dclass):
         if not field.init:
             continue  # don't try to get a field that can't be set via __init__
@@ -445,7 +464,7 @@ def _from_environment_as_dataclass(
 
         # cast value to type
         try:
-            kwargs[field.name] = _typecast_for_dataclass(
+            env_var_attrs[field.name] = _typecast_for_dataclass(
                 env_val, typ, arg_typs, collection_sep, dict_kv_joiner
             )
         except ValueError as e:
@@ -454,27 +473,16 @@ def _from_environment_as_dataclass(
                 f"var='{field.name}' value='{env_val}'"
             ) from e
 
-    try:
-        env_vars = cast(DataclassT, dclass(**kwargs))
-    except TypeError as e:
-        m = re.fullmatch(
-            r".*__init__\(\) missing \d+ required positional argument(?P<s>s?): (?P<args>.+)",
-            str(e),
-        )  # in 3.10 the class's qualname is used before "__init__()..."
-        if m:
-            raise OSError(
-                f"Missing required environment variable{m.groupdict()['s']}: "
-                f"{m.groupdict()['args']}"
-            ) from e
-        raise  # some other kind of TypeError
+    # to dataclass!
+    env_vars_dc = _cast_to_dataclass(dclass, env_var_attrs)
 
     # log & return
     if log_vars:
         logging_tools.log_dataclass(
-            env_vars,
+            env_vars_dc,
             logging.getLogger(),
             log_vars,
             prefix="(env)",
             obfuscate_sensitive_substrings=True,
         )
-    return env_vars
+    return env_vars_dc
