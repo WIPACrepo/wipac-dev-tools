@@ -2,6 +2,13 @@
 
 
 
+## v1.15.4 (2025-02-25)
+
+###  
+
+* `timing_tools`: Make Logging Optional (#113) ([`500372d`](https://github.com/WIPACrepo/wipac-dev-tools/commit/500372d2f2509e974c96017bc05c2cf3c1de087b))
+
+
 ## v1.15.3 (2025-02-19)
 
 ###  
