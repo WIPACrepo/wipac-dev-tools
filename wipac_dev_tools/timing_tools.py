@@ -22,7 +22,7 @@ class IntervalTimer:
         self._last_time = time.monotonic()
 
         if not logger:
-            self.logger = None  # not logging
+            self.logger = None  # no logging
         elif isinstance(logger, logging.Logger):
             self.logger = logger
         else:
