@@ -13,11 +13,17 @@ class IntervalTimer:
     mechanisms to wait until a specified time interval has passed.
     """
 
-    def __init__(self, seconds: float, logger: Union[logging.Logger, str]) -> None:
+    def __init__(
+        self,
+        seconds: float,
+        logger: Union[logging.Logger, str, None],
+    ) -> None:
         self.seconds = seconds
         self._last_time = time.monotonic()
 
-        if isinstance(logger, logging.Logger):
+        if not logger:
+            self.logger = None  # no logging
+        elif isinstance(logger, logging.Logger):
             self.logger = logger
         else:
             self.logger = logging.getLogger(logger)
@@ -36,9 +42,10 @@ class IntervalTimer:
         This method checks the elapsed time every `frequency` seconds,
         allowing cooperative multitasking during the wait.
         """
-        self.logger.debug(
-            f"Waiting until {self.seconds}s has elapsed since the last iteration..."
-        )
+        if self.logger:
+            self.logger.debug(
+                f"Waiting until {self.seconds}s has elapsed since the last iteration..."
+            )
         while not self.has_interval_elapsed():
             await asyncio.sleep(frequency)
 
@@ -48,9 +55,10 @@ class IntervalTimer:
         This method checks the elapsed time every `frequency` seconds,
         blocking until the interval has elapsed.
         """
-        self.logger.debug(
-            f"Waiting until {self.seconds}s has elapsed since the last iteration..."
-        )
+        if self.logger:
+            self.logger.debug(
+                f"Waiting until {self.seconds}s has elapsed since the last iteration..."
+            )
         while not self.has_interval_elapsed():
             time.sleep(frequency)
 
@@ -62,8 +70,9 @@ class IntervalTimer:
         diff = time.monotonic() - self._last_time
         if diff >= self.seconds:
             self._last_time = time.monotonic()
-            self.logger.debug(
-                f"At least {self.seconds}s have elapsed (actually {diff}s)."
-            )
+            if self.logger:
+                self.logger.debug(
+                    f"At least {self.seconds}s have elapsed (actually {diff}s)."
+                )
             return True
         return False
