@@ -30,10 +30,10 @@ class IntervalTimer:
             self.logger = logging.getLogger(logger)
 
     def fastforward(self):
-        """Reset the timer so that the next call to `has_interval_elapsed` will return True.
+        """Force the interval timer to consider the current interval as already elapsed.
 
-        This effectively skips the current interval and forces the timer to indicate
-        that the interval has elapsed on the next check.
+        This resets the internal timer to a state where the next call to `has_interval_elapsed`
+        will immediately return `True`, as if the interval has already passed.
         """
         self._last_time = float("-inf")
 
