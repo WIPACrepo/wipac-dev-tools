@@ -38,8 +38,8 @@ class IntervalTimer:
         self._last_time = float("-inf")
 
     @staticmethod
-    def _is_nth(i: int, log_every_nth: int) -> bool:
-        return log_every_nth > 0 and i % log_every_nth == 0
+    def _is_nth(i: int, nth: int) -> bool:
+        return nth > 0 and i % nth == 0
 
     async def wait_until_interval(
         self,
