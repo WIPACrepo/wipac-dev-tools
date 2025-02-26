@@ -1,6 +1,7 @@
 """Utilities for timers, interval trackers, etc."""
 
 import asyncio
+import itertools
 import logging
 import time
 from typing import Union
@@ -36,7 +37,18 @@ class IntervalTimer:
         """
         self._last_time = float("-inf")
 
-    async def wait_until_interval(self, frequency: float = 1.0) -> None:
+    @staticmethod
+    def _is_every_n(i: int, log_every_n: int) -> bool:
+        if log_every_n < 1:
+            return False
+        else:
+            return i % log_every_n == 0
+
+    async def wait_until_interval(
+        self,
+        frequency: float = 1.0,
+        log_every_n: int = 60,
+    ) -> None:
         """Wait asynchronously until the specified interval has elapsed.
 
         This method checks the elapsed time every `frequency` seconds,
@@ -46,10 +58,16 @@ class IntervalTimer:
             self.logger.debug(
                 f"Waiting until {self.seconds}s has elapsed since the last iteration..."
             )
-        while not self.has_interval_elapsed():
+        for i in itertools.count():
+            if not self.has_interval_elapsed(do_log=self._is_every_n(i, log_every_n)):
+                return
             await asyncio.sleep(frequency)
 
-    def wait_until_interval_sync(self, frequency: float = 1.0) -> None:
+    def wait_until_interval_sync(
+        self,
+        frequency: float = 1.0,
+        log_every_n: int = 60,
+    ) -> None:
         """Wait until the specified interval has elapsed.
 
         This method checks the elapsed time every `frequency` seconds,
@@ -59,10 +77,12 @@ class IntervalTimer:
             self.logger.debug(
                 f"Waiting until {self.seconds}s has elapsed since the last iteration..."
             )
-        while not self.has_interval_elapsed():
+        for i in itertools.count():
+            if not self.has_interval_elapsed(do_log=self._is_every_n(i, log_every_n)):
+                return
             time.sleep(frequency)
 
-    def has_interval_elapsed(self) -> bool:
+    def has_interval_elapsed(self, do_log: bool = False) -> bool:
         """Check if the specified time interval has elapsed since the last expiration.
 
         If the interval has elapsed, the internal timer is reset to the current time.
