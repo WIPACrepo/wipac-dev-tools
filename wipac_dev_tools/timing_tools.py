@@ -38,16 +38,13 @@ class IntervalTimer:
         self._last_time = float("-inf")
 
     @staticmethod
-    def _is_every_n(i: int, log_every_n: int) -> bool:
-        if log_every_n < 1:
-            return False
-        else:
-            return i % log_every_n == 0
+    def _is_nth(i: int, log_every_nth: int) -> bool:
+        return log_every_nth > 0 and i % log_every_nth == 0
 
     async def wait_until_interval(
         self,
         frequency: float = 1.0,
-        log_every_n: int = 60,
+        log_every_nth: int = 60,
     ) -> None:
         """Wait asynchronously until the specified interval has elapsed.
 
@@ -60,14 +57,14 @@ class IntervalTimer:
             )
 
         for i in itertools.count():
-            if self.has_interval_elapsed(do_log=self._is_every_n(i, log_every_n)):
+            if self.has_interval_elapsed(do_log=self._is_nth(i, log_every_nth)):
                 return
             await asyncio.sleep(frequency)
 
     def wait_until_interval_sync(
         self,
         frequency: float = 1.0,
-        log_every_n: int = 60,
+        log_every_nth: int = 60,
     ) -> None:
         """Wait until the specified interval has elapsed.
 
@@ -80,7 +77,7 @@ class IntervalTimer:
             )
 
         for i in itertools.count():
-            if self.has_interval_elapsed(do_log=self._is_every_n(i, log_every_n)):
+            if self.has_interval_elapsed(do_log=self._is_nth(i, log_every_nth)):
                 return
             time.sleep(frequency)
 
