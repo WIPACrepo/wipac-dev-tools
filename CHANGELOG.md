@@ -2,6 +2,13 @@
 
 
 
+## v1.15.5 (2025-02-26)
+
+###  
+
+* `timing_tools.py`: Decrease Logging More (#114) ([`8bb445e`](https://github.com/WIPACrepo/wipac-dev-tools/commit/8bb445ed987fc8aab36720ff43c384e81a33f5f9))
+
+
 ## v1.15.4 (2025-02-25)
 
 ###  
