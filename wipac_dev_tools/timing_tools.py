@@ -84,7 +84,7 @@ class IntervalTimer:
                 return
             time.sleep(frequency)
 
-    def has_interval_elapsed(self, do_log: bool = False) -> bool:
+    def has_interval_elapsed(self, do_log: bool = True) -> bool:
         """Check if the specified time interval has elapsed since the last expiration.
 
         If the interval has elapsed, the internal timer is reset to the current time.
