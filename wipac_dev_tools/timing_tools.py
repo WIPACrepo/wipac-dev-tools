@@ -56,7 +56,7 @@ class IntervalTimer:
         """
         if self.logger:
             self.logger.debug(
-                f"Waiting until {self.seconds}s has elapsed since the last iteration..."
+                f"Waiting for {self.seconds}s interval before proceeding..."
             )
 
         for i in itertools.count():
@@ -76,7 +76,7 @@ class IntervalTimer:
         """
         if self.logger:
             self.logger.debug(
-                f"Waiting until {self.seconds}s has elapsed since the last iteration..."
+                f"Waiting for {self.seconds}s interval before proceeding..."
             )
 
         for i in itertools.count():
