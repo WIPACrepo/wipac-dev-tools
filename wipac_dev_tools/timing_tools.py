@@ -57,8 +57,10 @@ class IntervalTimer:
             )
 
         for i in itertools.count():
-            if self.has_interval_elapsed(do_log=self._is_nth(i, log_every_nth)):
+            if self.has_interval_elapsed():
                 return
+            if self.logger and self._is_nth(i, log_every_nth):
+                self.logger.debug(f"Still waiting for {self.seconds}s interval...")
             await asyncio.sleep(frequency)
 
     def wait_until_interval_sync(
@@ -77,11 +79,13 @@ class IntervalTimer:
             )
 
         for i in itertools.count():
-            if self.has_interval_elapsed(do_log=self._is_nth(i, log_every_nth)):
+            if self.has_interval_elapsed():
                 return
+            if self.logger and self._is_nth(i, log_every_nth):
+                self.logger.debug(f"Still waiting for {self.seconds}s interval...")
             time.sleep(frequency)
 
-    def has_interval_elapsed(self, do_log: bool = True) -> bool:
+    def has_interval_elapsed(self) -> bool:
         """Check if the specified time interval has elapsed since the last expiration.
 
         If the interval has elapsed, the internal timer is reset to the current time.
@@ -89,9 +93,5 @@ class IntervalTimer:
         diff = time.monotonic() - self._last_time
         if diff >= self.seconds:
             self._last_time = time.monotonic()
-            if self.logger and do_log:
-                self.logger.debug(
-                    f"Interval elapsed: {self.seconds}s (actual: {diff:.3f}s)."
-                )
             return True
         return False
