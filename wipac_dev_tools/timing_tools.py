@@ -58,8 +58,9 @@ class IntervalTimer:
             self.logger.debug(
                 f"Waiting until {self.seconds}s has elapsed since the last iteration..."
             )
+
         for i in itertools.count():
-            if not self.has_interval_elapsed(do_log=self._is_every_n(i, log_every_n)):
+            if self.has_interval_elapsed(do_log=self._is_every_n(i, log_every_n)):
                 return
             await asyncio.sleep(frequency)
 
@@ -77,8 +78,9 @@ class IntervalTimer:
             self.logger.debug(
                 f"Waiting until {self.seconds}s has elapsed since the last iteration..."
             )
+
         for i in itertools.count():
-            if not self.has_interval_elapsed(do_log=self._is_every_n(i, log_every_n)):
+            if self.has_interval_elapsed(do_log=self._is_every_n(i, log_every_n)):
                 return
             time.sleep(frequency)
 
@@ -90,9 +92,9 @@ class IntervalTimer:
         diff = time.monotonic() - self._last_time
         if diff >= self.seconds:
             self._last_time = time.monotonic()
-            if self.logger:
+            if self.logger and do_log:
                 self.logger.debug(
-                    f"At least {self.seconds}s have elapsed (actually {diff}s)."
+                    f"Interval elapsed: {self.seconds}s (actual: {diff:.3f}s)."
                 )
             return True
         return False
