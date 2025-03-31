@@ -59,6 +59,7 @@ jobs:
         #   & we don't want to trigger an update on PR's merge to main/master/default (which is a branch)
         run: |
           set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           if [[ \
               ${{github.actor}} != 'dependabot[bot]' && \
               ${{github.ref_type}} == 'branch' && \
@@ -80,13 +81,14 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
-        uses: WIPACrepo/wipac-dev-py-setup-action@v4.3
+        uses: WIPACrepo/wipac-dev-py-setup-action@v4.5
         with:
           python_min: 3.9
           pypi_name: wipac-dev-tools
           author: WIPAC Developers
           author_email: developers@icecube.wisc.edu
-          keywords: "WIPAC, python tools, utilities"
+          keywords_comma: "WIPAC, python tools, utilities"
+          auto_mypy_option: True
 
   py-dependencies:
     needs: [ writable-branch-detect ]
@@ -118,6 +120,7 @@ jobs:
       - name: Pytest
         run: |
           set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           pip install --upgrade pip wheel setuptools pytest
           pip install .[dev]
           pytest -vvvv tests
