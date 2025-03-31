@@ -2,6 +2,15 @@
 
 
 
+## v1.15.7 (2025-03-31)
+
+###  
+
+* GHA `py-setup`: Use `auto_mypy_option` (#116)
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`fbe6a8e`](https://github.com/WIPACrepo/wipac-dev-tools/commit/fbe6a8e715d4ae369f160fe61d2b0c5309e530ff))
+
+
 ## v1.15.6 (2025-02-26)
 
 ###  
