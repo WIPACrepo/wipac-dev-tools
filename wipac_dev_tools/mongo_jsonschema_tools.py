@@ -43,7 +43,7 @@ class MongoValidatedCollection:
         database_name: str,
         collection_name: str,
         collection_jsonschema_spec: dict[str, Any],
-        send_web_errors: bool = False,
+        raise_web_errors: bool = False,
         parent_logger: logging.Logger | None = None,
     ) -> None:
         self._collection = AsyncIOMotorCollection(  # type: ignore[var-annotated]
@@ -51,7 +51,7 @@ class MongoValidatedCollection:
             collection_name,
         )
         self._schema = collection_jsonschema_spec
-        self._send_web_errors = send_web_errors
+        self._raise_web_errors = raise_web_errors
 
         if parent_logger is not None:
             self.logger = logging.getLogger(
@@ -74,7 +74,7 @@ class MongoValidatedCollection:
             )
         except jsonschema.exceptions.ValidationError as e:
             self.logger.exception(e)
-            if self._send_web_errors:
+            if self._raise_web_errors:
                 raise web.HTTPError(
                     status_code=500,
                     log_message=f"{e.__class__.__name__}: {e}",  # to stderr
@@ -90,21 +90,20 @@ class MongoValidatedCollection:
     def _validate_mongo_update(self, update: dict[str, Any]) -> None:
         """Validate the data for each given mongo-syntax update operator."""
         for operator in update:
-            match operator:
-                case "$set":
-                    self._validate(
-                        update[operator],
-                        allow_partial_update=True,
-                    )
-                case "$push":
-                    self._validate(
-                        # validate each value as if it was the whole field's list -- other wise `str != [str]`
-                        {k: [v] for k, v in update[operator].items()},
-                        allow_partial_update=True,
-                    )
-                # FUTURE: insert more operators here
-                case other:
-                    raise KeyError(f"Unsupported mongo-syntax update operator: {other}")
+            if operator == "$set":
+                self._validate(
+                    update[operator],
+                    allow_partial_update=True,
+                )
+            elif operator == "$push":
+                self._validate(
+                    # validate each value as if it was the whole field's list -- other wise `str != [str]`
+                    {k: [v] for k, v in update[operator].items()},
+                    allow_partial_update=True,
+                )
+            # FUTURE: insert more operators here
+            else:
+                raise KeyError(f"Unsupported mongo-syntax update operator: {operator}")
 
     async def insert_one(self, doc: dict, **kwargs: Any) -> dict:
         """Insert the doc (dict)."""
