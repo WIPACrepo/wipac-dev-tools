@@ -297,29 +297,28 @@ def _mongo_to_jsonschema_prep(
                 "required": []  # NONE!
             }
     """
-    match (allow_partial_update, any("." in k for k in og_dict.keys())):
+    has_dots = any("." in k for k in og_dict.keys())
+    if allow_partial_update:
         # yes partial & yes dots -> proceed to rest of func
-        case (True, True):
+        if has_dots:
             schema = copy.deepcopy(og_schema)
             schema["required"] = []
         # yes partial & no dots -> quick exit
-        case (True, False):
+        else:
             schema = copy.deepcopy(og_schema)
             schema["required"] = []
             return og_dict, schema
+    else:
         # no partial & yes dots -> error
-        case (False, True):
+        if has_dots:
             raise web.HTTPError(
                 500,
                 log_message="Partial updating disallowed but instance contains dotted parent_keys.",
                 reason="Internal database schema validation error",
             )
         # no partial & no dots -> immediate exit
-        case (False, False):
+        else:
             return og_dict, og_schema
-        # ???
-        case _other:
-            raise RuntimeError(f"Unknown match: {_other}")
 
     # https://stackoverflow.com/a/75734554/13156561 (looping logic)
     out = {}  # type: ignore
