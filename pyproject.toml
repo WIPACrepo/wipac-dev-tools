@@ -37,6 +37,15 @@ file = "LICENSE"
 semver = [
   'semantic-version'
 ]
+mongo = [
+  'motor'
+]
+web = [
+  'tornado'
+]
+jsonschema = [
+  'jsonschema'
+]
 dev = [
   'prometheus-client',
   'pytest',
@@ -47,13 +56,16 @@ dev = [
   'semantic-version'
 ]
 mypy = [
+  'jsonschema',
+  'motor',
   'prometheus-client',
   'pytest',
   'pytest-asyncio',
   'pytest-flake8',
   'pytest-mypy',
   'requests',
-  'semantic-version'
+  'semantic-version',
+  'tornado'
 ]
 
 [project.urls]
