@@ -70,7 +70,9 @@ class MongoValidatedCollection:
         """Wrap `jsonschema.validate` with logic for mongo syntax."""
         try:
             jsonschema.validate(
-                *_mongo_to_jsonschema_prep(instance, self._schema, allow_partial_update)
+                *_convert_mongo_to_jsonschema(
+                    instance, self._schema, allow_partial_update
+                )
             )
         except jsonschema.exceptions.ValidationError as e:
             self.logger.exception(e)
@@ -246,9 +248,13 @@ class MongoValidatedCollection:
 ########################################################################################
 
 
-def _mongo_to_jsonschema_prep(
-    og_dict: dict,
-    og_schema: dict,
+def _has_dotted_keys(dicto: dict[str, Any]) -> bool:
+    return any("." in k for k in dicto.keys())
+
+
+def _convert_mongo_to_jsonschema(
+    mongo_dict: dict,
+    full_schema: dict,
     allow_partial_update: bool,
 ) -> tuple[dict, dict]:
     """Converts a mongo-style dotted dict to a nested dict with an augmented schema.
@@ -290,27 +296,18 @@ def _mongo_to_jsonschema_prep(
                     "copyright": {
                         "type": "object",
                         "properties": { ... },
-                        "required": [<some>]  # not changed b/c og_key was not seen in dot notation
+                        "required": [<some>]  # not changed b/c key was not seen in dot notation
                     },
                     ...
                 },
                 "required": []  # NONE!
             }
     """
-    has_dots = any("." in k for k in og_dict.keys())
     if allow_partial_update:
-        # yes partial & yes dots -> proceed to rest of func
-        if has_dots:
-            schema = copy.deepcopy(og_schema)
-            schema["required"] = []
-        # yes partial & no dots -> quick exit
-        else:
-            schema = copy.deepcopy(og_schema)
-            schema["required"] = []
-            return og_dict, schema
+        return _adapt_schema_for_partial_updating(mongo_dict, full_schema)
     else:
         # no partial & yes dots -> error
-        if has_dots:
+        if _has_dotted_keys(mongo_dict):
             raise web.HTTPError(
                 500,
                 log_message="Partial updating disallowed but instance contains dotted parent_keys.",
@@ -318,18 +315,30 @@ def _mongo_to_jsonschema_prep(
             )
         # no partial & no dots -> immediate exit
         else:
-            return og_dict, og_schema
+            return mongo_dict, full_schema
+
+
+def _adapt_schema_for_partial_updating(
+    mongo_dict: dict,
+    full_schema: dict,
+) -> tuple[dict, dict]:
+    adapted_schema = copy.deepcopy(full_schema)
+    adapted_schema["required"] = []
+
+    # yes partial but no dots -> quick exit
+    if not _has_dotted_keys(mongo_dict):
+        return mongo_dict, adapted_schema
 
     # https://stackoverflow.com/a/75734554/13156561 (looping logic)
-    out = {}  # type: ignore
-    for og_key, value in og_dict.items():
+    out_dict = {}  # type: ignore
+    for og_key, value in mongo_dict.items():
         if "." not in og_key:
-            out[og_key] = value
+            out_dict[og_key] = value
             continue
         else:
             # (re)set cursors to root
-            cursor = out
-            schema_props_cursor = schema["properties"]
+            cursor = out_dict
+            schema_props_cursor = adapted_schema["properties"]
             # iterate & attach keys
             *parent_keys, leaf_key = og_key.split(".")
             for k in parent_keys:
@@ -341,4 +350,5 @@ def _mongo_to_jsonschema_prep(
                     schema_props_cursor = schema_props_cursor[k].get("properties")
             # place value
             cursor[leaf_key] = value
-    return out, schema
+
+    return out_dict, adapted_schema
