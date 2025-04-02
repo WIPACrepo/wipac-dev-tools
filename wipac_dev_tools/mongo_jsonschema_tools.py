@@ -2,7 +2,7 @@
 
 import copy
 import logging
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, Union
 
 # mongo imports
 try:
@@ -44,7 +44,7 @@ class MongoValidatedCollection:
         collection_name: str,
         collection_jsonschema_spec: dict[str, Any],
         raise_web_errors: bool = False,
-        parent_logger: logging.Logger | None = None,
+        parent_logger: Union[logging.Logger, None] = None,
     ) -> None:
         self._collection = AsyncIOMotorCollection(  # type: ignore[var-annotated]
             mongo_client[database_name],  # type: ignore[arg-type]
