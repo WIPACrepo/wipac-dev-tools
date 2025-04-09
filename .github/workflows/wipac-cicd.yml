@@ -120,17 +120,16 @@ jobs:
       test_info_json: ${{ steps.set.outputs.test_info_json }}
       ignore_args: ${{ steps.set.outputs.ignore_args }}
     steps:
-      - name: Define matrix and ignore args
+      - name: Define outputs
         id: set
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
 
-          # Define raw test info directly as a JSON list of "[extras]:file"
+          # Define test info directly as a JSON list of "[extras]:file" strings
           TEST_INFO_JSON='[
             "[dev]:vanilla",
-            "[dev,foom,bar]:test_needs_bigdata.py",
-            "[bop]:test_slow_stuff.py"
+            "[dev,prometheus]:prometheus_tools.py",
           ]'
 
           # Assemble ignore args by extracting the filename part
