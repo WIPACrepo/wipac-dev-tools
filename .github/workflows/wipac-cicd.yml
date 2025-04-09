@@ -126,13 +126,22 @@ jobs:
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
 
+
+          #
+          # *** HERE ARE THE TEST FILES & THEIR RESPECTIVE INSTALL OPTIONS ***
+          #
           # Define test info directly as a JSON list of "file:[extras]" strings
+          # - The 'vanilla' test is one that has no (or minimal) install extras
+          # - Any test file listed will be ignored in the vanilla tests
+          #
           TEST_INFO_JSON='[
             "vanilla:[dev]",
             "prometheus_tools_test.py:[dev,prometheus]",
           ]'
-          # Strip trailing comma before closing ]
-          TEST_INFO_JSON=$(echo "$TEST_INFO_JSON" | sed ':a;N;$!ba;s/,\s*\]/\]/')
+          
+          
+          # format json
+          TEST_INFO_JSON=$(echo "$TEST_INFO_JSON" | sed ':a;N;$!ba;s/,\s*\]/\]/') # remove trailing comma 
           TEST_INFO_JSON=$(echo "$TEST_INFO_JSON" | jq -c '.') # put on one line
           echo $TEST_INFO_JSON
 
