@@ -402,7 +402,7 @@ async def test_1000__insert_one_calls_validate_and_motor(
     """Test insert_one calls validation and insert_one, and removes _id."""
     doc = {"name": "Alice", "age": 30, "_id": "abc"}
     bio_coll._validate = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.insert_one = AsyncMock()
+    bio_coll._collection.insert_one = AsyncMock()  # type: ignore[method-assign]
 
     result = await bio_coll.insert_one(doc.copy())
 
@@ -427,7 +427,7 @@ async def test_1100__insert_many_calls_validate_and_motor(
         {"name": "Bob", "age": 25, "_id": "def"},
     ]
     bio_coll._validate = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.insert_many = AsyncMock()
+    bio_coll._collection.insert_many = AsyncMock()  # type: ignore[method-assign]
 
     result = await bio_coll.insert_many([doc.copy() for doc in docs])
 
@@ -446,7 +446,7 @@ async def test_1200__find_one_removes_id_and_returns(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one removes _id and returns result."""
-    bio_coll._collection.find_one = AsyncMock(
+    bio_coll._collection.find_one = AsyncMock(  # type: ignore[method-assign]
         return_value={"_id": "id", "name": "Alice", "age": 30}
     )
 
@@ -462,7 +462,7 @@ async def test_1201__find_one_not_found_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one raises DocumentNotFoundException when no document found."""
-    bio_coll._collection.find_one = AsyncMock(return_value=None)
+    bio_coll._collection.find_one = AsyncMock(return_value=None)  # type: ignore[method-assign]
 
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.find_one({"name": "Missing"})
@@ -480,7 +480,7 @@ async def test_1300__find_one_and_update_calls_validate_and_motor(
     update = {"$set": {"age": 35}}
     result_doc = {"_id": "x", "name": "Updated", "age": 35}
     bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.find_one_and_update = AsyncMock(return_value=result_doc)
+    bio_coll._collection.find_one_and_update = AsyncMock(return_value=result_doc)  # type: ignore[method-assign]
 
     result = await bio_coll.find_one_and_update({"name": "Alice"}, update)
 
@@ -502,7 +502,7 @@ async def test_1301__find_one_and_update_not_found_raises(
 ):
     """Test find_one_and_update raises DocumentNotFoundException if not found."""
     bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.find_one_and_update = AsyncMock(return_value=None)
+    bio_coll._collection.find_one_and_update = AsyncMock(return_value=None)  # type: ignore[method-assign]
 
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.find_one_and_update({"name": "Missing"}, {"$set": {"age": 35}})
@@ -519,7 +519,7 @@ async def test_1400__update_many_calls_validate_and_motor(
     """Test update_many calls validation and returns modified count."""
     mock_res = MagicMock(matched_count=1, modified_count=3)
     bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.update_many = AsyncMock(return_value=mock_res)
+    bio_coll._collection.update_many = AsyncMock(return_value=mock_res)  # type: ignore[method-assign]
 
     count = await bio_coll.update_many({"active": True}, {"$set": {"age": 40}})
 
@@ -537,7 +537,7 @@ async def test_1401__update_many_not_found_raises(
 ):
     """Test update_many raises DocumentNotFoundException if no documents matched."""
     bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.update_many = AsyncMock(
+    bio_coll._collection.update_many = AsyncMock(  # type: ignore[method-assign]
         return_value=MagicMock(matched_count=0)
     )
 
@@ -560,7 +560,7 @@ async def test_1500__find_all_removes_id(
         for doc in docs:
             yield doc
 
-    bio_coll._collection.find = lambda *_args, **_kwargs: async_gen()
+    bio_coll._collection.find = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
 
     # check calls & result
     results = [doc async for doc in bio_coll.find_all({}, ["name"])]
@@ -582,7 +582,7 @@ async def test_1600__aggregate_removes_id(
         for doc in docs:
             yield doc
 
-    bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()
+    bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
 
     # check calls & result
     results = [doc async for doc in bio_coll.aggregate([{"$match": {}}])]
