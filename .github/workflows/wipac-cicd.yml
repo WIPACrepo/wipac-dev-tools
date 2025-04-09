@@ -187,6 +187,7 @@ jobs:
             pytest -vvvv ${{ needs.prep-test-info.outputs.ignore_args }}
           else
             pytest -vvvv "tests/${{ steps.parse.outputs.file }}"
+          fi
 
 
   ############################################################################
