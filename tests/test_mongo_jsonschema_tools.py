@@ -637,7 +637,8 @@ async def test_1701__aggregate_one_not_found_raises(
     """Test aggregate_one raises DocumentNotFoundException if empty."""
 
     async def async_gen():
-        return
+        for _ in []:  # hack for empty async iter
+            yield
 
     bio_coll._collection.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
 
