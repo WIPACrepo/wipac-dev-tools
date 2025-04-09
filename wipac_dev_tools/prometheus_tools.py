@@ -4,18 +4,26 @@ from collections.abc import Callable
 from functools import partialmethod, wraps
 from typing import Any, Union
 
-from prometheus_client import (
-    Counter,
-    Gauge,
-    Summary,
-    Histogram,
-    Info,
-    Enum,
-)
-from prometheus_client import disable_created_metrics
+# prometheus imports
+try:
+    from prometheus_client import (
+        Counter,
+        Gauge,
+        Summary,
+        Histogram,
+        Info,
+        Enum,
+        disable_created_metrics,
+    )
+except (ImportError, ModuleNotFoundError) as e:
+    raise ImportError(
+        "the 'prometheus' option must be installed in order to use 'prometheus_tools'"
+    ) from e
 
 # https://prometheus.github.io/client_python/instrumenting/#disabling-_created-metrics
 disable_created_metrics()
+
+# fmt:off
 
 
 class _MetricWrapper:

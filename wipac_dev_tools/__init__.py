@@ -14,7 +14,7 @@ __all__ = [
     "argparse_tools",
     "data_safety_tools",
     "timing_tools",
-    "prometheus_tools"
+    "prometheus_tools",  # not imported above b/c module has optional dependencies
 ]
 
 # version is a human-readable version number.
