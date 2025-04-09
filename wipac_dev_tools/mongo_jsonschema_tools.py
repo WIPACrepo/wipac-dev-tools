@@ -8,33 +8,29 @@ from typing import Any, AsyncIterator, Union
 try:
     from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
     from pymongo import ReturnDocument
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as _exc:
     raise ImportError(
         "the 'mongo' option must be installed in order to use 'mongo_jsonschema_tools'"
-    ) from e
-
-# web imports
-try:
-    from tornado import web
-except (ImportError, ModuleNotFoundError) as e:
-    raise ImportError(
-        "the 'web' option must be installed in order to use 'mongo_jsonschema_tools'"
-    ) from e
+    ) from _exc
 
 # jsonschema imports
 try:
     import jsonschema
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as _exc:
     raise ImportError(
         "the 'jsonschema' option must be installed in order to use 'mongo_jsonschema_tools'"
-    ) from e
+    ) from _exc
 
 
 class DocumentNotFoundException(Exception):
     """Raised when document is not found for a particular query."""
 
 
-class MongoValidatedCollection:
+class MongoJSONSchemaValidationError(Exception):
+    """Raised when a document is not valid for a particular collection and/or query."""
+
+
+class MongoJSONSchemaValidatedCollection:
     """For interacting with a mongo collection using jsonschema validation."""
 
     def __init__(
@@ -43,7 +39,6 @@ class MongoValidatedCollection:
         database_name: str,
         collection_name: str,
         collection_jsonschema_spec: dict[str, Any],
-        raise_web_errors: bool = False,
         parent_logger: Union[logging.Logger, None] = None,
     ) -> None:
         self._collection = AsyncIOMotorCollection(  # type: ignore[var-annotated]
@@ -51,7 +46,6 @@ class MongoValidatedCollection:
             collection_name,
         )
         self._schema = collection_jsonschema_spec
-        self._raise_web_errors = raise_web_errors
 
         if parent_logger is not None:
             self.logger = logging.getLogger(
@@ -76,14 +70,9 @@ class MongoValidatedCollection:
             )
         except jsonschema.exceptions.ValidationError as e:
             self.logger.exception(e)
-            if self._raise_web_errors:
-                raise web.HTTPError(
-                    status_code=500,
-                    log_message=f"{e.__class__.__name__}: {e}",  # to stderr
-                    reason="Attempted to insert invalid data into database",  # to client
-                ) from e
-            else:
-                raise
+            raise MongoJSONSchemaValidationError(
+                "Attempted to insert invalid data into database"
+            ) from e
 
     ####################################################################
     # WRITES
@@ -308,10 +297,8 @@ def _convert_mongo_to_jsonschema(
     else:
         # no partial & yes dots -> error
         if _has_dotted_keys(mongo_dict):
-            raise web.HTTPError(
-                500,
-                log_message="Partial updating disallowed but instance contains dotted parent_keys.",
-                reason="Internal database schema validation error",
+            raise MongoJSONSchemaValidationError(
+                "Partial updating disallowed but instance contains dotted parent_keys."
             )
         # no partial & no dots -> immediate exit
         else:

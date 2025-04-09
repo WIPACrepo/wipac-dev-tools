@@ -40,9 +40,6 @@ semver = [
 mongo = [
   'motor'
 ]
-web = [
-  'tornado'
-]
 jsonschema = [
   'jsonschema'
 ]
