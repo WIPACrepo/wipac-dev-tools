@@ -37,6 +37,15 @@ file = "LICENSE"
 semver = [
   'semantic-version'
 ]
+mongo = [
+  'motor'
+]
+web = [
+  'tornado'
+]
+jsonschema = [
+  'jsonschema'
+]
 prometheus = [
   'prometheus-client'
 ]
