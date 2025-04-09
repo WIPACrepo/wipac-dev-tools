@@ -125,24 +125,24 @@ jobs:
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          
-          # Structured matrix
-          MATRIX='[
-            { "file": "vanilla", "extras": "[dev]" },
-            { "file": "test_needs_bigdata.py", "extras": "[dev,foom,bar]" },
-            { "file": "test_slow_stuff.py", "extras": "[bop]" }
+
+          # Define raw test info directly as a JSON list of "[extras]:file"
+          TEST_INFO_JSON='[
+            "[dev]:vanilla",
+            "[dev,foom,bar]:test_needs_bigdata.py",
+            "[bop]:test_slow_stuff.py"
           ]'
-          
-          # Convert to "[extras]:file" format
-          TEST_INFO=$(jq -c '[.[] | "\(.extras):\(.file)"]' <<< "$MATRIX")
-          
-          # Assemble ignore args
+
+          # Assemble ignore args by extracting the filename part
           IGNORE_ARGS=""
-          for file in $(jq -r '.[] | select(.file != "vanilla") | .file' <<< "$MATRIX"); do
-            IGNORE_ARGS+=" --ignore=tests/$file"
+          for file in $(jq -r '.[] | split(":")[1]' <<< "$TEST_INFO_JSON"); do
+            if [[ "$file" != "vanilla" ]]; then
+              IGNORE_ARGS+=" --ignore=tests/$file"
+            fi
           done
-          
-          echo "test_info_json=$TEST_INFO" >> "$GITHUB_OUTPUT"
+
+          # output
+          echo "test_info_json=$TEST_INFO_JSON" >> "$GITHUB_OUTPUT"
           echo "ignore_args=$IGNORE_ARGS" >> "$GITHUB_OUTPUT"
 
   tests:
