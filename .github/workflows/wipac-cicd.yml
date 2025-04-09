@@ -133,6 +133,7 @@ jobs:
           ]'
           # Strip trailing comma before closing ]
           TEST_INFO_JSON=$(echo "$TEST_INFO_JSON_RAW" | sed ':a;N;$!ba;s/,\s*\]/\]/')
+          echo $TEST_INFO_JSON
 
           # Assemble ignore args by extracting the filename part
           IGNORE_ARGS=""
@@ -141,6 +142,7 @@ jobs:
               IGNORE_ARGS+=" --ignore=tests/$file"
             fi
           done
+          echo $IGNORE_ARGS
 
           # output
           echo "test_info_json=$TEST_INFO_JSON" >> "$GITHUB_OUTPUT"
