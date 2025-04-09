@@ -13,7 +13,10 @@ jobs:
       - id: versions
         uses: WIPACrepo/wipac-dev-py-versions-action@v2.5
 
-  ######################################################################################
+
+  ############################################################################
+  # LINTERS
+  #############################################################################
 
   flake8:
     needs: [ py-versions ]
@@ -45,7 +48,10 @@ jobs:
           python-version: ${{ matrix.py3 }}
       - uses: WIPACrepo/wipac-dev-mypy-action@v2.0
 
-  ######################################################################################
+
+  ############################################################################
+  # PACKAGING
+  #############################################################################
 
   writable-branch-detect:
     runs-on: ubuntu-latest
@@ -103,29 +109,99 @@ jobs:
         with:
           use_directory: true
 
-  ######################################################################################
+
+  ############################################################################
+  # TESTS
+  #############################################################################
+
+  prep-pytest:
+    runs-on: ubuntu-latest
+    outputs:
+      pytest_info_json: ${{ steps.set.outputs.pytest_info_json }}
+      pytest_ignore_args: ${{ steps.set.outputs.pytest_ignore_args }}
+    steps:
+      - name: Define outputs
+        id: set
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+
+
+          #
+          # *** HERE ARE THE TEST FILES & THEIR RESPECTIVE INSTALL OPTIONS ***
+          #
+          # Define test info directly as a JSON list of "file:[extras]" strings
+          # - The 'vanilla' test is one that has no (or minimal) install extras
+          # - Any test file listed will be ignored in the vanilla tests
+          #
+          PYTEST_INFO_JSON='[
+            "vanilla:[tests]",
+            "prometheus_tools_test.py:[tests,prometheus]",
+          ]'
+          
+          
+          # format json
+          PYTEST_INFO_JSON=$(echo "$PYTEST_INFO_JSON" | sed ':a;N;$!ba;s/,\s*\]/\]/') # remove trailing comma 
+          PYTEST_INFO_JSON=$(echo "$PYTEST_INFO_JSON" | jq -c '.') # put on one line
+          echo $PYTEST_INFO_JSON
+
+          # Assemble ignore args by extracting the filename part
+          PYTEST_IGNORE_ARGS=""
+          for file in $(jq -r '.[] | split(":")[0]' <<< "$PYTEST_INFO_JSON"); do
+            if [[ "$file" != "vanilla" ]]; then
+              PYTEST_IGNORE_ARGS+=" --ignore=tests/$file"
+            fi
+          done
+          echo $PYTEST_IGNORE_ARGS
+
+          # output
+          echo "pytest_info_json=$PYTEST_INFO_JSON" >> "$GITHUB_OUTPUT"
+          echo "pytest_ignore_args=$PYTEST_IGNORE_ARGS" >> "$GITHUB_OUTPUT"
 
   tests:
-    needs: [ py-versions ]
+    needs: [ py-versions, prep-pytest ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
+        pytest_info: ${{ fromJSON(needs.prep-pytest.outputs.pytest_info_json) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py3 }}
-      - name: Pytest
+      - name: Parse file and extras from pytest_info
+        id: parse
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          pip install --upgrade pip wheel setuptools pytest
-          pip install .[dev]
-          pytest -vvvv tests
+          PYTEST_INFO="${{ matrix.pytest_info }}"
+          # "file:[extras]"
+          FILE="${PYTEST_INFO%%:*}"     # before `:`
+          EXTRAS="${PYTEST_INFO#*:}"    # after  `:`
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "extras=$EXTRAS" >> "$GITHUB_OUTPUT"
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          pip install --upgrade pip wheel setuptools
+          pip install ".${{ steps.parse.outputs.extras }}"
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          if [[ "${{ steps.parse.outputs.file }}" == "vanilla" ]]; then
+            pytest -vvvv ${{ needs.prep-pytest.outputs.pytest_ignore_args }}
+          else
+            pytest -vvvv "tests/${{ steps.parse.outputs.file }}"
+          fi
 
-  ######################################################################################
+
+  ############################################################################
+  # RELEASE
+  #############################################################################
 
   release:
     # only run on main/master/default
@@ -143,7 +219,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       # PyPI Release
-      - uses: pypa/gh-action-pypi-publish@v1.8.14
+      - uses: pypa/gh-action-pypi-publish@v1.12.4
         if: steps.psr-psr.outputs.released == 'true'
         with:
           password: ${{ secrets.PYPI_TOKEN }}

@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-version = "1.15.7"
+version = "1.15.9"
 name = "wipac-dev-tools"
 description = "Common, basic, and reusable development tools"
 readme = "README.md"
@@ -37,17 +37,10 @@ file = "LICENSE"
 semver = [
   'semantic-version'
 ]
-mongo = [
-  'motor'
+prometheus = [
+  'prometheus-client'
 ]
-web = [
-  'tornado'
-]
-jsonschema = [
-  'jsonschema'
-]
-dev = [
-  'prometheus-client',
+tests = [
   'pytest',
   'pytest-asyncio',
   'pytest-flake8',
@@ -56,16 +49,13 @@ dev = [
   'semantic-version'
 ]
 mypy = [
-  'jsonschema',
-  'motor',
   'prometheus-client',
   'pytest',
   'pytest-asyncio',
   'pytest-flake8',
   'pytest-mypy',
   'requests',
-  'semantic-version',
-  'tornado'
+  'semantic-version'
 ]
 
 [project.urls]

@@ -2,6 +2,26 @@
 
 
 
+## v1.15.9 (2025-04-09)
+
+###  
+
+* Bump to `pypa/gh-action-pypi-publish@v1.12.4` ([`37a5a3f`](https://github.com/WIPACrepo/wipac-dev-tools/commit/37a5a3f2ee3824efc0ac54e7dabc386a9a398fdf))
+
+
+## v1.15.8 (2025-04-09)
+
+###  
+
+* Add `prometheus` Install Option (#119)
+
+closes #118
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`412ff22`](https://github.com/WIPACrepo/wipac-dev-tools/commit/412ff220d61cc705eaed432777f085eb03ff6f26))
+
+
 ## v1.15.7 (2025-03-31)
 
 ###  
