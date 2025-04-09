@@ -194,6 +194,7 @@ async def test_1000__insert_one_calls_validate_and_motor(
 
     result = await valid_coll.insert_one(doc.copy())
 
+    # check calls & result
     valid_coll._validate.assert_called_once_with(doc)
     valid_coll._collection.insert_one.assert_called_once_with(doc)
     assert "_id" not in result
@@ -218,6 +219,7 @@ async def test_1100__insert_many_calls_validate_and_motor(
 
     result = await valid_coll.insert_many([doc.copy() for doc in docs])
 
+    # check calls & result
     assert result == [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
     assert valid_coll._validate.call_count == 2
     valid_coll._collection.insert_many.assert_called_once_with(docs)
@@ -238,6 +240,7 @@ async def test_1200__find_one_removes_id_and_returns(
 
     result = await valid_coll.find_one({"name": "Alice"})
 
+    # check calls & result
     valid_coll._collection.find_one.assert_called_once_with({"name": "Alice"})
     assert result == {"name": "Alice", "age": 30}
 
@@ -269,8 +272,15 @@ async def test_1300__find_one_and_update_calls_validate_and_motor(
 
     result = await valid_coll.find_one_and_update({"name": "Alice"}, update)
 
+    # check calls & result
     valid_coll._validate_mongo_update.assert_called_once_with(update)
-    valid_coll._collection.find_one_and_update.assert_called_once()
+    valid_coll._collection.find_one_and_update.assert_called_once_with(
+        {"name": "Alice"},
+        update,
+        return_document=valid_coll._collection.find_one_and_update.call_args.kwargs[
+            "return_document"
+        ],
+    )
     assert result == result_doc
 
 
@@ -301,8 +311,11 @@ async def test_1400__update_many_calls_validate_and_motor(
 
     count = await valid_coll.update_many({"active": True}, {"$set": {"age": 40}})
 
-    valid_coll._validate_mongo_update.assert_called_once()
-    valid_coll._collection.update_many.assert_called_once()
+    # check calls & result
+    valid_coll._validate_mongo_update.assert_called_once_with({"$set": {"age": 40}})
+    valid_coll._collection.update_many.assert_called_once_with(
+        {"active": True}, {"$set": {"age": 40}}
+    )
     assert count == 3
 
 
@@ -337,6 +350,7 @@ async def test_1500__find_all_removes_id(
 
     valid_coll._collection.find = lambda *_args, **_kwargs: async_gen()
 
+    # check calls & result
     results = [doc async for doc in valid_coll.find_all({}, ["name"])]
     assert results == [{"name": "A"}, {"name": "B"}]
 
@@ -358,6 +372,7 @@ async def test_1600__aggregate_removes_id(
 
     valid_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()
 
+    # check calls & result
     results = [doc async for doc in valid_coll.aggregate([{"$match": {}}])]
     assert results == [{"val": "X"}, {"val": "Y"}]
 
@@ -376,7 +391,11 @@ async def test_1700__aggregate_one_returns_first_doc(
         {"_id": 99, "result": "match"}
     ]
 
-    result = await valid_coll.aggregate_one([{"$match": {"val": "match"}}])
+    pipeline = [{"$match": {"val": "match"}}]
+    result = await valid_coll.aggregate_one(pipeline.copy())
+
+    # check calls & result
+    valid_coll.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
     assert result == {"result": "match"}
 
 
@@ -388,5 +407,9 @@ async def test_1701__aggregate_one_not_found_raises(
     valid_coll.aggregate = AsyncMock()  # type: ignore[method-assign]
     valid_coll.aggregate.return_value.__aiter__.return_value = []
 
+    pipeline = [{"$match": {"val": "none"}}]
     with pytest.raises(DocumentNotFoundException):
-        await valid_coll.aggregate_one([{"$match": {"val": "none"}}])
+        await valid_coll.aggregate_one(pipeline.copy())
+
+    # check calls
+    valid_coll.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
