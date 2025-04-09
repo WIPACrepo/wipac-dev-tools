@@ -166,20 +166,18 @@ def test_0204__validate_mongo_update__push_invalid(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1000__insert_one(mongo_collection):
-    """Test inserting one valid document."""
-    doc = {"name": "Alice", "age": 30}
+async def test_1000__insert_one_calls_validate_and_motor(mongo_collection):
+    """Test insert_one calls validation and insert_one, and removes _id."""
+    doc = {"name": "Alice", "age": 30, "_id": "abc"}
+    mongo_collection._validate = MagicMock()
     mongo_collection._collection.insert_one = AsyncMock()
+
     result = await mongo_collection.insert_one(doc.copy())
-    assert result == doc
 
-
-@pytest.mark.asyncio
-async def test_1001__insert_one__invalid(mongo_collection):
-    """Test inserting one document with invalid schema."""
-    doc = {"name": "Alice"}
-    with pytest.raises(MongoJSONSchemaValidationError):
-        await mongo_collection.insert_one(doc)
+    mongo_collection._validate.assert_called_once_with(doc)
+    mongo_collection._collection.insert_one.assert_called_once_with(doc)
+    assert "_id" not in result
+    assert result == {"name": "Alice", "age": 30}
 
 
 ########################################################################################
@@ -187,20 +185,20 @@ async def test_1001__insert_one__invalid(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1100__insert_many(mongo_collection):
-    """Test inserting multiple valid documents."""
-    docs = [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
+async def test_1100__insert_many_calls_validate_and_motor(mongo_collection):
+    """Test insert_many calls validation on each doc and strips _id."""
+    docs = [
+        {"name": "Alice", "age": 30, "_id": "abc"},
+        {"name": "Bob", "age": 25, "_id": "def"},
+    ]
+    mongo_collection._validate = MagicMock()
     mongo_collection._collection.insert_many = AsyncMock()
+
     result = await mongo_collection.insert_many([doc.copy() for doc in docs])
-    assert result == docs
 
-
-@pytest.mark.asyncio
-async def test_1101__insert_many__invalid(mongo_collection):
-    """Test inserting multiple documents with one invalid document raises error."""
-    docs = [{"name": "Alice", "age": 30}, {"name": "Bob"}]
-    with pytest.raises(MongoJSONSchemaValidationError):
-        await mongo_collection.insert_many(docs)
+    assert result == [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
+    assert mongo_collection._validate.call_count == 2
+    mongo_collection._collection.insert_many.assert_called_once_with(docs)
 
 
 ########################################################################################
@@ -208,21 +206,25 @@ async def test_1101__insert_many__invalid(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1200__find_one(mongo_collection):
-    """Test finding one document that exists."""
+async def test_1200__find_one_removes_id_and_returns(mongo_collection):
+    """Test find_one removes _id and returns result."""
     mongo_collection._collection.find_one = AsyncMock(
-        return_value={"_id": "123", "name": "Bob", "age": 40}
+        return_value={"_id": "id", "name": "Alice", "age": 30}
     )
-    result = await mongo_collection.find_one({"name": "Bob"})
-    assert result == {"name": "Bob", "age": 40}
+
+    result = await mongo_collection.find_one({"name": "Alice"})
+
+    mongo_collection._collection.find_one.assert_called_once_with({"name": "Alice"})
+    assert result == {"name": "Alice", "age": 30}
 
 
 @pytest.mark.asyncio
-async def test_1201__find_one__not_found(mongo_collection):
-    """Test finding one document that does not exist."""
+async def test_1201__find_one_not_found_raises(mongo_collection):
+    """Test find_one raises DocumentNotFoundException when no document found."""
     mongo_collection._collection.find_one = AsyncMock(return_value=None)
+
     with pytest.raises(DocumentNotFoundException):
-        await mongo_collection.find_one({"name": "Bob"})
+        await mongo_collection.find_one({"name": "Missing"})
 
 
 ########################################################################################
@@ -230,54 +232,31 @@ async def test_1201__find_one__not_found(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1300__find_one_and_update__set(mongo_collection):
-    """Test updating and returning one document successfully with $set."""
+async def test_1300__find_one_and_update_calls_validate_and_motor(mongo_collection):
+    """Test find_one_and_update calls validation and returns updated doc."""
+    update = {"$set": {"age": 35}}
+    result_doc = {"_id": "x", "name": "Updated", "age": 35}
+    mongo_collection._validate_mongo_update = MagicMock()
     mongo_collection._collection.find_one_and_update = AsyncMock(
-        return_value={"_id": "1", "name": "Updated", "age": 35}
+        return_value=result_doc
     )
-    result = await mongo_collection.find_one_and_update(
-        {"name": "Alice"}, {"$set": {"age": 35}}
-    )
-    assert result == {"_id": "1", "name": "Updated", "age": 35}
 
-
-@pytest.mark.asyncio
-async def test_1301__find_one_and_update__set__invalid(mongo_collection):
-    """Test updating one document with invalid $set schema raises error."""
-    update = {"$set": {"name": "Charlie"}}
-    with pytest.raises(MongoJSONSchemaValidationError):
-        await mongo_collection.find_one_and_update({"name": "Charlie"}, update)
-
-
-@pytest.mark.asyncio
-async def test_1310__find_one_and_update__push(mongo_collection):
-    """Test updating one document successfully with $push."""
-    mongo_collection._collection.find_one_and_update = AsyncMock(
-        return_value={
-            "_id": "2",
-            "name": "Alice",
-            "address": [{"city": "NY", "zip": "10001"}],
-        }
-    )
-    update = {"$push": {"address": {"city": "NY", "zip": "10001"}}}
     result = await mongo_collection.find_one_and_update({"name": "Alice"}, update)
-    assert result["address"][0]["city"] == "NY"
+
+    mongo_collection._validate_mongo_update.assert_called_once_with(update)
+    mongo_collection._collection.find_one_and_update.assert_called_once()
+    assert result == result_doc
 
 
 @pytest.mark.asyncio
-async def test_1311__find_one_and_update__push__invalid(mongo_collection):
-    """Test updating one document with invalid $push schema raises error."""
-    update = {"$push": {"address": "not-an-object"}}
-    with pytest.raises(MongoJSONSchemaValidationError):
-        await mongo_collection.find_one_and_update({"name": "Charlie"}, update)
+async def test_1301__find_one_and_update_not_found_raises(mongo_collection):
+    """Test find_one_and_update raises DocumentNotFoundException if not found."""
+    mongo_collection._validate_mongo_update = MagicMock()
+    mongo_collection._collection.find_one_and_update = AsyncMock(return_value=None)
 
-
-@pytest.mark.asyncio
-async def test_1390__find_one_and_update__unsupported_operator(mongo_collection):
-    """Test updating with unsupported operator raises error."""
-    with pytest.raises(KeyError):
+    with pytest.raises(DocumentNotFoundException):
         await mongo_collection.find_one_and_update(
-            {"name": "Bob"}, {"$unset": {"age": ""}}
+            {"name": "Missing"}, {"$set": {"age": 35}}
         )
 
 
@@ -286,26 +265,29 @@ async def test_1390__find_one_and_update__unsupported_operator(mongo_collection)
 
 
 @pytest.mark.asyncio
-async def test_1400__update_many(mongo_collection):
-    """Test updating multiple documents successfully."""
-    mock_res = MagicMock()
-    mock_res.matched_count = 1
-    mock_res.modified_count = 2
+async def test_1400__update_many_calls_validate_and_motor(mongo_collection):
+    """Test update_many calls validation and returns modified count."""
+    mock_res = MagicMock(matched_count=1, modified_count=3)
+    mongo_collection._validate_mongo_update = MagicMock()
     mongo_collection._collection.update_many = AsyncMock(return_value=mock_res)
-    modified = await mongo_collection.update_many(
-        {"name": "Alice"}, {"$set": {"age": 31}}
-    )
-    assert modified == 2
+
+    count = await mongo_collection.update_many({"active": True}, {"$set": {"age": 40}})
+
+    mongo_collection._validate_mongo_update.assert_called_once()
+    mongo_collection._collection.update_many.assert_called_once()
+    assert count == 3
 
 
 @pytest.mark.asyncio
-async def test_1401__update_many__not_found(mongo_collection):
-    """Test updating multiple documents with no match raises error."""
-    mock_res = MagicMock()
-    mock_res.matched_count = 0
-    mongo_collection._collection.update_many = AsyncMock(return_value=mock_res)
+async def test_1401__update_many_not_found_raises(mongo_collection):
+    """Test update_many raises DocumentNotFoundException if no documents matched."""
+    mongo_collection._validate_mongo_update = MagicMock()
+    mongo_collection._collection.update_many = AsyncMock(
+        return_value=MagicMock(matched_count=0)
+    )
+
     with pytest.raises(DocumentNotFoundException):
-        await mongo_collection.update_many({"name": "Bob"}, {"$set": {"age": 40}})
+        await mongo_collection.update_many({"active": False}, {"$set": {"age": 40}})
 
 
 ########################################################################################
@@ -313,17 +295,18 @@ async def test_1401__update_many__not_found(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1500__find_all(mongo_collection):
-    """Test finding all matching documents."""
-    docs = [{"_id": 1, "name": "A", "age": 20}, {"_id": 2, "name": "B", "age": 25}]
+async def test_1500__find_all_removes_id(mongo_collection):
+    """Test find_all yields documents without _id field."""
+    docs = [{"_id": 1, "name": "A"}, {"_id": 2, "name": "B"}]
 
     async def async_gen():
         for doc in docs:
             yield doc
 
     mongo_collection._collection.find = lambda *_args, **_kwargs: async_gen()
-    results = [doc async for doc in mongo_collection.find_all({}, ["name", "age"])]
-    assert results == [{"name": "A", "age": 20}, {"name": "B", "age": 25}]
+
+    results = [doc async for doc in mongo_collection.find_all({}, ["name"])]
+    assert results == [{"name": "A"}, {"name": "B"}]
 
 
 ########################################################################################
@@ -331,17 +314,18 @@ async def test_1500__find_all(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1600__aggregate(mongo_collection):
-    """Test running an aggregation pipeline."""
-    docs = [{"_id": "x", "name": "X"}, {"_id": "y", "name": "Y"}]
+async def test_1600__aggregate_removes_id(mongo_collection):
+    """Test aggregate yields documents without _id field."""
+    docs = [{"_id": 1, "val": "X"}, {"_id": 2, "val": "Y"}]
 
     async def async_gen():
         for doc in docs:
             yield doc
 
     mongo_collection._collection.aggregate = lambda *_args, **_kwargs: async_gen()
+
     results = [doc async for doc in mongo_collection.aggregate([{"$match": {}}])]
-    assert results == [{"name": "X"}, {"name": "Y"}]
+    assert results == [{"val": "X"}, {"val": "Y"}]
 
 
 ########################################################################################
@@ -349,22 +333,22 @@ async def test_1600__aggregate(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1700__aggregate_one(mongo_collection):
-    """Test finding one document using aggregation."""
+async def test_1700__aggregate_one_returns_first_doc(mongo_collection):
+    """Test aggregate_one returns the first document."""
     mongo_collection.aggregate = AsyncMock()
     mongo_collection.aggregate.return_value.__aiter__.return_value = [
-        {"_id": "z", "name": "Z"}
+        {"_id": 99, "result": "match"}
     ]
 
-    result = await mongo_collection.aggregate_one([{"$match": {"name": "Z"}}])
-    assert result == {"name": "Z"}
+    result = await mongo_collection.aggregate_one([{"$match": {"val": "match"}}])
+    assert result == {"result": "match"}
 
 
 @pytest.mark.asyncio
-async def test_1701__aggregate_one__not_found(mongo_collection):
-    """Test aggregation returns no document raises error."""
+async def test_1701__aggregate_one_not_found_raises(mongo_collection):
+    """Test aggregate_one raises DocumentNotFoundException if empty."""
     mongo_collection.aggregate = AsyncMock()
     mongo_collection.aggregate.return_value.__aiter__.return_value = []
 
     with pytest.raises(DocumentNotFoundException):
-        await mongo_collection.aggregate_one([{"$match": {"name": "None"}}])
+        await mongo_collection.aggregate_one([{"$match": {"val": "none"}}])
