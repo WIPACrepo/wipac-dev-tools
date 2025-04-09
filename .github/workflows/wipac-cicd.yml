@@ -126,17 +126,14 @@ jobs:
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
 
-          # Define structured JSON
-          SPECIALS_JSON='[
+          # Define structured JSON including "vanilla"
+          MATRIX='[
             { "file": "vanilla", "extras": "[dev]" },
             { "file": "test_needs_bigdata.py", "extras": "[dev,foom,bar]" },
             { "file": "test_slow_stuff.py", "extras": "[bop]" }
           ]'
 
-          # Matrix: add "vanilla" job as first entry
-          # TODO
-
-          # List of filenames (space-separated) for ignore logic
+          # Extract just the files to ignore (everything except "vanilla")
           FILE_LIST=$(jq -r '.[] | select(.file != "vanilla") | .file' <<< "$MATRIX" | xargs)
 
           echo "json=$MATRIX" >> "$GITHUB_OUTPUT"
@@ -178,7 +175,7 @@ jobs:
           else
             pytest -vvvv tests/${{ matrix.file }}
   
-  
+
   ############################################################################
   # RELEASE
   #############################################################################
