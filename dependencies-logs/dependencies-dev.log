@@ -17,16 +17,15 @@ mypy==1.15.0
 mypy-extensions==1.0.0
 packaging==24.2
 pluggy==1.5.0
-prometheus_client==0.21.1
 pycodestyle==2.13.0
 pyflakes==3.3.2
 pytest==8.3.5
 pytest-asyncio==0.26.0
 pytest-flake8==1.3.0
-pytest-mypy==1.0.0
+pytest-mypy==1.0.1
 requests==2.32.3
 semantic-version==2.10.0
-typing_extensions==4.13.0
+typing_extensions==4.13.1
 urllib3==2.3.0
 ########################################################################
 #  pipdeptree
@@ -34,7 +33,6 @@ urllib3==2.3.0
 pipdeptree==2.26.0
 ├── packaging [required: >=24.1, installed: 24.2]
 └── pip [required: >=24.2, installed: 25.0.1]
-prometheus_client==0.21.1
 pytest-asyncio==0.26.0
 └── pytest [required: >=8.2,<9, installed: 8.3.5]
     ├── iniconfig [required: Any, installed: 2.1.0]
@@ -49,10 +47,10 @@ pytest-flake8==1.3.0
     ├── iniconfig [required: Any, installed: 2.1.0]
     ├── packaging [required: Any, installed: 24.2]
     └── pluggy [required: >=1.5,<2, installed: 1.5.0]
-pytest-mypy==1.0.0
+pytest-mypy==1.0.1
 ├── filelock [required: >=3.0, installed: 3.18.0]
 ├── mypy [required: >=1.0, installed: 1.15.0]
-│   ├── typing_extensions [required: >=4.6.0, installed: 4.13.0]
+│   ├── typing_extensions [required: >=4.6.0, installed: 4.13.1]
 │   └── mypy-extensions [required: >=1.0.0, installed: 1.0.0]
 └── pytest [required: >=7.0, installed: 8.3.5]
     ├── iniconfig [required: Any, installed: 2.1.0]
@@ -65,4 +63,4 @@ wipac-dev-tools
 │   ├── idna [required: >=2.5,<4, installed: 3.10]
 │   ├── urllib3 [required: >=1.21.1,<3, installed: 2.3.0]
 │   └── certifi [required: >=2017.4.17, installed: 2025.1.31]
-└── typing_extensions [required: Any, installed: 4.13.0]
+└── typing_extensions [required: Any, installed: 4.13.1]
