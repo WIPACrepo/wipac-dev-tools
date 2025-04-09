@@ -118,7 +118,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       json: ${{ steps.set.outputs.json }}
-      list: ${{ steps.set.outputs.list }}
+      ignore_args: ${{ steps.set.outputs.ignore_args }}
     steps:
       - name: Define matrix and ignore list
         id: set
@@ -133,11 +133,17 @@ jobs:
             { "file": "test_slow_stuff.py", "extras": "[bop]" }
           ]'
 
-          # Extract just the files to ignore (everything except "vanilla")
+          # Extract filenames to ignore
+          # Assemble --ignore arguments
+          IGNORE_ARGS=""
           FILE_LIST=$(jq -r '.[] | select(.file != "vanilla") | .file' <<< "$MATRIX" | xargs)
+          for file in $FILE_LIST; do
+            IGNORE_ARGS+=" --ignore=tests/$file"
+          done
 
+          # output
           echo "json=$MATRIX" >> "$GITHUB_OUTPUT"
-          echo "list=$FILE_LIST" >> "$GITHUB_OUTPUT"
+          echo "ignore_args=$IGNORE_ARGS" >> "$GITHUB_OUTPUT"
 
   tests:
     needs: [ set-special-files ]
@@ -166,16 +172,13 @@ jobs:
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+
           if [[ "${{ matrix.file }}" == "vanilla" ]]; then
-            IGNORE_ARGS=""
-            for file in ${{ needs.set-special-files.outputs.list }}; do
-              IGNORE_ARGS+=" --ignore=tests/$file"
-            done
-            pytest -vvvv $IGNORE_ARGS
+            pytest -vvvv ${{ needs.set-special-files.outputs.ignore_args }}
           else
             pytest -vvvv tests/${{ matrix.file }}
   
-
+  
   ############################################################################
   # RELEASE
   #############################################################################
