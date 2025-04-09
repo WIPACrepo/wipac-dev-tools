@@ -606,6 +606,7 @@ async def test_1700__aggregate_one_returns_first_doc(
     result = await bio_coll.aggregate_one(pipeline.copy())
 
     # check calls & result
+    bio_coll._collection.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
     assert result == {"val": "X"} or result == {"val": "Y"}
 
 
@@ -614,16 +615,15 @@ async def test_1701__aggregate_one_not_found_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test aggregate_one raises DocumentNotFoundException if empty."""
-    bio_coll.aggregate = AsyncMock()  # type: ignore[method-assign]
 
     async def async_gen():
         return
 
-    bio_coll.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
+    bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
 
     pipeline = [{"$match": {"val": "none"}}]
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.aggregate_one(pipeline.copy())
 
     # check calls
-    bio_coll.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
+    bio_coll._collection.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
