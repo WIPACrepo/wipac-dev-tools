@@ -600,14 +600,14 @@ async def test_1700__aggregate_one_returns_first_doc(
         for doc in docs:
             yield doc
 
-    bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
+    bio_coll._collection.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
 
     pipeline = [{"$match": {}}]  # type: ignore[var-annotated]
     result = await bio_coll.aggregate_one(pipeline.copy())
 
     # check calls & result
     bio_coll._collection.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
-    assert result == {"val": "X"} or result == {"val": "Y"}
+    assert result in [{"val": "X"}, {"val": "Y"}]
 
 
 @pytest.mark.asyncio
@@ -619,7 +619,7 @@ async def test_1701__aggregate_one_not_found_raises(
     async def async_gen():
         return
 
-    bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
+    bio_coll._collection.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
 
     pipeline = [{"$match": {"val": "none"}}]
     with pytest.raises(DocumentNotFoundException):
