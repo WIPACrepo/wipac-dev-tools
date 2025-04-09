@@ -106,25 +106,50 @@ jobs:
   ######################################################################################
 
   tests:
-    needs: [ py-versions ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
+        file: [
+          "vanilla",
+          "test_requires_docker.py",
+          "test_needs_bigdata.py",
+          "test_slow_stuff.py",
+        ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py3 }}
-      - name: Pytest
+      - name: Install dependencies
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          pip install --upgrade pip wheel setuptools pytest
+          pip install --upgrade pip wheel setuptools
           pip install .[dev]
-          pytest -vvvv tests
+      - name: Collect special test files to ignore
+        if: ${{ matrix.file == 'vanilla' }}
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          SPECIAL_FILES=$(jq -r '.matrix.file[] | select(. != "")' <<< '${{ toJSON(strategy) }}')
+          IGNORE_ARGS=""
+          for file in $SPECIAL_FILES; do
+            IGNORE_ARGS+=" --ignore=tests/$file"
+          done
+          echo "IGNORE_ARGS=$IGNORE_ARGS" >> "$GITHUB_OUTPUT"
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
 
+          if [[ -z "${{ matrix.file }}" ]]; then
+            pytest -vvvv $IGNORE_ARGS
+          else
+            pytest -vvvv tests/${{ matrix.file }}
+  
+  
   ######################################################################################
 
   release:
