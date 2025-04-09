@@ -120,39 +120,39 @@ jobs:
       json: ${{ steps.set.outputs.json }}
       ignore_args: ${{ steps.set.outputs.ignore_args }}
     steps:
-      - name: Define matrix and ignore list
+      - name: Define matrix and ignore args
         id: set
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
 
-          # Define structured JSON including "vanilla"
+          # Define structured matrix
           MATRIX='[
             { "file": "vanilla", "extras": "[dev]" },
             { "file": "test_needs_bigdata.py", "extras": "[dev,foom,bar]" },
             { "file": "test_slow_stuff.py", "extras": "[bop]" }
           ]'
 
-          # Extract filenames to ignore
-          # Assemble --ignore arguments
+          # Convert to flat [extras]file format for matrix.raw
+          RAW=$(jq -c '[.[] | "[\(.extras | gsub("[\\[\\]]"; ""))]\(.file)"]' <<< "$MATRIX")
+
+          # Build ignore args for vanilla
           IGNORE_ARGS=""
-          FILE_LIST=$(jq -r '.[] | select(.file != "vanilla") | .file' <<< "$MATRIX" | xargs)
-          for file in $FILE_LIST; do
+          for file in $(jq -r '.[] | select(.file != "vanilla") | .file' <<< "$MATRIX"); do
             IGNORE_ARGS+=" --ignore=tests/$file"
           done
 
-          # output
-          echo "json=$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "json=$RAW" >> "$GITHUB_OUTPUT"
           echo "ignore_args=$IGNORE_ARGS" >> "$GITHUB_OUTPUT"
 
   tests:
-    needs: [ set-special-files ]
+    needs: [ py-versions, set-special-files ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
-        include: ${{ fromJSON(needs.set-special-files.outputs.json) }}
+        raw: ${{ fromJSON(needs.set-special-files.outputs.json) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -161,22 +161,36 @@ jobs:
         with:
           python-version: ${{ matrix.py3 }}
 
+      - name: Parse test file and extras
+        id: parse
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          
+          RAW="${{ matrix.raw }}"
+          EXTRAS="${RAW%%]*}"      # strip after ]
+          EXTRAS="${EXTRAS#[}"     # strip leading [
+          FILE="${RAW#*]}"         # strip before ]
+
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "extras=$EXTRAS" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           pip install --upgrade pip wheel setuptools
-          pip install .${{ matrix.extras }}
+          pip install ".[$(echo '${{ steps.parse.outputs.extras }}')]"
 
       - name: Run tests
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-
-          if [[ "${{ matrix.file }}" == "vanilla" ]]; then
+          if [[ "${{ steps.parse.outputs.file }}" == "vanilla" ]]; then
             pytest -vvvv ${{ needs.set-special-files.outputs.ignore_args }}
           else
-            pytest -vvvv tests/${{ matrix.file }}
+            pytest -vvvv "tests/${{ steps.parse.outputs.file }}"
+  
   
   
   ############################################################################
