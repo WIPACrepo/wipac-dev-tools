@@ -35,26 +35,23 @@ class MongoJSONSchemaValidatedCollection:
 
     def __init__(
         self,
-        mongo_client: AsyncIOMotorClient,  # type: ignore[valid-type]
-        database_name: str,
-        collection_name: str,
+        collection: AsyncIOMotorCollection,
         collection_jsonschema_spec: dict[str, Any],
         parent_logger: Union[logging.Logger, None] = None,
     ) -> None:
-        self._collection = AsyncIOMotorCollection(  # type: ignore[var-annotated]
-            mongo_client[database_name],  # type: ignore[arg-type]
-            collection_name,
-        )
+        self._collection = collection
         self._schema = collection_jsonschema_spec
+
+        self.collection_name = collection.name
 
         if parent_logger is not None:
             self.logger = logging.getLogger(
-                f"{parent_logger.name}.db.{collection_name.lower()}"
+                f"{parent_logger.name}.db.{self.collection_name.lower()}"
             )
         else:
-            self.logger = logging.getLogger(f"{__name__}.{collection_name.lower()}")
-
-        self.collection_name = collection_name
+            self.logger = logging.getLogger(
+                f"{__name__}.{self.collection_name.lower()}"
+            )
 
     def _validate(
         self,

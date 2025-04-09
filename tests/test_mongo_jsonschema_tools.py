@@ -16,9 +16,7 @@ from wipac_dev_tools.mongo_jsonschema_tools import (
 def make_coll(schema: dict) -> MongoJSONSchemaValidatedCollection:
     with patch("motor.motor_asyncio.AsyncIOMotorCollection"):
         return MongoJSONSchemaValidatedCollection(
-            mongo_client=AsyncMock(),
-            database_name="test_db",
-            collection_name="test_coll",
+            collection=AsyncMock(),
             collection_jsonschema_spec=schema,
             parent_logger=logging.getLogger("test_logger"),
         )
