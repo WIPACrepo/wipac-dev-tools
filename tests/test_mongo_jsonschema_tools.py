@@ -86,6 +86,45 @@ def test_0002__convert_with_dots_and_partial_succeeds(schema):
 
 
 ########################################################################################
+# _validate()
+
+
+def test_0100__validate__valid_full_doc(mongo_collection):
+    """Test _validate with a fully valid document."""
+    doc = {"name": "Alice", "age": 30}
+    # Should not raise
+    mongo_collection._validate(doc)
+
+
+def test_0101__validate__invalid_full_doc(mongo_collection):
+    """Test _validate with a full document missing required fields."""
+    doc = {"name": "Bob"}  # missing "age"
+    with pytest.raises(MongoJSONSchemaValidationError):
+        mongo_collection._validate(doc)
+
+
+def test_0102__validate__valid_partial_doc(mongo_collection):
+    """Test _validate with valid dotted keys and partial update allowed."""
+    doc = {"address.city": "Springfield", "address.zip": "12345"}
+    # Should not raise
+    mongo_collection._validate(doc, allow_partial_update=True)
+
+
+def test_0103__validate__invalid_partial_doc(mongo_collection):
+    """Test _validate with invalid partial doc missing required subfield."""
+    doc = {"address.city": "Springfield"}  # missing zip
+    with pytest.raises(MongoJSONSchemaValidationError):
+        mongo_collection._validate(doc, allow_partial_update=True)
+
+
+def test_0104__validate__partial_doc_not_allowed(mongo_collection):
+    """Test _validate with dotted keys and partial updates disallowed raises error."""
+    doc = {"address.city": "Springfield"}
+    with pytest.raises(MongoJSONSchemaValidationError):
+        mongo_collection._validate(doc, allow_partial_update=False)
+
+
+########################################################################################
 # _validate_mongo_update()
 
 
