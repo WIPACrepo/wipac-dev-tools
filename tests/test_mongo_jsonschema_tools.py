@@ -396,8 +396,8 @@ def test_0204__validate_mongo_update__push_invalid(
 async def test_1000__insert_one_calls_validate_and_motor(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
-    """Test insert_one calls validation and insert_one, and removes _id."""
-    doc = {"name": "Alice", "age": 30, "_id": "abc"}
+    """Test insert_one calls validation and insert_one."""
+    doc = {"name": "Alice", "age": 30}
     bio_coll._validate = MagicMock()  # type: ignore[method-assign]
     bio_coll._collection.insert_one = AsyncMock()  # type: ignore[method-assign]
 
@@ -406,8 +406,7 @@ async def test_1000__insert_one_calls_validate_and_motor(
     # check calls & result
     bio_coll._validate.assert_called_once_with(doc)
     bio_coll._collection.insert_one.assert_called_once_with(doc)
-    assert "_id" not in result
-    assert result == {"name": "Alice", "age": 30}
+    assert result == doc
 
 
 ########################################################################################
@@ -418,10 +417,10 @@ async def test_1000__insert_one_calls_validate_and_motor(
 async def test_1100__insert_many_calls_validate_and_motor(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
-    """Test insert_many calls validation on each doc and strips _id."""
+    """Test insert_many calls validation on each doc."""
     docs = [
-        {"name": "Alice", "age": 30, "_id": "abc"},
-        {"name": "Bob", "age": 25, "_id": "def"},
+        {"name": "Alice", "age": 30},
+        {"name": "Bob", "age": 25},
     ]
     bio_coll._validate = MagicMock()  # type: ignore[method-assign]
     bio_coll._collection.insert_many = AsyncMock()  # type: ignore[method-assign]
@@ -429,7 +428,7 @@ async def test_1100__insert_many_calls_validate_and_motor(
     result = await bio_coll.insert_many([doc.copy() for doc in docs])
 
     # check calls & result
-    assert result == [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
+    assert result == docs
     assert bio_coll._validate.call_count == 2
     bio_coll._collection.insert_many.assert_called_once_with(docs)
 
