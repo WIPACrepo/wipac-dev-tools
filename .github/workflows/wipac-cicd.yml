@@ -105,18 +105,35 @@ jobs:
 
   ######################################################################################
 
+  set-special-files:
+    runs-on: ubuntu-latest
+    env:
+      SPECIAL_FILES: "test_requires_docker.py test_needs_bigdata.py test_slow_stuff.py"
+    outputs:
+      json: ${{ steps.set.outputs.json }}
+      list: ${{ steps.set.outputs.list }}
+    steps:
+      - name: Set special test files
+        id: set
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          
+          # Space-separated list
+          echo "list=$SPECIAL_FILES" >> "$GITHUB_OUTPUT"
+
+          # JSON array including "vanilla"
+          FILE_JSON=$(jq -c --argfiles files <(echo "$SPECIAL_FILES") '["vanilla"] + ($files | split(" "))' <<< "")
+          echo "json=$FILE_JSON" >> "$GITHUB_OUTPUT"
+
   tests:
+    needs: [ set-special-files ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
-        file: [
-          "vanilla",
-          "test_requires_docker.py",
-          "test_needs_bigdata.py",
-          "test_slow_stuff.py",
-        ]
+        file: ${{ fromJSON(needs.set-special-files.outputs.json) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -128,24 +145,19 @@ jobs:
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           pip install --upgrade pip wheel setuptools
           pip install .[dev]
-      - name: Collect special test files to ignore
-        if: ${{ matrix.file == 'vanilla' }}
-        run: |
-          set -euo pipefail
-          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          SPECIAL_FILES=$(jq -r '.matrix.file[] | select(. != "")' <<< '${{ toJSON(strategy) }}')
-          IGNORE_ARGS=""
-          for file in $SPECIAL_FILES; do
-            IGNORE_ARGS+=" --ignore=tests/$file"
-          done
-          echo "IGNORE_ARGS=$IGNORE_ARGS" >> "$GITHUB_OUTPUT"
       - name: Run tests
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
 
-          if [[ -z "${{ matrix.file }}" ]]; then
+          # vanilla tests
+          if [[ "${{ matrix.file }}" == "vanilla" ]]; then
+            IGNORE_ARGS=""
+            for file in ${{ needs.set-special-files.outputs.list }}; do
+              IGNORE_ARGS+=" --ignore=tests/$file"
+            done
             pytest -vvvv $IGNORE_ARGS
+          # file-based test
           else
             pytest -vvvv tests/${{ matrix.file }}
   
