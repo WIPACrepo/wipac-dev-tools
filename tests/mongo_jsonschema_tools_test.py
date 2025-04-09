@@ -1,4 +1,4 @@
-"""Tests for test_mongo_jsonschema_tools.py."""
+"""Tests for mongo_jsonschema_tools.py."""
 
 import logging
 from unittest.mock import AsyncMock, MagicMock, patch
