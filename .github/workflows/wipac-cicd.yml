@@ -133,6 +133,7 @@ jobs:
           ]'
           # Strip trailing comma before closing ]
           TEST_INFO_JSON=$(echo "$TEST_INFO_JSON" | sed ':a;N;$!ba;s/,\s*\]/\]/')
+          TEST_INFO_JSON=$(echo "$TEST_INFO_JSON" | jq -c '.') # put on one line
           echo $TEST_INFO_JSON
 
           # Assemble ignore args by extracting the filename part
