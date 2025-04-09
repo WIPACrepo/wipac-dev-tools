@@ -137,6 +137,7 @@ jobs:
           PYTEST_INFO_JSON='[
             "vanilla:[tests]",
             "prometheus_tools_test.py:[tests,prometheus]",
+            "test_mongo_jsonschema_tools.py:[tests,mongo,jsonschema]"
           ]'
           
           
