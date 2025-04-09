@@ -58,13 +58,16 @@ tests = [
   'semantic-version'
 ]
 mypy = [
+  'jsonschema',
+  'motor',
   'prometheus-client',
   'pytest',
   'pytest-asyncio',
   'pytest-flake8',
   'pytest-mypy',
   'requests',
-  'semantic-version'
+  'semantic-version',
+  'tornado'
 ]
 
 [project.urls]
