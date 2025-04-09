@@ -138,7 +138,7 @@ jobs:
 
           # Assemble ignore args by extracting the filename part
           IGNORE_ARGS=""
-          for file in $(jq -r '.[] | split(":")[1]' <<< "$TEST_INFO_JSON"); do
+          for file in $(jq -r '.[] | split(":")[0]' <<< "$TEST_INFO_JSON"); do
             if [[ "$file" != "vanilla" ]]; then
               IGNORE_ARGS+=" --ignore=tests/$file"
             fi
@@ -162,16 +162,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py3 }}
-      - name: Parse extras and file from test_info
+      - name: Parse file and extras from test_info
         id: parse
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           TEST_INFO="${{ matrix.test_info }}"
           # "file:[extras]"
-          FILE="${TEST_INFO%%:*}"  # before `:`
+          FILE="${TEST_INFO%%:*}"     # before `:`
+          EXTRAS="${TEST_INFO#*:}"    # after  `:`
           echo "file=$FILE" >> "$GITHUB_OUTPUT"
-          EXTRAS="${TEST_INFO#*:}"     # after  `:`
           echo "extras=$EXTRAS" >> "$GITHUB_OUTPUT"
       - name: Install dependencies
         run: |
