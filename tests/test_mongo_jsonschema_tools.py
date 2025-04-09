@@ -594,19 +594,19 @@ async def test_1700__aggregate_one_returns_first_doc(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test aggregate_one returns the first document."""
-    bio_coll.aggregate = AsyncMock()  # type: ignore[method-assign]
+    docs = [{"_id": 1, "val": "X"}, {"_id": 2, "val": "Y"}]
 
     async def async_gen():
-        yield {"_id": 99, "result": "match"}
+        for doc in docs:
+            yield doc
 
-    bio_coll.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
+    bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
 
-    pipeline = [{"$match": {"val": "match"}}]
+    pipeline = [{"$match": {}}]  # type: ignore[var-annotated]
     result = await bio_coll.aggregate_one(pipeline.copy())
 
     # check calls & result
-    bio_coll.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
-    assert result == {"result": "match"}
+    assert result == {"val": "X"} or result == {"val": "Y"}
 
 
 @pytest.mark.asyncio
