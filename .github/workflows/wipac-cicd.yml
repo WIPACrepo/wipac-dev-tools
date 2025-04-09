@@ -116,24 +116,31 @@ jobs:
 
   set-special-files:
     runs-on: ubuntu-latest
-    env:
-      SPECIAL_FILES: "test_requires_docker.py test_needs_bigdata.py test_slow_stuff.py"
     outputs:
       json: ${{ steps.set.outputs.json }}
       list: ${{ steps.set.outputs.list }}
     steps:
-      - name: Set special test files
+      - name: Define matrix and ignore list
         id: set
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
 
-          # Space-separated list
-          echo "list=$SPECIAL_FILES" >> "$GITHUB_OUTPUT"
+          # Define structured JSON
+          SPECIALS_JSON='[
+            { "file": "vanilla", "extras": "[dev]" },
+            { "file": "test_needs_bigdata.py", "extras": "[dev,foom,bar]" },
+            { "file": "test_slow_stuff.py", "extras": "[bop]" }
+          ]'
 
-          # JSON array including "vanilla"
-          FILE_JSON=$(jq -c --arg files "$SPECIAL_FILES" '["vanilla"] + ($files | split(" "))')
-          echo "json=$FILE_JSON" >> "$GITHUB_OUTPUT"
+          # Matrix: add "vanilla" job as first entry
+          # TODO
+
+          # List of filenames (space-separated) for ignore logic
+          FILE_LIST=$(jq -r '.[] | select(.file != "vanilla") | .file' <<< "$MATRIX" | xargs)
+
+          echo "json=$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "list=$FILE_LIST" >> "$GITHUB_OUTPUT"
 
   tests:
     needs: [ set-special-files ]
@@ -142,35 +149,36 @@ jobs:
       fail-fast: false
       matrix:
         py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
-        file: ${{ fromJSON(needs.set-special-files.outputs.json) }}
+        include: ${{ fromJSON(needs.set-special-files.outputs.json) }}
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py3 }}
+
       - name: Install dependencies
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           pip install --upgrade pip wheel setuptools
-          pip install .[dev]
+          pip install .${{ matrix.extras }}
+
       - name: Run tests
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-
-          # vanilla tests
           if [[ "${{ matrix.file }}" == "vanilla" ]]; then
             IGNORE_ARGS=""
             for file in ${{ needs.set-special-files.outputs.list }}; do
               IGNORE_ARGS+=" --ignore=tests/$file"
             done
             pytest -vvvv $IGNORE_ARGS
-          # file-based test
           else
             pytest -vvvv tests/${{ matrix.file }}
   
-
+  
   ############################################################################
   # RELEASE
   #############################################################################
