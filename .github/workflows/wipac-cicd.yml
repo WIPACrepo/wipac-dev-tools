@@ -131,6 +131,8 @@ jobs:
             "[dev]:vanilla",
             "[dev,prometheus]:prometheus_tools.py",
           ]'
+          # Strip trailing comma before closing ]
+          TEST_INFO_JSON=$(echo "$TEST_INFO_JSON_RAW" | sed ':a;N;$!ba;s/,\s*\]/\]/')
 
           # Assemble ignore args by extracting the filename part
           IGNORE_ARGS=""
