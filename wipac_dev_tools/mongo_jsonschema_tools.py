@@ -6,7 +6,7 @@ from typing import Any, AsyncIterator, Union
 
 # mongo imports
 try:
-    from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+    from motor.motor_asyncio import AsyncIOMotorCollection
     from pymongo import ReturnDocument
 except (ImportError, ModuleNotFoundError) as _exc:
     raise ImportError(
