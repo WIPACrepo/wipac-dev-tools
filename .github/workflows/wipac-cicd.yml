@@ -118,12 +118,12 @@ jobs:
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          
+
           # Space-separated list
           echo "list=$SPECIAL_FILES" >> "$GITHUB_OUTPUT"
 
           # JSON array including "vanilla"
-          FILE_JSON=$(jq -c --argfiles files <(echo "$SPECIAL_FILES") '["vanilla"] + ($files | split(" "))' <<< "")
+          FILE_JSON=$(jq -c --arg files "$SPECIAL_FILES" '["vanilla"] + ($files | split(" "))')
           echo "json=$FILE_JSON" >> "$GITHUB_OUTPUT"
 
   tests:
