@@ -189,7 +189,7 @@ async def test_1000__insert_one_calls_validate_and_motor(
 ):
     """Test insert_one calls validation and insert_one, and removes _id."""
     doc = {"name": "Alice", "age": 30, "_id": "abc"}
-    valid_coll._validate = MagicMock()
+    valid_coll._validate = MagicMock()  # type: ignore[method-assign]
     valid_coll._collection.insert_one = AsyncMock()
 
     result = await valid_coll.insert_one(doc.copy())
@@ -213,7 +213,7 @@ async def test_1100__insert_many_calls_validate_and_motor(
         {"name": "Alice", "age": 30, "_id": "abc"},
         {"name": "Bob", "age": 25, "_id": "def"},
     ]
-    valid_coll._validate = MagicMock()
+    valid_coll._validate = MagicMock()  # type: ignore[method-assign]
     valid_coll._collection.insert_many = AsyncMock()
 
     result = await valid_coll.insert_many([doc.copy() for doc in docs])
@@ -264,7 +264,7 @@ async def test_1300__find_one_and_update_calls_validate_and_motor(
     """Test find_one_and_update calls validation and returns updated doc."""
     update = {"$set": {"age": 35}}
     result_doc = {"_id": "x", "name": "Updated", "age": 35}
-    valid_coll._validate_mongo_update = MagicMock()
+    valid_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
     valid_coll._collection.find_one_and_update = AsyncMock(return_value=result_doc)
 
     result = await valid_coll.find_one_and_update({"name": "Alice"}, update)
@@ -279,7 +279,7 @@ async def test_1301__find_one_and_update_not_found_raises(
     valid_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one_and_update raises DocumentNotFoundException if not found."""
-    valid_coll._validate_mongo_update = MagicMock()
+    valid_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
     valid_coll._collection.find_one_and_update = AsyncMock(return_value=None)
 
     with pytest.raises(DocumentNotFoundException):
@@ -296,7 +296,7 @@ async def test_1400__update_many_calls_validate_and_motor(
 ):
     """Test update_many calls validation and returns modified count."""
     mock_res = MagicMock(matched_count=1, modified_count=3)
-    valid_coll._validate_mongo_update = MagicMock()
+    valid_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
     valid_coll._collection.update_many = AsyncMock(return_value=mock_res)
 
     count = await valid_coll.update_many({"active": True}, {"$set": {"age": 40}})
@@ -311,7 +311,7 @@ async def test_1401__update_many_not_found_raises(
     valid_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test update_many raises DocumentNotFoundException if no documents matched."""
-    valid_coll._validate_mongo_update = MagicMock()
+    valid_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
     valid_coll._collection.update_many = AsyncMock(
         return_value=MagicMock(matched_count=0)
     )
@@ -371,7 +371,7 @@ async def test_1700__aggregate_one_returns_first_doc(
     valid_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test aggregate_one returns the first document."""
-    valid_coll.aggregate = AsyncMock()
+    valid_coll.aggregate = AsyncMock()  # type: ignore[method-assign]
     valid_coll.aggregate.return_value.__aiter__.return_value = [
         {"_id": 99, "result": "match"}
     ]
@@ -385,7 +385,7 @@ async def test_1701__aggregate_one_not_found_raises(
     valid_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test aggregate_one raises DocumentNotFoundException if empty."""
-    valid_coll.aggregate = AsyncMock()
+    valid_coll.aggregate = AsyncMock()  # type: ignore[method-assign]
     valid_coll.aggregate.return_value.__aiter__.return_value = []
 
     with pytest.raises(DocumentNotFoundException):
