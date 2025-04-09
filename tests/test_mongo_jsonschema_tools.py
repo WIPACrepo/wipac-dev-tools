@@ -3,6 +3,7 @@
 import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import jsonschema
 import pytest
 
 from wipac_dev_tools.mongo_jsonschema_tools import (
@@ -120,7 +121,7 @@ def test_0003__convert_with_additional_properties_and_partial():
     assert out_schema["required"] == []
 
 
-def test_0004__convert_with_nested_additional_properties_blocked():
+def test_0004__convert_with_nested_additional_properties_blocked__but_ok():
     """Test partial update fails if nested object blocks additionalProperties."""
     schema = {
         "type": "object",
@@ -134,8 +135,17 @@ def test_0004__convert_with_nested_additional_properties_blocked():
         "required": ["meta"],
     }
     doc = {"meta.extra": "boom"}
-    with pytest.raises(MongoJSONSchemaValidationError):
-        _convert_mongo_to_jsonschema(doc, schema, allow_partial_update=True)
+    out_doc, out_schema = _convert_mongo_to_jsonschema(
+        doc, schema, allow_partial_update=True
+    )
+    assert out_doc == {"meta": {"extra": "boom"}}
+    assert out_schema["required"] == []
+
+    # NOTE: the above doc is invalid for jsonschema--but, it's not invalid for conversion
+    #
+    # see...
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        jsonschema.validate(out_doc, out_schema)
 
 
 ########################################################################################
