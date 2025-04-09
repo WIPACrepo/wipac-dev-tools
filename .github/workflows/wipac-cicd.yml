@@ -114,10 +114,10 @@ jobs:
   # TESTS
   #############################################################################
 
-  set-special-files:
+  prep-test-info:
     runs-on: ubuntu-latest
     outputs:
-      json: ${{ steps.set.outputs.json }}
+      test_info_json: ${{ steps.set.outputs.test_info_json }}
       ignore_args: ${{ steps.set.outputs.ignore_args }}
     steps:
       - name: Define matrix and ignore args
@@ -134,7 +134,7 @@ jobs:
           ]'
           
           # Convert to "[extras]:file" format
-          RAW=$(jq -c '[.[] | "\(.extras):\(.file)"]' <<< "$MATRIX")
+          TEST_INFO=$(jq -c '[.[] | "\(.extras):\(.file)"]' <<< "$MATRIX")
           
           # Assemble ignore args
           IGNORE_ARGS=""
@@ -142,55 +142,49 @@ jobs:
             IGNORE_ARGS+=" --ignore=tests/$file"
           done
           
-          echo "json=$RAW" >> "$GITHUB_OUTPUT"
+          echo "test_info_json=$TEST_INFO" >> "$GITHUB_OUTPUT"
           echo "ignore_args=$IGNORE_ARGS" >> "$GITHUB_OUTPUT"
 
   tests:
-    needs: [ py-versions, set-special-files ]
+    needs: [ py-versions, prep-test-info ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
-        raw: ${{ fromJSON(needs.set-special-files.outputs.json) }}
-
+        test_info: ${{ fromJSON(needs.prep-test-info.outputs.test_info_json) }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py3 }}
-
-      - name: Parse extras and file from raw
+      - name: Parse extras and file from test_info
         id: parse
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          RAW="${{ matrix.raw }}"
-          
+          TEST_INFO="${{ matrix.test_info }}"
           # "[extras]:file"
-          EXTRAS="${RAW%%:*}"  # before `:`
+          EXTRAS="${TEST_INFO%%:*}"  # before `:`
           echo "extras=$EXTRAS" >> "$GITHUB_OUTPUT"
-          FILE="${RAW#*:}"     # after  `:`
+          FILE="${TEST_INFO#*:}"     # after  `:`
           echo "file=$FILE" >> "$GITHUB_OUTPUT"
-
       - name: Install dependencies
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           pip install --upgrade pip wheel setuptools
           pip install ".${{ steps.parse.outputs.extras }}"
-
       - name: Run tests
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           if [[ "${{ steps.parse.outputs.file }}" == "vanilla" ]]; then
-            pytest -vvvv ${{ needs.set-special-files.outputs.ignore_args }}
+            pytest -vvvv ${{ needs.prep-test-info.outputs.ignore_args }}
           else
             pytest -vvvv "tests/${{ steps.parse.outputs.file }}"
-  
-  
+
+
   ############################################################################
   # RELEASE
   #############################################################################
