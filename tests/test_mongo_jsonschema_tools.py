@@ -47,6 +47,28 @@ def bio_coll(bio_schema) -> MongoJSONSchemaValidatedCollection:
     return make_coll(bio_schema)
 
 
+@pytest.fixture
+def team_schema():
+    return {
+        "type": "object",
+        "properties": {
+            "team": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "position": {"type": "string"},
+                        "number": {"type": "integer"},
+                    },
+                    "required": ["name", "position", "number"],
+                },
+            }
+        },
+        "required": ["team"],
+    }
+
+
 ########################################################################################
 # _convert_mongo_to_jsonschema()
 
@@ -371,21 +393,19 @@ def test_0202__validate_mongo_update__set_invalid(
         bio_coll._validate_mongo_update(update)
 
 
-def test_0203__validate_mongo_update__push(
-    bio_coll: MongoJSONSchemaValidatedCollection,
-):
-    """Test _validate_mongo_update with valid $push operator."""
-    update = {"$push": {"address": {"city": "Chicago", "zip": "60601"}}}
-    bio_coll._validate_mongo_update(update)
+def test_0203__validate_mongo_update__push_baseball(team_schema):
+    """Test _validate_mongo_update with valid $push operator using baseball theme."""
+    coll = make_coll(team_schema)
+    update = {"$push": {"team": {"name": "Jack", "position": "Pitcher", "number": 42}}}
+    coll._validate_mongo_update(update)
 
 
-def test_0204__validate_mongo_update__push_invalid(
-    bio_coll: MongoJSONSchemaValidatedCollection,
-):
-    """Test _validate_mongo_update with invalid $push schema."""
-    update = {"$push": {"address": {"city": "Chicago"}}}
+def test_0204__validate_mongo_update__push_baseball_invalid(team_schema):
+    """Test _validate_mongo_update with invalid $push operator using baseball theme."""
+    coll = make_coll(team_schema)
+    update = {"$push": {"team": {"name": "Jack", "position": "Catcher"}}}  # no number
     with pytest.raises(MongoJSONSchemaValidationError):
-        bio_coll._validate_mongo_update(update)
+        coll._validate_mongo_update(update)
 
 
 ########################################################################################
