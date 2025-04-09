@@ -2,6 +2,19 @@
 
 
 
+## v1.15.8 (2025-04-09)
+
+###  
+
+* Add `prometheus` Install Option (#119)
+
+closes #118
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`412ff22`](https://github.com/WIPACrepo/wipac-dev-tools/commit/412ff220d61cc705eaed432777f085eb03ff6f26))
+
+
 ## v1.15.7 (2025-03-31)
 
 ###  
