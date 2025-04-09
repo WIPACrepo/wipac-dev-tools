@@ -5,17 +5,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from wipac_dev_tools.mongo_jsonschema_tools import (
-    DocumentNotFoundException,
-    MongoJSONSchemaValidatedCollection,
-    MongoJSONSchemaValidationError,
-    _convert_mongo_to_jsonschema,
-)
+from wipac_dev_tools import mongo_jsonschema_tools as mjt
 
 
-def make_coll(schema: dict) -> MongoJSONSchemaValidatedCollection:
+def make_coll(schema: dict) -> mjt.MongoJSONSchemaValidatedCollection:
     with patch("mongo_jsonschema_tools.AsyncIOMotorCollection"):
-        return MongoJSONSchemaValidatedCollection(
+        return mjt.MongoJSONSchemaValidatedCollection(
             mongo_client=AsyncMock(),
             database_name="test_db",
             collection_name="test_coll",
@@ -45,7 +40,7 @@ def bio_schema():
 
 
 @pytest.fixture
-def bio_coll(bio_schema) -> MongoJSONSchemaValidatedCollection:
+def bio_coll(bio_schema) -> mjt.MongoJSONSchemaValidatedCollection:
     return make_coll(bio_schema)
 
 
@@ -56,7 +51,7 @@ def bio_coll(bio_schema) -> MongoJSONSchemaValidatedCollection:
 def test_0000__convert_no_dots_no_partial_returns_as_is(bio_schema):
     """Test conversion passes through doc and schema as-is if no dotted keys."""
     doc = {"name": "Charlie", "age": 28}
-    out_doc, out_schema = _convert_mongo_to_jsonschema(
+    out_doc, out_schema = mjt._convert_mongo_to_jsonschema(
         doc, bio_schema, allow_partial_update=False
     )
     assert out_doc == doc
@@ -66,14 +61,14 @@ def test_0000__convert_no_dots_no_partial_returns_as_is(bio_schema):
 def test_0001__convert_with_dots_no_partial_raises(bio_schema):
     """Test conversion with dotted keys and no partial update raises error."""
     doc = {"address.city": "Springfield"}
-    with pytest.raises(MongoJSONSchemaValidationError):
-        _convert_mongo_to_jsonschema(doc, bio_schema, allow_partial_update=False)
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
+        mjt._convert_mongo_to_jsonschema(doc, bio_schema, allow_partial_update=False)
 
 
 def test_0002__convert_with_dots_and_partial_succeeds(bio_schema):
     """Test conversion with dotted keys and partial update flattens and validates."""
     doc = {"address.city": "Metropolis"}
-    out_doc, out_schema = _convert_mongo_to_jsonschema(
+    out_doc, out_schema = mjt._convert_mongo_to_jsonschema(
         doc, bio_schema, allow_partial_update=True
     )
     assert out_doc == {"address": {"city": "Metropolis"}}
@@ -82,7 +77,7 @@ def test_0002__convert_with_dots_and_partial_succeeds(bio_schema):
 
 
 ########################################################################################
-# _convert_mongo_to_jsonschema() - schema edge cases
+# mjt._convert_mongo_to_jsonschema() - schema edge cases
 
 
 def test_0003__convert_with_additional_properties_and_partial():
@@ -93,7 +88,7 @@ def test_0003__convert_with_additional_properties_and_partial():
         "additionalProperties": True,
     }
     doc = {"custom.field": "yes"}
-    out_doc, out_schema = _convert_mongo_to_jsonschema(
+    out_doc, out_schema = mjt._convert_mongo_to_jsonschema(
         doc, schema, allow_partial_update=True
     )
     assert out_doc == {"custom": {"field": "yes"}}
@@ -114,15 +109,17 @@ def test_0004__convert_with_nested_additional_properties_blocked():
         "required": ["meta"],
     }
     doc = {"meta.extra": "boom"}
-    with pytest.raises(MongoJSONSchemaValidationError):
-        _convert_mongo_to_jsonschema(doc, schema, allow_partial_update=True)
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
+        mjt._convert_mongo_to_jsonschema(doc, schema, allow_partial_update=True)
 
 
 ########################################################################################
 # _validate()
 
 
-def test_0100__validate__valid_full_doc(bio_coll: MongoJSONSchemaValidatedCollection):
+def test_0100__validate__valid_full_doc(
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
+):
     """Test _validate with a fully valid document."""
     doc = {"name": "Alice", "age": 30}
     # Should not raise
@@ -130,16 +127,16 @@ def test_0100__validate__valid_full_doc(bio_coll: MongoJSONSchemaValidatedCollec
 
 
 def test_0101__validate__invalid_full_doc(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test _validate with a full document missing required fields."""
     doc = {"name": "Bob"}  # missing "age"
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         bio_coll._validate(doc)
 
 
 def test_0102__validate__valid_partial_doc(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test _validate with valid dotted keys and partial update allowed."""
     doc = {"address.city": "Springfield", "address.zip": "12345"}
@@ -148,20 +145,20 @@ def test_0102__validate__valid_partial_doc(
 
 
 def test_0103__validate__invalid_partial_doc(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test _validate with invalid partial doc missing required subfield."""
     doc = {"address.city": "Springfield"}  # missing zip
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         bio_coll._validate(doc, allow_partial_update=True)
 
 
 def test_0104__validate__partial_doc_not_allowed(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test _validate with dotted keys and partial updates disallowed raises error."""
     doc = {"address.city": "Springfield"}
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         bio_coll._validate(doc, allow_partial_update=False)
 
 
@@ -178,7 +175,7 @@ def test_0105__validate__additional_properties_rejected():
         "required": ["foo"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         coll._validate({"foo": "bar", "extra": "nope"})
 
 
@@ -196,7 +193,7 @@ def test_0106__validate__nested_object_missing_subfield():
         "required": ["settings"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         coll._validate({"settings": {}})
 
 
@@ -213,7 +210,7 @@ def test_0107__validate__array_type_enforced():
         "required": ["tags"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         coll._validate({"tags": [1, 2, 3]})
 
 
@@ -227,7 +224,7 @@ def test_0108__validate__enum_enforced():
         "required": ["status"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         coll._validate({"status": "archived"})
 
 
@@ -264,7 +261,7 @@ def test_0110__validate__one_of_match_failure():
         "required": ["input"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         coll._validate({"input": {"foo": "bar"}})
 
 
@@ -291,7 +288,7 @@ def test_0112__validate__partial_update_with_enum_invalid():
         "required": ["type"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         coll._validate({"type": "Z"}, allow_partial_update=True)
 
 
@@ -303,7 +300,7 @@ def test_0113__validate__type_mismatch_raises():
         "required": ["count"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         coll._validate({"count": "ten"})
 
 
@@ -349,7 +346,7 @@ def test_0115__validate__deep_nested_dotted_update_succeeds():
 
 
 def test_0200__validate_mongo_update__unsupported_operator(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test _validate_mongo_update with unsupported operator raises error."""
     update = {"$rename": {"name": "full_name"}}
@@ -358,7 +355,7 @@ def test_0200__validate_mongo_update__unsupported_operator(
 
 
 def test_0201__validate_mongo_update__set(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test _validate_mongo_update with valid $set operator."""
     update = {"$set": {"name": "Alice", "age": 42}}
@@ -366,16 +363,16 @@ def test_0201__validate_mongo_update__set(
 
 
 def test_0202__validate_mongo_update__set_invalid(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test _validate_mongo_update with invalid $set schema."""
     update = {"$set": {"name": "Bob"}}
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         bio_coll._validate_mongo_update(update)
 
 
 def test_0203__validate_mongo_update__push(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test _validate_mongo_update with valid $push operator."""
     update = {"$push": {"address": {"city": "Chicago", "zip": "60601"}}}
@@ -383,11 +380,11 @@ def test_0203__validate_mongo_update__push(
 
 
 def test_0204__validate_mongo_update__push_invalid(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test _validate_mongo_update with invalid $push schema."""
     update = {"$push": {"address": {"city": "Chicago"}}}
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(mjt.MongoJSONSchemaValidationError):
         bio_coll._validate_mongo_update(update)
 
 
@@ -397,7 +394,7 @@ def test_0204__validate_mongo_update__push_invalid(
 
 @pytest.mark.asyncio
 async def test_1000__insert_one_calls_validate_and_motor(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test insert_one calls validation and insert_one, and removes _id."""
     doc = {"name": "Alice", "age": 30, "_id": "abc"}
@@ -419,7 +416,7 @@ async def test_1000__insert_one_calls_validate_and_motor(
 
 @pytest.mark.asyncio
 async def test_1100__insert_many_calls_validate_and_motor(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test insert_many calls validation on each doc and strips _id."""
     docs = [
@@ -443,7 +440,7 @@ async def test_1100__insert_many_calls_validate_and_motor(
 
 @pytest.mark.asyncio
 async def test_1200__find_one_removes_id_and_returns(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one removes _id and returns result."""
     bio_coll._collection.find_one = AsyncMock(  # type: ignore[method-assign]
@@ -459,12 +456,12 @@ async def test_1200__find_one_removes_id_and_returns(
 
 @pytest.mark.asyncio
 async def test_1201__find_one_not_found_raises(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one raises DocumentNotFoundException when no document found."""
     bio_coll._collection.find_one = AsyncMock(return_value=None)  # type: ignore[method-assign]
 
-    with pytest.raises(DocumentNotFoundException):
+    with pytest.raises(mjt.DocumentNotFoundException):
         await bio_coll.find_one({"name": "Missing"})
 
 
@@ -474,7 +471,7 @@ async def test_1201__find_one_not_found_raises(
 
 @pytest.mark.asyncio
 async def test_1300__find_one_and_update_calls_validate_and_motor(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one_and_update calls validation and returns updated doc."""
     update = {"$set": {"age": 35}}
@@ -498,13 +495,13 @@ async def test_1300__find_one_and_update_calls_validate_and_motor(
 
 @pytest.mark.asyncio
 async def test_1301__find_one_and_update_not_found_raises(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
-    """Test find_one_and_update raises DocumentNotFoundException if not found."""
+    """Test find_one_and_update raises mjt.DocumentNotFoundException if not found."""
     bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
     bio_coll._collection.find_one_and_update = AsyncMock(return_value=None)  # type: ignore[method-assign]
 
-    with pytest.raises(DocumentNotFoundException):
+    with pytest.raises(mjt.DocumentNotFoundException):
         await bio_coll.find_one_and_update({"name": "Missing"}, {"$set": {"age": 35}})
 
 
@@ -514,7 +511,7 @@ async def test_1301__find_one_and_update_not_found_raises(
 
 @pytest.mark.asyncio
 async def test_1400__update_many_calls_validate_and_motor(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test update_many calls validation and returns modified count."""
     mock_res = MagicMock(matched_count=1, modified_count=3)
@@ -533,7 +530,7 @@ async def test_1400__update_many_calls_validate_and_motor(
 
 @pytest.mark.asyncio
 async def test_1401__update_many_not_found_raises(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test update_many raises DocumentNotFoundException if no documents matched."""
     bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
@@ -541,7 +538,7 @@ async def test_1401__update_many_not_found_raises(
         return_value=MagicMock(matched_count=0)
     )
 
-    with pytest.raises(DocumentNotFoundException):
+    with pytest.raises(mjt.DocumentNotFoundException):
         await bio_coll.update_many({"active": False}, {"$set": {"age": 40}})
 
 
@@ -551,7 +548,7 @@ async def test_1401__update_many_not_found_raises(
 
 @pytest.mark.asyncio
 async def test_1500__find_all_removes_id(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test find_all yields documents without _id field."""
     docs = [{"_id": 1, "name": "A"}, {"_id": 2, "name": "B"}]
@@ -573,7 +570,7 @@ async def test_1500__find_all_removes_id(
 
 @pytest.mark.asyncio
 async def test_1600__aggregate_removes_id(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test aggregate yields documents without _id field."""
     docs = [{"_id": 1, "val": "X"}, {"_id": 2, "val": "Y"}]
@@ -595,7 +592,7 @@ async def test_1600__aggregate_removes_id(
 
 @pytest.mark.asyncio
 async def test_1700__aggregate_one_returns_first_doc(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test aggregate_one returns the first document."""
     bio_coll.aggregate = AsyncMock()  # type: ignore[method-assign]
@@ -613,14 +610,14 @@ async def test_1700__aggregate_one_returns_first_doc(
 
 @pytest.mark.asyncio
 async def test_1701__aggregate_one_not_found_raises(
-    bio_coll: MongoJSONSchemaValidatedCollection,
+    bio_coll: mjt.MongoJSONSchemaValidatedCollection,
 ):
     """Test aggregate_one raises DocumentNotFoundException if empty."""
     bio_coll.aggregate = AsyncMock()  # type: ignore[method-assign]
     bio_coll.aggregate.return_value.__aiter__.return_value = []
 
     pipeline = [{"$match": {"val": "none"}}]
-    with pytest.raises(DocumentNotFoundException):
+    with pytest.raises(mjt.DocumentNotFoundException):
         await bio_coll.aggregate_one(pipeline.copy())
 
     # check calls
