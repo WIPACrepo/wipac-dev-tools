@@ -37,8 +37,10 @@ file = "LICENSE"
 semver = [
   'semantic-version'
 ]
+prometheus = [
+  'prometheus-client'
+]
 dev = [
-  'prometheus-client',
   'pytest',
   'pytest-asyncio',
   'pytest-flake8',
