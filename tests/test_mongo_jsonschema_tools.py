@@ -87,6 +87,14 @@ async def test_100__insert_many(mongo_collection):
     assert result == docs
 
 
+@pytest.mark.asyncio
+async def test_101__insert_many__invalid_schema(mongo_collection):
+    """Test inserting multiple documents with one invalid document raises error."""
+    docs = [{"name": "Alice", "age": 30}, {"name": "Bob"}]  # "Bob" is missing "age"
+    with pytest.raises(MongoJSONSchemaValidationError):
+        await mongo_collection.insert_many(docs)
+
+
 ########################################################################################
 # find_one()
 
@@ -114,8 +122,8 @@ async def test_201__find_one__not_found(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_300__find_one_and_update(mongo_collection):
-    """Test updating and returning one document successfully."""
+async def test_300__find_one_and_update__set(mongo_collection):
+    """Test updating and returning one document successfully with $set."""
     mongo_collection._collection.find_one_and_update = AsyncMock(
         return_value={"_id": "1", "name": "Updated", "age": 35}
     )
@@ -126,7 +134,38 @@ async def test_300__find_one_and_update(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_301__find_one_and_update__invalid_operator(mongo_collection):
+async def test_301__find_one_and_update__set__invalid_schema(mongo_collection):
+    """Test updating one document with invalid $set schema raises error."""
+    update = {"$set": {"name": "Charlie"}}  # missing required "age"
+    with pytest.raises(MongoJSONSchemaValidationError):
+        await mongo_collection.find_one_and_update({"name": "Charlie"}, update)
+
+
+@pytest.mark.asyncio
+async def test_310__find_one_and_update__push(mongo_collection):
+    """Test updating one document successfully with $push."""
+    mongo_collection._collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": "2",
+            "name": "Alice",
+            "address": [{"city": "NY", "zip": "10001"}],
+        }
+    )
+    update = {"$push": {"address": {"city": "NY", "zip": "10001"}}}
+    result = await mongo_collection.find_one_and_update({"name": "Alice"}, update)
+    assert result["address"][0]["city"] == "NY"
+
+
+@pytest.mark.asyncio
+async def test_311__find_one_and_update__push__invalid_schema(mongo_collection):
+    """Test updating one document with invalid $push schema raises error."""
+    update = {"$push": {"address": "not-an-object"}}
+    with pytest.raises(MongoJSONSchemaValidationError):
+        await mongo_collection.find_one_and_update({"name": "Charlie"}, update)
+
+
+@pytest.mark.asyncio
+async def test_390__find_one_and_update__unsupported_operator(mongo_collection):
     """Test updating with unsupported operator raises error."""
     with pytest.raises(KeyError):
         await mongo_collection.find_one_and_update(
@@ -221,6 +260,45 @@ async def test_701__aggregate_one__not_found(mongo_collection):
 
     with pytest.raises(DocumentNotFoundException):
         await mongo_collection.aggregate_one([{"$match": {"name": "None"}}])
+
+
+########################################################################################
+# _validate_mongo_update()
+
+
+def test_900__validate_mongo_update__unsupported_operator(mongo_collection):
+    """Test _validate_mongo_update with unsupported operator raises error."""
+    update = {"$rename": {"name": "full_name"}}
+    with pytest.raises(KeyError):
+        mongo_collection._validate_mongo_update(update)
+
+
+def test_910__validate_mongo_update__set(mongo_collection):
+    """Test _validate_mongo_update with valid $set operator."""
+    update = {"$set": {"name": "Alice", "age": 42}}
+    # Should not raise
+    mongo_collection._validate_mongo_update(update)
+
+
+def test_911__validate_mongo_update__set_invalid(mongo_collection):
+    """Test _validate_mongo_update with invalid $set schema."""
+    update = {"$set": {"name": "Bob"}}  # missing "age"
+    with pytest.raises(MongoJSONSchemaValidationError):
+        mongo_collection._validate_mongo_update(update)
+
+
+def test_920__validate_mongo_update__push(mongo_collection):
+    """Test _validate_mongo_update with valid $push operator."""
+    update = {"$push": {"address": {"city": "Chicago", "zip": "60601"}}}
+    # Should not raise
+    mongo_collection._validate_mongo_update(update)
+
+
+def test_921__validate_mongo_update__push_invalid(mongo_collection):
+    """Test _validate_mongo_update with invalid $push schema."""
+    update = {"$push": {"address": {"city": "Chicago"}}}  # missing "zip"
+    with pytest.raises(MongoJSONSchemaValidationError):
+        mongo_collection._validate_mongo_update(update)
 
 
 ########################################################################################
