@@ -125,23 +125,23 @@ jobs:
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-
-          # Define structured matrix
+          
+          # Structured matrix
           MATRIX='[
             { "file": "vanilla", "extras": "[dev]" },
             { "file": "test_needs_bigdata.py", "extras": "[dev,foom,bar]" },
             { "file": "test_slow_stuff.py", "extras": "[bop]" }
           ]'
-
-          # Convert to flat [extras]file format for matrix.raw
-          RAW=$(jq -c '[.[] | "[\(.extras | gsub("[\\[\\]]"; ""))]\(.file)"]' <<< "$MATRIX")
-
-          # Build ignore args for vanilla
+          
+          # Convert to "[extras]:file" format
+          RAW=$(jq -c '[.[] | "\(.extras):\(.file)"]' <<< "$MATRIX")
+          
+          # Assemble ignore args
           IGNORE_ARGS=""
           for file in $(jq -r '.[] | select(.file != "vanilla") | .file' <<< "$MATRIX"); do
             IGNORE_ARGS+=" --ignore=tests/$file"
           done
-
+          
           echo "json=$RAW" >> "$GITHUB_OUTPUT"
           echo "ignore_args=$IGNORE_ARGS" >> "$GITHUB_OUTPUT"
 
@@ -161,26 +161,25 @@ jobs:
         with:
           python-version: ${{ matrix.py3 }}
 
-      - name: Parse test file and extras
+      - name: Parse extras and file from raw
         id: parse
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          
           RAW="${{ matrix.raw }}"
-          EXTRAS="${RAW%%]*}"      # strip after ]
-          EXTRAS="${EXTRAS#[}"     # strip leading [
-          FILE="${RAW#*]}"         # strip before ]
-
-          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          
+          # "[extras]:file"
+          EXTRAS="${RAW%%:*}"  # before `:`
           echo "extras=$EXTRAS" >> "$GITHUB_OUTPUT"
+          FILE="${RAW#*:}"     # after  `:`
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: |
           set -euo pipefail
           echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           pip install --upgrade pip wheel setuptools
-          pip install ".[$(echo '${{ steps.parse.outputs.extras }}')]"
+          pip install ".${{ steps.parse.outputs.extras }}"
 
       - name: Run tests
         run: |
@@ -190,7 +189,6 @@ jobs:
             pytest -vvvv ${{ needs.set-special-files.outputs.ignore_args }}
           else
             pytest -vvvv "tests/${{ steps.parse.outputs.file }}"
-  
   
   
   ############################################################################
