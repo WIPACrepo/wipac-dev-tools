@@ -175,7 +175,7 @@ async def test_1000__insert_one(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1001__insert_one__invalid_schema(mongo_collection):
+async def test_1001__insert_one__invalid(mongo_collection):
     """Test inserting one document with invalid schema."""
     doc = {"name": "Alice"}
     with pytest.raises(MongoJSONSchemaValidationError):
@@ -196,7 +196,7 @@ async def test_1100__insert_many(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1101__insert_many__invalid_schema(mongo_collection):
+async def test_1101__insert_many__invalid(mongo_collection):
     """Test inserting multiple documents with one invalid document raises error."""
     docs = [{"name": "Alice", "age": 30}, {"name": "Bob"}]
     with pytest.raises(MongoJSONSchemaValidationError):
@@ -242,7 +242,7 @@ async def test_1300__find_one_and_update__set(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1301__find_one_and_update__set__invalid_schema(mongo_collection):
+async def test_1301__find_one_and_update__set__invalid(mongo_collection):
     """Test updating one document with invalid $set schema raises error."""
     update = {"$set": {"name": "Charlie"}}
     with pytest.raises(MongoJSONSchemaValidationError):
@@ -265,7 +265,7 @@ async def test_1310__find_one_and_update__push(mongo_collection):
 
 
 @pytest.mark.asyncio
-async def test_1311__find_one_and_update__push__invalid_schema(mongo_collection):
+async def test_1311__find_one_and_update__push__invalid(mongo_collection):
     """Test updating one document with invalid $push schema raises error."""
     update = {"$push": {"address": "not-an-object"}}
     with pytest.raises(MongoJSONSchemaValidationError):
