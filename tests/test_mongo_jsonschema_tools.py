@@ -139,6 +139,7 @@ def test_0004__convert_with_nested_additional_properties_blocked__but_ok():
         doc, schema, allow_partial_update=True
     )
     assert out_doc == {"meta": {"extra": "boom"}}
+    assert out_schema["properties"]["meta"]["additionalProperties"] is False
     assert out_schema["required"] == []
 
     # NOTE: the above doc is invalid for jsonschema--but, it's not invalid for conversion
