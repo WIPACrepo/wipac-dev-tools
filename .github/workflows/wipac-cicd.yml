@@ -135,8 +135,8 @@ jobs:
           # - Any test file listed will be ignored in the vanilla tests
           #
           TEST_INFO_JSON='[
-            "vanilla:[dev]",
-            "prometheus_tools_test.py:[dev,prometheus]",
+            "vanilla:[tests]",
+            "prometheus_tools_test.py:[tests,prometheus]",
           ]'
           
           
