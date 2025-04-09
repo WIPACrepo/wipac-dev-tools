@@ -596,9 +596,11 @@ async def test_1700__aggregate_one_returns_first_doc(
 ):
     """Test aggregate_one returns the first document."""
     bio_coll.aggregate = AsyncMock()  # type: ignore[method-assign]
-    bio_coll.aggregate.return_value.__aiter__.return_value = [
-        {"_id": 99, "result": "match"}
-    ]
+
+    async def async_gen():
+        yield {"_id": 99, "result": "match"}
+
+    bio_coll.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
 
     pipeline = [{"$match": {"val": "match"}}]
     result = await bio_coll.aggregate_one(pipeline.copy())
@@ -614,7 +616,11 @@ async def test_1701__aggregate_one_not_found_raises(
 ):
     """Test aggregate_one raises DocumentNotFoundException if empty."""
     bio_coll.aggregate = AsyncMock()  # type: ignore[method-assign]
-    bio_coll.aggregate.return_value.__aiter__.return_value = []
+
+    async def async_gen():
+        return
+
+    bio_coll.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
 
     pipeline = [{"$match": {"val": "none"}}]
     with pytest.raises(DocumentNotFoundException):
