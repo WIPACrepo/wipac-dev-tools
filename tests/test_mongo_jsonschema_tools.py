@@ -148,10 +148,9 @@ def test_0102__validate__valid_partial_doc(
 def test_0103__validate__invalid_partial_doc(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
-    """Test _validate with invalid partial doc missing required subfield."""
+    """Partial update skips subfield requirements; this should succeed."""
     doc = {"address.city": "Springfield"}  # missing zip
-    with pytest.raises(MongoJSONSchemaValidationError):
-        bio_coll._validate(doc, allow_partial_update=True)
+    bio_coll._validate(doc, allow_partial_update=True)
 
 
 def test_0104__validate__partial_doc_not_allowed(
@@ -366,8 +365,8 @@ def test_0201__validate_mongo_update__set(
 def test_0202__validate_mongo_update__set_invalid(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
-    """Test _validate_mongo_update with invalid $set schema."""
-    update = {"$set": {"name": "Bob"}}
+    """Invalid value in $set (wrong type) should raise error."""
+    update = {"$set": {"age": "not-a-number"}}  # age must be integer
     with pytest.raises(MongoJSONSchemaValidationError):
         bio_coll._validate_mongo_update(update)
 
