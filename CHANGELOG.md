@@ -2,6 +2,13 @@
 
 
 
+## v1.16.2 (2025-04-10)
+
+###  
+
+* `mongo_jsonschema_tools`: Add Missing `_id` Removal (#121) ([`b7c6adf`](https://github.com/WIPACrepo/wipac-dev-tools/commit/b7c6adf6f8d6fdb75f4ac1dce79a7af8ff6d08bf))
+
+
 ## v1.16.1 (2025-04-10)
 
 ###  
