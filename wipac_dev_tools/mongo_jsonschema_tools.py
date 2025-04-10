@@ -2,7 +2,8 @@
 
 import copy
 import logging
-from typing import Any, AsyncIterator, Union
+from typing import Any, AsyncIterator, Callable, Union
+
 
 # mongo imports
 try:
@@ -26,18 +27,33 @@ class DocumentNotFoundException(Exception):
     """Raised when document is not found for a particular query."""
 
 
-class MongoJSONSchemaValidationError(Exception):
-    """Raised when a document is not valid for a particular collection and/or query."""
+class IllegalDotsNotationActionException(Exception):
+    """The object contains dotted keys which the mongo action disallows."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "The object contains dotted keys which the mongo action disallows."
+        )
 
 
 class MongoJSONSchemaValidatedCollection:
-    """For interacting with a mongo collection using jsonschema validation."""
+    """For interacting with a mongo collection using jsonschema validation for writes.
+
+    A `jsonschema.exceptions.ValidationError` instance is raised, when an object
+    is invalid for given schema and mongo action; use `validation_exception_callback`
+    to raise a specialized exception instead (must *return* an exception instance).
+
+    Validation only occurs on writes--not reads.
+    """
 
     def __init__(
         self,
         collection: AsyncIOMotorCollection,
         collection_jsonschema_spec: dict[str, Any],
         parent_logger: Union[logging.Logger, None] = None,
+        validation_exception_callback: Union[
+            Callable[[Exception], Exception], None
+        ] = None,
     ) -> None:
         self._collection = collection
         self._schema = collection_jsonschema_spec
@@ -53,6 +69,8 @@ class MongoJSONSchemaValidatedCollection:
                 f"{__name__}.{self.collection_name.lower()}"
             )
 
+        self.validation_exception_callback = validation_exception_callback
+
     def _validate(
         self,
         instance: dict,
@@ -65,11 +83,12 @@ class MongoJSONSchemaValidatedCollection:
                     instance, self._schema, allow_partial_update
                 )
             )
-        except jsonschema.exceptions.ValidationError as e:
+        except Exception as e:
             self.logger.exception(e)
-            raise MongoJSONSchemaValidationError(
-                "Attempted to insert invalid data into database"
-            ) from e
+            if self.validation_exception_callback:
+                raise self.validation_exception_callback(e) from e
+            else:
+                raise e
 
     ####################################################################
     # WRITES
@@ -294,9 +313,7 @@ def _convert_mongo_to_jsonschema(
     else:
         # no partial & yes dots -> error
         if _has_dotted_keys(mongo_dict):
-            raise MongoJSONSchemaValidationError(
-                "Partial updating disallowed but instance contains dotted parent_keys."
-            )
+            raise IllegalDotsNotationActionException()
         # no partial & no dots -> immediate exit
         else:
             return mongo_dict, full_schema
