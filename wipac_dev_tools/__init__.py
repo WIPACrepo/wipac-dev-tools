@@ -15,6 +15,7 @@ __all__ = [
     "data_safety_tools",
     "timing_tools",
     "prometheus_tools",  # not imported above b/c module has optional dependencies
+    "mongo_jsonschema_tools",  # not imported above b/c module has optional dependencies
 ]
 
 # version is a human-readable version number.

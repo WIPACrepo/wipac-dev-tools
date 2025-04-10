@@ -37,6 +37,12 @@ file = "LICENSE"
 semver = [
   'semantic-version'
 ]
+mongo = [
+  'motor'
+]
+jsonschema = [
+  'jsonschema'
+]
 prometheus = [
   'prometheus-client'
 ]
@@ -49,6 +55,8 @@ tests = [
   'semantic-version'
 ]
 mypy = [
+  'jsonschema',
+  'motor',
   'prometheus-client',
   'pytest',
   'pytest-asyncio',

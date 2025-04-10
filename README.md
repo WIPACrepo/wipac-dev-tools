@@ -247,3 +247,5 @@ def strtobool(string: str) -> bool:
         ValueError: if the string does not match any of the about
     """
 ```
+
+#### _and more!_
