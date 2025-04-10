@@ -8,10 +8,12 @@ import pytest
 
 from wipac_dev_tools.mongo_jsonschema_tools import (
     DocumentNotFoundException,
+    IllegalDotsNotationActionException,
     MongoJSONSchemaValidatedCollection,
-    MongoJSONSchemaValidationError,
     _convert_mongo_to_jsonschema,
 )
+
+ValidationError = jsonschema.exceptions.ValidationError
 
 
 def make_coll(schema: dict) -> MongoJSONSchemaValidatedCollection:
@@ -87,7 +89,7 @@ def test_0000__convert_no_dots_no_partial_returns_as_is(bio_schema):
 def test_0001__convert_with_dots_no_partial_raises(bio_schema):
     """Test conversion with dotted keys and no partial update raises error."""
     doc = {"address.city": "Springfield"}
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(IllegalDotsNotationActionException):
         _convert_mongo_to_jsonschema(doc, bio_schema, allow_partial_update=False)
 
 
@@ -165,7 +167,7 @@ def test_0101__validate__invalid_full_doc(
 ):
     """Test _validate with a full document missing required fields."""
     doc = {"name": "Bob"}  # missing "age"
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         bio_coll._validate(doc)
 
 
@@ -191,7 +193,7 @@ def test_0104__validate__partial_doc_not_allowed(
 ):
     """Test _validate with dotted keys and partial updates disallowed raises error."""
     doc = {"address.city": "Springfield"}
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(IllegalDotsNotationActionException):
         bio_coll._validate(doc, allow_partial_update=False)
 
 
@@ -208,7 +210,7 @@ def test_0105__validate__additional_properties_rejected():
         "required": ["foo"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         coll._validate({"foo": "bar", "extra": "nope"})
 
 
@@ -226,7 +228,7 @@ def test_0106__validate__nested_object_missing_subfield():
         "required": ["settings"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         coll._validate({"settings": {}})
 
 
@@ -243,7 +245,7 @@ def test_0107__validate__array_type_enforced():
         "required": ["tags"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         coll._validate({"tags": [1, 2, 3]})
 
 
@@ -257,7 +259,7 @@ def test_0108__validate__enum_enforced():
         "required": ["status"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         coll._validate({"status": "archived"})
 
 
@@ -294,7 +296,7 @@ def test_0110__validate__one_of_match_failure():
         "required": ["input"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         coll._validate({"input": {"foo": "bar"}})
 
 
@@ -321,7 +323,7 @@ def test_0112__validate__partial_update_with_enum_invalid():
         "required": ["type"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         coll._validate({"type": "Z"}, allow_partial_update=True)
 
 
@@ -333,7 +335,7 @@ def test_0113__validate__type_mismatch_raises():
         "required": ["count"],
     }
     coll = make_coll(schema)
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         coll._validate({"count": "ten"})
 
 
@@ -400,7 +402,7 @@ def test_0202__validate_mongo_update__set_invalid(
 ):
     """Invalid value in $set (wrong type) should raise error."""
     update = {"$set": {"age": "not-a-number"}}  # age must be integer
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         bio_coll._validate_mongo_update(update)
 
 
@@ -415,7 +417,7 @@ def test_0204__validate_mongo_update__push_baseball_invalid(team_schema):
     """Test _validate_mongo_update with invalid $push operator using baseball theme."""
     coll = make_coll(team_schema)
     update = {"$push": {"team": {"name": "Jack", "position": "Catcher"}}}  # no number
-    with pytest.raises(MongoJSONSchemaValidationError):
+    with pytest.raises(ValidationError):
         coll._validate_mongo_update(update)
 
 
