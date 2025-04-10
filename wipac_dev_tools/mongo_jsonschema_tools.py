@@ -100,7 +100,7 @@ class MongoJSONSchemaValidatedCollection:
         self._validate(doc)
         await self._collection.insert_one(doc, **kwargs)
         # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
-        doc.pop("_id", None)  # mongo will put "_id" but for testing, set default
+        doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
 
         self.logger.debug(f"inserted one: {doc}")
         return doc
@@ -137,7 +137,7 @@ class MongoJSONSchemaValidatedCollection:
         await self._collection.insert_many(docs, **kwargs)
         # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
         for doc in docs:
-            doc.pop("_id", None)  # mongo will put "_id" but for testing, set default
+            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
 
         self.logger.debug(f"inserted many: {docs}")
         return docs
@@ -171,7 +171,7 @@ class MongoJSONSchemaValidatedCollection:
         if not doc:
             raise DocumentNotFoundException()
         # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
-        doc.pop("_id", None)  # mongo will put "_id" but for testing, set default
+        doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
 
         self.logger.debug(f"found one: {doc}")
         return doc  # type: ignore[no-any-return]
@@ -189,7 +189,7 @@ class MongoJSONSchemaValidatedCollection:
         async for doc in self._collection.find(query, projection, **kwargs):
             i += 1
             # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
-            doc.pop("_id", None)  # mongo will put "_id" but for testing, set default
+            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
             self.logger.debug(f"found {doc}")
             yield doc
 
@@ -207,7 +207,7 @@ class MongoJSONSchemaValidatedCollection:
         async for doc in self._collection.aggregate(pipeline, **kwargs):
             i += 1
             # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
-            doc.pop("_id", None)  # mongo will put "_id" but for testing, set default
+            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
             self.logger.debug(f"found {doc}")
             yield doc
 
