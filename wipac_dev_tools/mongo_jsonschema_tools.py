@@ -75,15 +75,13 @@ class MongoJSONSchemaValidatedCollection:
 
     def _validate(
         self,
-        instance: dict,
+        obj: dict,
         allow_partial_update: bool = False,
     ) -> None:
         """Wrap `jsonschema.validate` with logic for mongo syntax."""
         try:
             jsonschema.validate(
-                *_convert_mongo_to_jsonschema(
-                    instance, self._schema, allow_partial_update
-                )
+                *_convert_mongo_to_jsonschema(obj, self._schema, allow_partial_update)
             )
         except Exception as e:
             self.logger.exception(e)
