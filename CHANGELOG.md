@@ -2,6 +2,13 @@
 
 
 
+## v1.16.1 (2025-04-10)
+
+###  
+
+* `mongo_jsonschema_tools`: Update Exceptions (#120) ([`2295eb6`](https://github.com/WIPACrepo/wipac-dev-tools/commit/2295eb6b43d49df890253d62c0957ca88eac4401))
+
+
 ## v1.16.0 (2025-04-10)
 
 ### [minor]
