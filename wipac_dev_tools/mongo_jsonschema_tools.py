@@ -259,7 +259,7 @@ def _has_dotted_keys(dicto: dict[str, Any]) -> bool:
 
 def _convert_mongo_to_jsonschema(
     mongo_dict: dict,
-    full_schema: dict,
+    full_jsonschema: dict,
     allow_partial_update: bool,
 ) -> tuple[dict, dict]:
     """Converts a mongo-style dotted dict to a nested dict with an augmented schema.
@@ -309,21 +309,21 @@ def _convert_mongo_to_jsonschema(
             }
     """
     if allow_partial_update:
-        return _adapt_schema_for_partial_updating(mongo_dict, full_schema)
+        return _adapt_schema_for_partial_updating(mongo_dict, full_jsonschema)
     else:
         # no partial & yes dots -> error
         if _has_dotted_keys(mongo_dict):
             raise IllegalDotsNotationActionException()
         # no partial & no dots -> immediate exit
         else:
-            return mongo_dict, full_schema
+            return mongo_dict, full_jsonschema
 
 
 def _adapt_schema_for_partial_updating(
     mongo_dict: dict,
-    full_schema: dict,
+    full_jsonschema: dict,
 ) -> tuple[dict, dict]:
-    adapted_schema = copy.deepcopy(full_schema)
+    adapted_schema = copy.deepcopy(full_jsonschema)
     adapted_schema["required"] = []
 
     # yes partial but no dots -> quick exit
