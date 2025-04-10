@@ -142,6 +142,8 @@ class MongoJSONSchemaValidatedCollection:
         )
         if not doc:
             raise DocumentNotFoundException()
+        else:
+            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
 
         self.logger.debug(f"updated one ({query}): {doc}")
         return doc  # type: ignore[no-any-return]
