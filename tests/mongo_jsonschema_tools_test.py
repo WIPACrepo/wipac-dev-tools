@@ -8,6 +8,7 @@ import pytest
 
 from wipac_dev_tools.mongo_jsonschema_tools import (
     DocumentNotFoundException,
+    IllegalDotsNotationActionException,
     MongoJSONSchemaValidatedCollection,
     _convert_mongo_to_jsonschema,
 )
@@ -88,7 +89,7 @@ def test_0000__convert_no_dots_no_partial_returns_as_is(bio_schema):
 def test_0001__convert_with_dots_no_partial_raises(bio_schema):
     """Test conversion with dotted keys and no partial update raises error."""
     doc = {"address.city": "Springfield"}
-    with pytest.raises(ValidationError):
+    with pytest.raises(IllegalDotsNotationActionException):
         _convert_mongo_to_jsonschema(doc, bio_schema, allow_partial_update=False)
 
 
@@ -192,7 +193,7 @@ def test_0104__validate__partial_doc_not_allowed(
 ):
     """Test _validate with dotted keys and partial updates disallowed raises error."""
     doc = {"address.city": "Springfield"}
-    with pytest.raises(ValidationError):
+    with pytest.raises(IllegalDotsNotationActionException):
         bio_coll._validate(doc, allow_partial_update=False)
 
 
