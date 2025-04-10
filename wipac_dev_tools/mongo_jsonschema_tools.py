@@ -39,9 +39,11 @@ class IllegalDotsNotationActionException(Exception):
 class MongoJSONSchemaValidatedCollection:
     """For interacting with a mongo collection using jsonschema validation for writes.
 
-    A `jsonschema.exceptions.ValidationError` instance is raised, when an object
-    is invalid for given schema and mongo action; use `validation_exception_callback`
-    to raise a specialized exception instead (must *return* an exception instance).
+    A `jsonschema.exceptions.ValidationError` or `IllegalDotsNotationActionException`
+    instance is raised, when an object is invalid for given schema and mongo action.
+    Use `validation_exception_callback` to raise a specialized exception instead;
+    this callback must *return* an exception instance and should account for any/all
+    exception types.
 
     Validation only occurs on writes--not reads.
     """
