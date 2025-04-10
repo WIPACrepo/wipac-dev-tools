@@ -2,6 +2,15 @@
 
 
 
+## v1.16.0 (2025-04-10)
+
+### [minor]
+
+* Add `mongo_jsonschema_tools` [minor] (#117)
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`bb9eb9e`](https://github.com/WIPACrepo/wipac-dev-tools/commit/bb9eb9ec0308afdc0a7a6461ea48707461e98377))
+
+
 ## v1.15.9 (2025-04-09)
 
 ###  
