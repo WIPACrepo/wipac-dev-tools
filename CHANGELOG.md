@@ -2,6 +2,15 @@
 
 
 
+## v1.16.3 (2025-04-22)
+
+###  
+
+* `mongo_jsonschema_tools`: Add Arg to Toggle `_id` Removal (#122)
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`e95f8d1`](https://github.com/WIPACrepo/wipac-dev-tools/commit/e95f8d11b7c117c53333e6886f6db7677ec00967))
+
+
 ## v1.16.2 (2025-04-10)
 
 ###  
