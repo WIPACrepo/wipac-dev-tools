@@ -15,8 +15,8 @@ urllib3==2.4.0
 ########################################################################
 #  pipdeptree
 ########################################################################
-pipdeptree==2.26.0
-├── packaging [required: >=24.1, installed: 24.2]
+pipdeptree==2.26.1
+├── packaging [required: >=24.1, installed: 25.0]
 └── pip [required: >=24.2, installed: 25.0.1]
 wipac-dev-tools
 ├── requests [required: Any, installed: 2.32.3]
