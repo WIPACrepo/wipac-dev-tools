@@ -112,14 +112,19 @@ class MongoJSONSchemaValidatedCollection:
             else:
                 raise KeyError(f"Unsupported mongo-syntax update operator: {operator}")
 
-    async def insert_one(self, doc: dict, **kwargs: Any) -> dict:
+    async def insert_one(
+        self,
+        doc: dict,
+        no_id: bool = True,
+        **kwargs: Any,
+    ) -> dict:
         """Insert the doc (dict)."""
         self.logger.debug(f"inserting one: {doc}")
 
         self._validate(doc)
         await self._collection.insert_one(doc, **kwargs)
-        # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
-        doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+        if no_id:
+            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
 
         self.logger.debug(f"inserted one: {doc}")
         return doc
@@ -128,6 +133,7 @@ class MongoJSONSchemaValidatedCollection:
         self,
         query: dict,
         update: dict,
+        no_id: bool = True,
         **kwargs: Any,
     ) -> dict:
         """Update the doc and return updated doc."""
@@ -142,13 +148,18 @@ class MongoJSONSchemaValidatedCollection:
         )
         if not doc:
             raise DocumentNotFoundException()
-        else:
+        elif no_id:
             doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
 
         self.logger.debug(f"updated one ({query}): {doc}")
         return doc  # type: ignore[no-any-return]
 
-    async def insert_many(self, docs: list[dict], **kwargs: Any) -> list[dict]:
+    async def insert_many(
+        self,
+        docs: list[dict],
+        no_id: bool = True,
+        **kwargs: Any,
+    ) -> list[dict]:
         """Insert multiple docs."""
         self.logger.debug(f"inserting many: {docs}")
 
@@ -156,9 +167,9 @@ class MongoJSONSchemaValidatedCollection:
             self._validate(doc)
 
         await self._collection.insert_many(docs, **kwargs)
-        # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
-        for doc in docs:
-            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+        if no_id:
+            for doc in docs:
+                doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
 
         self.logger.debug(f"inserted many: {docs}")
         return docs
@@ -184,15 +195,20 @@ class MongoJSONSchemaValidatedCollection:
     # READS
     ####################################################################
 
-    async def find_one(self, query: dict, **kwargs: Any) -> dict:
+    async def find_one(
+        self,
+        query: dict,
+        no_id: bool = True,
+        **kwargs: Any,
+    ) -> dict:
         """Find one matching the query."""
         self.logger.debug(f"finding one with query: {query}")
 
         doc = await self._collection.find_one(query, **kwargs)
         if not doc:
             raise DocumentNotFoundException()
-        # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
-        doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+        if no_id:
+            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
 
         self.logger.debug(f"found one: {doc}")
         return doc  # type: ignore[no-any-return]
@@ -201,6 +217,7 @@ class MongoJSONSchemaValidatedCollection:
         self,
         query: dict,
         projection: list,
+        no_id: bool = True,
         **kwargs: Any,
     ) -> AsyncIterator[dict]:
         """Find all matching the query."""
@@ -209,8 +226,8 @@ class MongoJSONSchemaValidatedCollection:
         i = 0
         async for doc in self._collection.find(query, projection, **kwargs):
             i += 1
-            # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
-            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+            if no_id:
+                doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
             self.logger.debug(f"found {doc}")
             yield doc
 
@@ -219,6 +236,7 @@ class MongoJSONSchemaValidatedCollection:
     async def aggregate(
         self,
         pipeline: list[dict],
+        no_id: bool = True,
         **kwargs: Any,
     ) -> AsyncIterator[dict]:
         """Find all matching the aggregate pipeline."""
@@ -227,8 +245,8 @@ class MongoJSONSchemaValidatedCollection:
         i = 0
         async for doc in self._collection.aggregate(pipeline, **kwargs):
             i += 1
-            # https://pymongo.readthedocs.io/en/stable/faq.html#writes-and-ids
-            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+            if no_id:
+                doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
             self.logger.debug(f"found {doc}")
             yield doc
 

@@ -30,8 +30,8 @@ jsonschema==4.23.0
 │   ├── attrs [required: >=22.2.0, installed: 25.3.0]
 │   └── rpds-py [required: >=0.7.0, installed: 0.24.0]
 └── rpds-py [required: >=0.7.1, installed: 0.24.0]
-pipdeptree==2.26.0
-├── packaging [required: >=24.1, installed: 24.2]
+pipdeptree==2.26.1
+├── packaging [required: >=24.1, installed: 25.0]
 └── pip [required: >=24.2, installed: 25.0.1]
 wipac-dev-tools
 ├── requests [required: Any, installed: 2.32.3]
