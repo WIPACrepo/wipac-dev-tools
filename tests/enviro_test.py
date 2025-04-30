@@ -1,6 +1,5 @@
 """Test enviro_tools.py."""
 
-
 import dataclasses as dc
 import os
 import pathlib
@@ -212,6 +211,7 @@ def test__real_life_example() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_000__str() -> None:
     """Test normal use case."""
+
     # str
     @dc.dataclass(frozen=True)
     class Config:
@@ -225,6 +225,7 @@ def test_000__str() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_002__int() -> None:
     """Test normal use case."""
+
     # int
     @dc.dataclass(frozen=True)
     class Config:
@@ -239,6 +240,7 @@ def test_002__int() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_003__float() -> None:
     """Test normal use case."""
+
     # float
     @dc.dataclass(frozen=True)
     class Config:
@@ -253,6 +255,7 @@ def test_003__float() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_004__float_from_int() -> None:
     """Test normal use case."""
+
     # float - from int
     @dc.dataclass(frozen=True)
     class Config:
@@ -267,6 +270,7 @@ def test_004__float_from_int() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_005__float_engineering() -> None:
     """Test normal use case."""
+
     # float - engineering notation
     @dc.dataclass(frozen=True)
     class Config:
@@ -281,6 +285,7 @@ def test_005__float_engineering() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_006__bool_true() -> None:
     """Test normal use case."""
+
     # bool - true
     @dc.dataclass(frozen=True)
     class Config:
@@ -307,6 +312,7 @@ def test_006__bool_true() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_007__bool_false() -> None:
     """Test normal use case."""
+
     # bool - false
     @dc.dataclass(frozen=True)
     class Config:
@@ -629,6 +635,7 @@ def test_062__optional_dict(typo) -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_100_error__missing_required() -> None:
     """Test error use case."""
+
     # Missing
     @dc.dataclass(frozen=True)
     class Config:
@@ -641,6 +648,7 @@ def test_100_error__missing_required() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_101_error__int() -> None:
     """Test error use case."""
+
     # Bad Type - int
     @dc.dataclass(frozen=True)
     class Config:
@@ -654,6 +662,7 @@ def test_101_error__int() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_102_error__float() -> None:
     """Test error use case."""
+
     # Bad Type - float
     @dc.dataclass(frozen=True)
     class Config:
@@ -690,6 +699,7 @@ def test_103_error__bool() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_104_error__bytes() -> None:
     """Test error use case."""
+
     # using a bytes, this is similar to any multi-arg built-in type
     @dc.dataclass(frozen=True)
     class Config:
@@ -703,6 +713,7 @@ def test_104_error__bytes() -> None:
 @pytest.mark.usefixtures("isolated_env")
 def test_105_error__overly_nested_type_alias() -> None:
     """Test error use case."""
+
     # using a bytes, this is similar to any multi-arg built-in type
     @dc.dataclass(frozen=True)
     class Config:
@@ -766,18 +777,16 @@ def test_108_error__bytes() -> None:
         from_environment_as_dataclass(Config)
 
 
-# NOTE: mypy crashes with an un-typed non-initialized 'Final'
-# see https://github.com/python/mypy/issues/10090
-# def test_109_error__final_only() -> None:
-#     """Test error use case."""
+def test_109_error__final_only() -> None:
+    """Test error use case."""
 
-#     @dc.dataclass(frozen=True)
-#     class Config:
-#         FOO: Final  # type: ignore[misc] # ...this is an error after all
+    @dc.dataclass(frozen=True)
+    class Config:
+        FOO: Final  # type: ignore[misc] # ...this is an error after all
 
-#     os.environ["FOO"] = "foo bar baz"
-#     with pytest.raises(ValueError):
-#         from_environment_as_dataclass(Config)
+    os.environ["FOO"] = "foo bar baz"
+    with pytest.raises(ValueError):
+        from_environment_as_dataclass(Config)
 
 
 @pytest.mark.usefixtures("isolated_env")
