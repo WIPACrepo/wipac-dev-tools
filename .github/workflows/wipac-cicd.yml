@@ -1,88 +1,231 @@
 name: wipac ci/cd
 
-on: [push]
+on: [ push ]
 
 jobs:
 
-  flake8:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-      - uses: WIPACrepo/wipac-dev-flake8-action@v1
-
-  mypy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-      - uses: WIPACrepo/wipac-dev-mypy-action@v1.1
-
-  py-setup:
-    runs-on: ubuntu-latest
-    steps:
-      # dependabot can't access normal secrets
-      #   & don't run non-branch triggers (like tags)
-      #   & we don't want to trigger an update on PR's merge to main/master/default (which is a branch)
-      # IOW: only for non-dependabot branches
-      - if: |
-          github.actor != 'dependabot[bot]' &&
-          github.ref_type == 'branch' &&
-          format('refs/heads/{0}', github.event.repository.default_branch) != github.ref
-        name: checkout (only for non-dependabot non-default branches)
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      - if: |
-          github.actor != 'dependabot[bot]' &&
-          github.ref_type == 'branch' &&
-          format('refs/heads/{0}', github.event.repository.default_branch) != github.ref
-        name: wipac-dev-py-setup-action (only for non-dependabot non-default branches)
-        uses: WIPACrepo/wipac-dev-py-setup-action@v1.11
-        with:
-          base-keywords: "WIPAC IceCube"
-
   py-versions:
-    needs: [py-setup]
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.versions.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: versions
-        uses: WIPACrepo/wipac-dev-py-versions-action@v2
+        uses: WIPACrepo/wipac-dev-py-versions-action@v2.5
 
-  tests:
-    needs: [py-versions]
+
+  ############################################################################
+  # LINTERS
+  #############################################################################
+
+  flake8:
+    needs: [ py-versions ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py3 }}
-      - name: Pytest
+      - uses: WIPACrepo/wipac-dev-flake8-action@v1.2
+        with:
+          max-complexity: 10  # ideal is ~10-15
+
+  mypy:
+    needs: [ py-versions ]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py3 }}
+      - uses: WIPACrepo/wipac-dev-mypy-action@v2.0
+
+
+  ############################################################################
+  # PACKAGING
+  #############################################################################
+
+  writable-branch-detect:
+    runs-on: ubuntu-latest
+    outputs:
+      OKAY: ${{ steps.detect.outputs.OKAY }}
+    steps:
+      - name: is this a bot-writable branch?
+        id: detect
+        # dependabot can't access normal secrets
+        #   & don't run non-branch triggers (like tags)
+        #   & we don't want to trigger an update on PR's merge to main/master/default (which is a branch)
         run: |
-          pip install --upgrade pip wheel setuptools pytest
-          pip install .
-          pytest -vvvv tests
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          if [[ \
+              ${{github.actor}} != 'dependabot[bot]' && \
+              ${{github.ref_type}} == 'branch' && \
+              ${{format('refs/heads/{0}', github.event.repository.default_branch)}} != ${{github.ref}} \
+          ]]; then
+            echo "OKAY=true" >> "$GITHUB_OUTPUT"
+            echo "yes, this branch is compatible"
+          else
+            echo "OKAY=false" >> "$GITHUB_OUTPUT"
+            echo "no, this branch is incompatible"
+          fi
+
+  py-setup:
+    needs: [ writable-branch-detect ]
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.writable-branch-detect.outputs.OKAY == 'true'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      - if: needs.writable-branch-detect.outputs.OKAY == 'true'
+        uses: WIPACrepo/wipac-dev-py-setup-action@v4.5
+        with:
+          python_min: 3.9
+          pypi_name: wipac-dev-tools
+          author: WIPAC Developers
+          author_email: developers@icecube.wisc.edu
+          keywords_comma: "WIPAC, python tools, utilities"
+          auto_mypy_option: True
+
+  py-dependencies:
+    needs: [ writable-branch-detect ]
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.writable-branch-detect.outputs.OKAY == 'true'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      - if: needs.writable-branch-detect.outputs.OKAY == 'true'
+        uses: WIPACrepo/wipac-dev-py-dependencies-action@v2.1
+        with:
+          use_directory: true
+
+
+  ############################################################################
+  # TESTS
+  #############################################################################
+
+  prep-pytest:
+    runs-on: ubuntu-latest
+    outputs:
+      pytest_info_json: ${{ steps.set.outputs.pytest_info_json }}
+      pytest_ignore_args: ${{ steps.set.outputs.pytest_ignore_args }}
+    steps:
+      - name: Define outputs
+        id: set
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+
+
+          #
+          # *** HERE ARE THE TEST FILES & THEIR RESPECTIVE INSTALL OPTIONS ***
+          #
+          # Define test info directly as a JSON list of "file:[extras]" strings
+          # - The 'vanilla' test is one that has no (or minimal) install extras
+          # - Any test file listed will be ignored in the vanilla tests
+          #
+          PYTEST_INFO_JSON='[
+            "vanilla:[tests]",
+            "prometheus_tools_test.py:[tests,prometheus]",
+            "mongo_jsonschema_tools_test.py:[tests,mongo,jsonschema]"
+          ]'
+          
+          
+          # format json
+          PYTEST_INFO_JSON=$(echo "$PYTEST_INFO_JSON" | sed ':a;N;$!ba;s/,\s*\]/\]/') # remove trailing comma 
+          PYTEST_INFO_JSON=$(echo "$PYTEST_INFO_JSON" | jq -c '.') # put on one line
+          echo $PYTEST_INFO_JSON
+
+          # Assemble ignore args by extracting the filename part
+          PYTEST_IGNORE_ARGS=""
+          for file in $(jq -r '.[] | split(":")[0]' <<< "$PYTEST_INFO_JSON"); do
+            if [[ "$file" != "vanilla" ]]; then
+              PYTEST_IGNORE_ARGS+=" --ignore=tests/$file"
+            fi
+          done
+          echo $PYTEST_IGNORE_ARGS
+
+          # output
+          echo "pytest_info_json=$PYTEST_INFO_JSON" >> "$GITHUB_OUTPUT"
+          echo "pytest_ignore_args=$PYTEST_IGNORE_ARGS" >> "$GITHUB_OUTPUT"
+
+  tests:
+    needs: [ py-versions, prep-pytest ]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        py3: ${{ fromJSON(needs.py-versions.outputs.matrix) }}
+        pytest_info: ${{ fromJSON(needs.prep-pytest.outputs.pytest_info_json) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py3 }}
+      - name: Parse file and extras from pytest_info
+        id: parse
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          PYTEST_INFO="${{ matrix.pytest_info }}"
+          # "file:[extras]"
+          FILE="${PYTEST_INFO%%:*}"     # before `:`
+          EXTRAS="${PYTEST_INFO#*:}"    # after  `:`
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "extras=$EXTRAS" >> "$GITHUB_OUTPUT"
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          pip install --upgrade pip wheel setuptools
+          pip install ".${{ steps.parse.outputs.extras }}"
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          if [[ "${{ steps.parse.outputs.file }}" == "vanilla" ]]; then
+            pytest -vvvv ${{ needs.prep-pytest.outputs.pytest_ignore_args }}
+          else
+            pytest -vvvv "tests/${{ steps.parse.outputs.file }}"
+          fi
+
+
+  ############################################################################
+  # RELEASE
+  #############################################################################
 
   release:
     # only run on main/master/default
     if: format('refs/heads/{0}', github.event.repository.default_branch) == github.ref
-    needs: [py-setup, tests]
+    needs: [ flake8, mypy, py-setup, py-dependencies, tests ]
     runs-on: ubuntu-latest
-    concurrency: release
+    concurrency: release  # prevent any possible race conditions
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: Python Semantic Release
-      uses: relekang/python-semantic-release@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        repository_username: __token__
-        repository_password: ${{ secrets.PYPI_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Python-Package Version Bump
+      - uses: python-semantic-release/python-semantic-release@v9.8.1
+        id: psr-psr
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      # PyPI Release
+      - uses: pypa/gh-action-pypi-publish@v1.12.4
+        if: steps.psr-psr.outputs.released == 'true'
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+      # GitHub Release
+      - uses: python-semantic-release/upload-to-gh-release@v9.8.1
+        if: steps.psr-psr.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}

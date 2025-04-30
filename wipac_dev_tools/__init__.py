@@ -1,6 +1,6 @@
 """Init."""
 
-from . import argparse_tools, logging_tools
+from . import argparse_tools, data_safety_tools, logging_tools, timing_tools
 from .enviro_tools import from_environment, from_environment_as_dataclass  # noqa
 from .setup_tools import SetupShop  # noqa
 from .strtobool import strtobool
@@ -12,10 +12,15 @@ __all__ = [
     "logging_tools",
     "strtobool",
     "argparse_tools",
+    "data_safety_tools",
+    "timing_tools",
+    "prometheus_tools",  # not imported above b/c module has optional dependencies
+    "mongo_jsonschema_tools",  # not imported above b/c module has optional dependencies
 ]
 
 # version is a human-readable version number.
-__version__ = "1.6.12"
+__version__ = "1.16.3"
+
 
 # version_info is a four-tuple for programmatic comparison. The first
 # three numbers are the components of the version number. The fourth

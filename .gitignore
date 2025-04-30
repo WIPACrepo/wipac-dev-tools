@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# wipac-dev-py-setup-action
+!dependencies*.log
+
+.idea/
+

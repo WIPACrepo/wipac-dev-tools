@@ -1,26 +1,31 @@
 <!--- Top of README Badges (automated) --->
-[![PyPI](https://img.shields.io/pypi/v/wipac-dev-tools)](https://pypi.org/project/wipac-dev-tools/) [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/WIPACrepo/wipac-dev-tools?include_prereleases)](https://github.com/WIPACrepo/wipac-dev-tools/) [![PyPI - License](https://img.shields.io/pypi/l/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/blob/main/LICENSE) [![Lines of code](https://img.shields.io/tokei/lines/github/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/) [![GitHub issues](https://img.shields.io/github/issues/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aopen) [![GitHub pull requests](https://img.shields.io/github/issues-pr/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/pulls?q=is%3Apr+sort%3Aupdated-desc+is%3Aopen) 
+[![PyPI](https://img.shields.io/pypi/v/wipac-dev-tools)](https://pypi.org/project/wipac-dev-tools/) [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/WIPACrepo/wipac-dev-tools?include_prereleases)](https://github.com/WIPACrepo/wipac-dev-tools/) [![Versions](https://img.shields.io/pypi/pyversions/wipac-dev-tools.svg)](https://pypi.org/project/wipac-dev-tools) [![PyPI - License](https://img.shields.io/pypi/l/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/blob/main/LICENSE) [![GitHub issues](https://img.shields.io/github/issues/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aopen) [![GitHub pull requests](https://img.shields.io/github/issues-pr/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/pulls?q=is%3Apr+sort%3Aupdated-desc+is%3Aopen)
 <!--- End of README Badges (automated) --->
-# wipac-dev-tools
-Common, basic, and reusable development tools
 
+# wipac-dev-tools
+
+Common, basic, and reusable development tools
 
 ## Utilities
 
 ### Logging Tools
 
 #### `wipac_dev_tools.logging_tools.set_level()`
+
 _Available for Python 3.6+_
+
 ```
 def set_level(
     level: LoggerLevel,
-    first_party_loggers: Union[None, str, logging.Logger, List[Union[str, logging.Logger]]] = None,
+    first_party_loggers: Union[
+        None, LogggerObjectOrName, List[LogggerObjectOrName]
+    ] = None,
     third_party_level: LoggerLevel = "WARNING",
     future_third_parties: Union[None, str, List[str]] = None,
+    specialty_loggers: Optional[Dict[LogggerObjectOrName, LoggerLevel]] = None,
     use_coloredlogs: bool = False,
 ) -> None:
-    """Set the level of the root logger, first-party loggers, and third-party
-    loggers.
+    """Set the level of loggers of various precedence.
 
     The root logger and first-party logger(s) are set to the same level (`level`).
 
@@ -32,7 +37,10 @@ def set_level(
         `third_party_level`
             the desired logging level for any other (currently) available loggers, case-insensitive
         `future_third_parties`
-            additional third party logger(s) which have not yet been created
+            additional third party logger(s) which have not yet been created (at call time)
+        `specialty_loggers`
+            additional loggers, each paired with a logging level, which are not
+            considered first-party nor third-party loggers. **These have the highest precedence**
         `use_coloredlogs`
             if True, will import and use the `coloredlogs` package.
             This will set the logger format and use colored text.
@@ -40,7 +48,9 @@ def set_level(
 ```
 
 #### `wipac_dev_tools.logging_tools.log_argparse_args()`
+
 _Available for Python 3.6+_
+
 ```
 def log_argparse_args(
     args: argparse.Namespace,
@@ -59,11 +69,12 @@ def log_argparse_args(
     """
 ```
 
-
 ### Environment Variable Tool(s)
 
 #### `wipac_dev_tools.from_environment()`
+
 _Available for Python 3.6+_
+
 ```
 def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
     """Obtain configuration values from the OS environment.
@@ -123,7 +134,9 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
 ```
 
 #### `wipac_dev_tools.from_environment_as_dataclass()`
-_Available for Python 3.7+_
+
+_Available for Python >=3.9_
+
 ```
 def from_environment_as_dataclass(
     dclass: Type[T],
@@ -219,6 +232,7 @@ def from_environment_as_dataclass(
 ```
 
 #### `wipac_dev_tools.strtobool()`
+
 ```
 def strtobool(string: str) -> bool:
     """Smart-cast a string to a bool using common-sense interpretations.
@@ -233,3 +247,5 @@ def strtobool(string: str) -> bool:
         ValueError: if the string does not match any of the about
     """
 ```
+
+#### _and more!_

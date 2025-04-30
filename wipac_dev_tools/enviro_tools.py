@@ -1,42 +1,52 @@
 """Module to support parsing environment variables."""
 
-
+import dataclasses
 import logging
 import os
 import re
 import sys
+import types
 from typing import (
     Any,
     Dict,
     Mapping,
     Optional,
     Sequence,
+    TYPE_CHECKING,
     Tuple,
     Type,
     TypeVar,
     Union,
+    _SpecialForm,
     cast,
 )
 
-from typing_extensions import Final  # 3.8+ get the real thing
+from typing_extensions import Final
 
 from . import logging_tools
 from .strtobool import strtobool
 
-# IMPORTS for PYTHON 3.7+
-if sys.version_info >= (3, 7):
-    import dataclasses
-    from typing import _SpecialForm
+try:
+    from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
+except ImportError:
+    from typing import GenericAlias  # type: ignore[attr-defined]
 
-    try:
-        from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
-    except ImportError:
-        from typing import GenericAlias  # type: ignore[attr-defined]
+# fmt: off
+if TYPE_CHECKING:  # _typeshed only exists at runtime
+    from _typeshed import DataclassInstance  # type: ignore[attr-defined]
+    DataclassT = TypeVar("DataclassT", bound=DataclassInstance)
+else:
+    DataclassT = TypeVar("DataclassT")
+# fmt: on
 
 
 RetVal = Union[str, int, float, bool]
 OptionalDict = Mapping[str, Optional[RetVal]]
 KeySpec = Union[str, Sequence[str], OptionalDict]
+sdict = Dict[str, Any]
+
+
+# ---------------------------------------------------------------------------------------
 
 
 def _typecast(source: str, type_: type) -> RetVal:
@@ -131,6 +141,9 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
     return cast(Dict[str, RetVal], config)
 
 
+# ---------------------------------------------------------------------------------------
+
+
 def _typecast_for_dataclass(
     env_val: str,
     typ: type,
@@ -139,6 +152,7 @@ def _typecast_for_dataclass(
     dict_kv_joiner: str,
 ) -> Any:
     """Collect the typecast value."""
+
     if typ == list:
         _list = env_val.split(collection_sep)
         if arg_typs:
@@ -173,15 +187,12 @@ def _typecast_for_dataclass(
         return typ(env_val)
 
 
-T = TypeVar("T")
-
-
 def from_environment_as_dataclass(
-    dclass: Type[T],
+    dclass: Type[DataclassT],
     collection_sep: Optional[str] = None,
     dict_kv_joiner: str = "=",
     log_vars: Optional[logging_tools.LoggerLevel] = "WARNING",
-) -> T:
+) -> DataclassT:
     """Obtain configuration values from the OS environment formatted in a
     dataclass.
 
@@ -267,24 +278,133 @@ def from_environment_as_dataclass(
         ValueError - If an indicated value is not a legal value
         TypeError - If an argument or indicated value is not a legal type
     """
-    if sys.version_info >= (3, 7):
-        return _from_environment_as_dataclass(
-            dclass, collection_sep, dict_kv_joiner, log_vars
-        )
+    return _from_environment_as_dataclass(
+        dclass, collection_sep, dict_kv_joiner, log_vars
+    )
+
+
+def _resolve_optional(
+    typ_origin: Any,  # at this point, types kind of break down since there is no common base-type among the many variations
+    typ_args: tuple,
+):
+    # Optional[bool] *is* typing.Union[bool, NoneType]
+    # similarly...
+    #   Optional[bool]
+    #   Union[bool, None]
+    #   Union[None, bool]
+    #   bool | None
+    #   None | bool
+    if (
+        typ_origin == Union
+        and len(typ_args) == 2
+        and type(None) in typ_args  # doesn't matter where None is
+    ):
+        return next(x for x in typ_args if x is not type(None))  # get the non-None
     else:
-        raise NotImplementedError(
-            "Sorry, from_environment_as_dataclass() is only available for 3.7+"
+        return None
+
+
+def _resolve_final(
+    typ_origin: Any,  # at this point, types kind of break down since there is no common base-type among the many variations
+    typ_args: tuple,
+):
+    if typ_origin == Final:
+        return typ_args[0]
+    else:
+        return None
+
+
+def _check_invalid_typehints(
+    typ_origin: Any,  # at this point, types kind of break down since there is no common base-type among the many variations
+    typ_args: tuple,
+    field: dataclasses.Field,
+):
+    if isinstance(typ_origin, _SpecialForm) and not typ_args:
+        # ERROR: detect bare 'Final' and 'Optional'
+        raise ValueError(
+            f"'{field.type}' is not a supported type: "
+            f"field='{field.name}' (any of the typing-module's SpecialForm "
+            f"types, 'Final' and 'Optional', must have a nested type attached)"
+        )
+    elif typ_origin is Any:
+        # ERROR: Any is not ok
+        raise ValueError(
+            f"'{field.type}' is not a supported type: "
+            f"field='{field.name}' (the 'Any' type and subclasses are not "
+            f"valid environment variable types)"
+        )
+    elif typ_origin == Union and (len(typ_args) != 2 or type(None) not in typ_args):
+        # ERROR: disallowed Union usage (only single w/ None ok)
+        raise ValueError(
+            f"'{field.type}' is not a supported type: "
+            f"field='{field.name}' (the only allowed 'Union' type "
+            f"is one that makes a single-typed value optional, ex: "
+            f"'Union[bool, None]', 'Union[None, dict[str,int]]', "
+            f"'int | None', or 'None | str'"
+            ")"
+        )
+    # fall-through: okay
+
+
+def deconstruct_typehint(
+    field: dataclasses.Field,
+) -> Tuple[type, Optional[Tuple[type, ...]]]:
+    """Take a type hint and return its type and its arguments' types."""
+    _check_invalid_typehints(field.type, tuple(), field)
+
+    if isinstance(field.type, (GenericAlias, types.GenericAlias)):
+        # Ex:
+        #   List[int]     -> list, [int]
+        #   dict[str,int] -> dict, [str,int]
+        typ_origin, typ_args = field.type.__origin__, field.type.__args__
+    elif sys.version_info >= (3, 10) and isinstance(field.type, types.UnionType):
+        # Ex:
+        #   None | int, bool | str, ...
+        typ_origin, typ_args = Union, field.type.__args__
+    elif isinstance(field.type, type):
+        # Ex:
+        #   bool, str, int, ...
+        return field.type, None
+    else:
+        # ERROR: ???
+        raise ValueError(
+            f"'{field.type}' is not a supported type: field='{field.name}'"
         )
 
+    _check_invalid_typehints(typ_origin, typ_args, field)
 
-def _from_environment_as_dataclass(
-    dclass: Type[T],
-    collection_sep: Optional[str],
-    dict_kv_joiner: str,
-    log_vars: Optional[logging_tools.LoggerLevel],
-) -> T:
+    #
+    # every typehint that is left is some kind of wrapper. iow, not a primitive
+    #
 
-    # check args
+    # resolve nesting, get a workable type
+    if (inner := _resolve_optional(typ_origin, typ_args)) or (
+        inner := _resolve_final(typ_origin, typ_args)
+    ):
+        # Ex: Final[int], Optional[Dict[str,int]]
+        if isinstance(inner, type):  # Ex: Final[int], Optional[int]
+            typ_origin, typ_args = inner, None
+        else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
+            typ_origin, typ_args = inner.__origin__, inner.__args__
+
+    #
+    # validate what we got, then return
+    #
+    _check_invalid_typehints(typ_origin, typ_args, field)
+    too_nested_error_msg = (
+        f"'{field.type}' is not a supported type: field='{field.name}' "
+        f"(typehints must resolve to 'type' within 1 nesting, "
+        f"or 2 if using 'Final', 'Optional', or a None-'Union' pairing)"
+    )
+    if not isinstance(typ_origin, type):
+        raise ValueError(too_nested_error_msg)
+    if typ_args and not (all(isinstance(x, type) for x in typ_args)):
+        raise ValueError(too_nested_error_msg)
+
+    return typ_origin, typ_args
+
+
+def _validate_delimiters(collection_sep: Optional[str], dict_kv_joiner: str) -> None:
     if (
         (dict_kv_joiner == collection_sep)
         or (not collection_sep and " " in dict_kv_joiner)  # collection_sep=None is \s+
@@ -295,85 +415,15 @@ def _from_environment_as_dataclass(
             f"'{collection_sep}' & '{dict_kv_joiner}'"
         )
 
-    # type-check dclass
+
+def _validate_is_non_instantiated_dataclass(dclass: Type[DataclassT]) -> None:
     if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
         raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
 
-    # some helper functions
-    def _is_optional(typ: GenericAlias) -> bool:
-        # Optional[int] *is* typing.Union[int, NoneType]
-        return (
-            typ.__origin__ == Union
-            and len(typ.__args__) == 2
-            and typ.__args__[-1] == type(None)  # noqa: E721
-        )
 
-    def _is_final(typ: GenericAlias) -> bool:
-        return bool(typ.__origin__ == Final)
-
-    # iterate fields and find env vars
-    kwargs: Dict[str, Any] = {}
-    for field in dataclasses.fields(dclass):
-        if not field.init:
-            continue  # don't try to get a field that can't be set via __init__
-        # get value
-        try:
-            env_val = os.environ[field.name]
-        except KeyError:
-            continue
-
-        typ, arg_typs = field.type, None
-
-        # detect bare 'Final' and 'Optional'
-        if isinstance(typ, _SpecialForm):
-            raise ValueError(
-                f"'{field.type}' is not a supported type: "
-                f"field='{field.name}' (any of the typing-module's SpecialForm "
-                f"types, 'Final' and 'Optional', must have a nested type attached)"
-            )
-
-        # take care of 'typing'-module types
-        if isinstance(typ, GenericAlias):
-            # Ex: Final[int], Optional[Dict[str,int]]
-            if _is_optional(typ) or _is_final(typ):
-                if isinstance(typ.__args__[0], type):  # Ex: Final[int], Optional[int]
-                    typ, arg_typs = typ.__args__[0], None
-                else:  # Final[Dict[str,int]], Optional[Dict[str,int]]
-                    typ, arg_typs = typ.__args__[0].__origin__, typ.__args__[0].__args__
-            # Ex: List[int], Dict[str,int]
-            else:
-                typ, arg_typs = typ.__origin__, typ.__args__
-            if not (
-                isinstance(typ, type)
-                and (arg_typs is None or all(isinstance(x, type) for x in arg_typs))
-            ):
-                raise ValueError(
-                    f"'{field.type}' is not a supported type: "
-                    f"field='{field.name}' (the typing-module's alias "
-                    f"types must resolve to 'type' within 1 nesting, "
-                    f"or 2 if using 'Final' or 'Optional')"
-                )
-
-        # detect here 'Any'
-        if typ == Any:
-            raise ValueError(
-                f"'{field.type}' is not a supported type: "
-                f"field='{field.name}' (the 'Any' type and subclasses are not "
-                f"valid environment variable types)"
-            )
-
-        try:
-            kwargs[field.name] = _typecast_for_dataclass(
-                env_val, typ, arg_typs, collection_sep, dict_kv_joiner
-            )
-        except ValueError as e:
-            raise ValueError(
-                f"'{field.type}'-indicated value is not a legal value: "
-                f"var='{field.name}' value='{env_val}'"
-            ) from e
-
+def _cast_to_dataclass(dclass: Type[DataclassT], env_var_attrs: sdict) -> DataclassT:
     try:
-        env_vars = dclass(**kwargs)
+        return cast(DataclassT, dclass(**env_var_attrs))
     except TypeError as e:
         m = re.fullmatch(
             r".*__init__\(\) missing \d+ required positional argument(?P<s>s?): (?P<args>.+)",
@@ -386,7 +436,53 @@ def _from_environment_as_dataclass(
             ) from e
         raise  # some other kind of TypeError
 
+
+def _from_environment_as_dataclass(
+    dclass: Type[DataclassT],
+    collection_sep: Optional[str],
+    dict_kv_joiner: str,
+    log_vars: Optional[logging_tools.LoggerLevel],
+) -> DataclassT:
+    # check args
+    _validate_delimiters(collection_sep, dict_kv_joiner)
+    _validate_is_non_instantiated_dataclass(dclass)
+
+    # iterate fields and find env vars
+    env_var_attrs: sdict = {}
+    for field in dataclasses.fields(dclass):
+        if not field.init:
+            continue  # don't try to get a field that can't be set via __init__
+
+        # get value
+        try:
+            env_val = os.environ[field.name]
+        except KeyError:
+            continue
+
+        # get type
+        typ, arg_typs = deconstruct_typehint(field)
+
+        # cast value to type
+        try:
+            env_var_attrs[field.name] = _typecast_for_dataclass(
+                env_val, typ, arg_typs, collection_sep, dict_kv_joiner
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"'{field.type}'-indicated value is not a legal value: "
+                f"var='{field.name}' value='{env_val}'"
+            ) from e
+
+    # to dataclass!
+    env_vars_dc = _cast_to_dataclass(dclass, env_var_attrs)
+
     # log & return
     if log_vars:
-        logging_tools.log_dataclass(env_vars, logging.getLogger(), log_vars)
-    return env_vars
+        logging_tools.log_dataclass(
+            env_vars_dc,
+            logging.getLogger(),
+            log_vars,
+            prefix="(env)",
+            obfuscate_sensitive_substrings=True,
+        )
+    return env_vars_dc

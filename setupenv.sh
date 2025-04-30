@@ -1,8 +1,7 @@
 #!/bin/sh
 unset PYTHONPATH
-python3.7 -m venv ./env
+python3 -m venv ./env
 echo "unset PYTHONPATH" >> env/bin/activate
-source env/bin/activate
+. env/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt
-
+pip install -e .[dev,mypy]
