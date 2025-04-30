@@ -2,6 +2,15 @@
 
 
 
+## v1.16.4 (2025-04-30)
+
+###  
+
+* New `from_environment_as_dataclass()` Test (#41)
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt; ([`5d12eca`](https://github.com/WIPACrepo/wipac-dev-tools/commit/5d12eca2db96673d32c50308238ba5a11bc5900b))
+
+
 ## v1.16.3 (2025-04-22)
 
 ###  
