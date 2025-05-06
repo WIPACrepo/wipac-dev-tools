@@ -94,7 +94,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          ref: ${{ github.sha }}  # lock to triggered commit (github.ref is dynamic)
+          ref: ${{ github.ref }}  # don't lock to 'sha' b/c action needs to push
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
         uses: WIPACrepo/wipac-dev-py-setup-action@v5.0
         with:
@@ -113,7 +113,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          ref: ${{ github.sha }}  # lock to triggered commit (github.ref is dynamic)
+          ref: ${{ github.ref }}  # don't lock to 'sha' b/c action needs to push
       - if: needs.writable-branch-detect.outputs.OKAY == 'true'
         uses: WIPACrepo/wipac-dev-py-dependencies-action@v2.1
         with:
