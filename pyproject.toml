@@ -1,9 +1,8 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=78.1", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-version = "1.16.4"
 name = "wipac-dev-tools"
 description = "Common, basic, and reusable development tools"
 readme = "README.md"
@@ -13,7 +12,6 @@ keywords = [
   'utilities'
 ]
 classifiers = [
-  'Development Status :: 5 - Production/Stable',
   'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
@@ -25,13 +23,13 @@ dependencies = [
   'requests',
   'typing_extensions'
 ]
+dynamic = ["version"]
+license-files = ["LICENSE"]
+license = "MIT"
 
 [[project.authors]]
 name = "WIPAC Developers"
 email = "developers@icecube.wisc.edu"
-
-[project.license]
-file = "LICENSE"
 
 [project.optional-dependencies]
 semver = [
@@ -74,20 +72,11 @@ Source = "https://github.com/WIPACrepo/wipac-dev-tools"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 
-[tool.semantic_release]
-version_toml = ["pyproject.toml:project.version"]
-version_variables = ["wipac_dev_tools/__init__.py:__version__"]
-commit_parser = "emoji"
-build_command = "pip install build && python -m build"
-
-[tool.semantic_release.commit_parser_options]
-major_tags = ["[major]"]
-minor_tags = ["[minor]", "[feature]"]
-patch_tags = ["[patch]", "[fix]", " ", "!", "#", "$", "%", "&", "'", "(", ")", "*", "+", "-", ".", "/", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?", "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "]", "^", "_", "`", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "{", "|", "}", "~"]
-
 [tool.setuptools.package-data]
 "*" = ["py.typed"]
 
 [tool.setuptools.packages.find]
 namespaces = false
 exclude = ["test", "tests", "doc", "docs", "resource", "resources", "example", "examples"]
+
+[tool.setuptools_scm]
