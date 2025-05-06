@@ -25,11 +25,11 @@ dependencies = [
 ]
 dynamic = ["version"]
 license-files = ["LICENSE"]
+license = "MIT"
 
 [[project.authors]]
 name = "WIPAC Developers"
 email = "developers@icecube.wisc.edu"
-license = "MIT"
 
 [project.optional-dependencies]
 semver = [
