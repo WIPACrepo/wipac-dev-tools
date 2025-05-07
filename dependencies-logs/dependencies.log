@@ -23,6 +23,8 @@ pipdeptree==2.26.1
 wipac-dev-tools
 ├── python-dateutil [required: Any, installed: 2.9.0.post0]
 │   └── six [required: >=1.5, installed: 1.17.0]
+├── python-dateutil [required: Any, installed: 2.9.0.post0]
+│   └── six [required: >=1.5, installed: 1.17.0]
 ├── requests [required: Any, installed: 2.32.3]
 │   ├── charset-normalizer [required: >=2,<4, installed: 3.4.2]
 │   ├── idna [required: >=2.5,<4, installed: 3.10]
