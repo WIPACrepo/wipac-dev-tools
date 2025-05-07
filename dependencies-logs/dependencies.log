@@ -9,7 +9,9 @@
 certifi==2025.4.26
 charset-normalizer==3.4.2
 idna==3.10
+python-dateutil==2.9.0.post0
 requests==2.32.3
+six==1.17.0
 typing_extensions==4.13.2
 urllib3==2.4.0
 ########################################################################
@@ -19,6 +21,8 @@ pipdeptree==2.26.1
 ├── packaging [required: >=24.1, installed: 25.0]
 └── pip [required: >=24.2, installed: 25.1.1]
 wipac-dev-tools
+├── python-dateutil [required: Any, installed: 2.9.0.post0]
+│   └── six [required: >=1.5, installed: 1.17.0]
 ├── requests [required: Any, installed: 2.32.3]
 │   ├── charset-normalizer [required: >=2,<4, installed: 3.4.2]
 │   ├── idna [required: >=2.5,<4, installed: 3.10]
