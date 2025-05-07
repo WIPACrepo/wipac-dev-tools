@@ -22,7 +22,8 @@ requires-python = ">=3.9, <3.14"
 dependencies = [
   'python-dateutil',
   'requests',
-  'typing_extensions'
+  'typing_extensions',
+  'python-dateutil'
 ]
 dynamic = ["version"]
 license-files = ["LICENSE"]
