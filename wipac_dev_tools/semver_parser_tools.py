@@ -1,7 +1,9 @@
 """Tools for parsing semantic release versions (strings)."""
 
 import logging
+import re
 import time
+from pathlib import Path
 from typing import List, Tuple
 
 import requests
@@ -82,3 +84,47 @@ def list_all_majmin_versions(
     all_of_em = [(int(v.major), int(v.minor)) for v in filtered]
     LOGGER.info(f"matching major-minor versions: {all_of_em}")
     return all_of_em
+
+
+def get_py_semver_range_for_project(project_dir: Path = Path(".")) -> str:
+    """Get the semver range for a given project by parsing pyproject.toml or setup.cfg.
+
+    Ex: ">=3.9,<3.11" or any other valid semver range expression
+    """
+
+    if (project_dir / "pyproject.toml").is_file():
+        # ex: requires-python = ">=3.8, <3.13"
+        pat = re.compile(r"requires-python = \"(?P<semver_range>[^\"]+)\"$")
+        with open(project_dir / "pyproject.toml") as f:
+            for line in f:
+                if m := pat.match(line):
+                    return m.group("semver_range")
+        raise Exception("could not find `requires-python` entry in pyproject.toml")
+
+    if (project_dir / "setup.cfg").is_file():
+        # ex: python_requires = >=3.8, <3.13
+        pat = re.compile(r"python_requires = (?P<semver_range>.+)$")
+        with open(project_dir / "setup.cfg") as f:
+            for line in f:
+                if m := pat.match(line):
+                    return m.group("semver_range")
+        raise Exception("could not find `python_requires` entry in setup.cfg")
+
+    else:
+        raise Exception("could not find pyproject.toml nor setup.cfg")
+
+
+def get_py_semver_series_for_project(
+    project_dir: Path = Path("."),
+) -> List[Tuple[int, int]]:
+    """Get the semver range listed out for a given project dir.
+
+    Ex: [(3,9), (3,10), (3,11)]
+    """
+    semver_range = get_py_semver_range_for_project(project_dir)
+    top_python = get_latest_py3_release()
+    return list_all_majmin_versions(
+        major=top_python[0],
+        semver_range=semver_range,
+        max_minor=top_python[1],
+    )
