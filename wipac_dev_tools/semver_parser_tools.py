@@ -7,8 +7,15 @@ from pathlib import Path
 from typing import List, Tuple
 
 import requests
-import semantic_version  # type: ignore[import-untyped]
 from dateutil import parser
+
+# 'semver' imports
+try:
+    import semantic_version  # type: ignore[import-untyped]
+except (ImportError, ModuleNotFoundError) as _exc:
+    raise ImportError(
+        "the 'semver' option must be installed in order to use 'semver_parser_tools'"
+    ) from _exc
 
 LOGGER = logging.getLogger(__name__)
 
