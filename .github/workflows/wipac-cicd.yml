@@ -18,7 +18,7 @@ jobs:
       - name: "prep (TODO: remove after ci wrangling)"
         run: |
           set -euo pipefail; echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          pip install python-dateutil
+          rm -rf wipac_dev_tools/
       - id: versions
         uses: WIPACrepo/wipac-dev-py-versions-action@v2.5
 
@@ -255,11 +255,6 @@ jobs:
           set -euo pipefail; echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           git tag v${{ steps.next-version.outputs.version }}  # note: prepend 'v'
           git push origin --tags
-
-      - name: "prep (TODO: remove after ci wrangling)"
-        run: |
-          set -euo pipefail; echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          pip install python-dateutil
 
       # Build Python Package
       - if: steps.next-version.outputs.version != ''
