@@ -1,11 +1,12 @@
 """Tools for parsing semantic release versions (strings)."""
 
-
 import logging
+import time
 from typing import List, Tuple
 
 import requests
 import semantic_version  # type: ignore[import-untyped]
+from dateutil import parser
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +30,35 @@ def get_latest_py3_release() -> Tuple[int, int]:
     LOGGER.info(f"latest is {version}")
 
     return int(version.split(".")[0]), int(version.split(".")[1])
+
+
+def get_python_eol_ts(python_version: str) -> float:
+    """Return the end-of-life timestamp of a python version.
+
+    See https://devguide.python.org/versions/ or https://endoflife.date/python
+    """
+    url = "https://endoflife.date/api/v1/products/python/"
+    LOGGER.info(f"querying {url}")
+
+    resp = requests.get(url).json()
+
+    LOGGER.info(f"finding info on {python_version}")
+    try:
+        info = next(
+            p for p in resp["result"]["releases"] if p["name"] == python_version
+        )
+    except StopIteration:
+        raise ValueError(f"no info on {python_version}")
+
+    return parser.parse(info["eolFrom"]).timestamp()
+
+
+def is_python_eol(python_version: str) -> bool:
+    """Return whether this python version is end of life.
+
+    See https://devguide.python.org/versions/ or https://endoflife.date/python
+    """
+    return time.time() > get_python_eol_ts(python_version)
 
 
 def list_all_majmin_versions(

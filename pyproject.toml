@@ -21,7 +21,8 @@ classifiers = [
 requires-python = ">=3.9, <3.14"
 dependencies = [
   'requests',
-  'typing_extensions'
+  'typing_extensions',
+  'python-dateutil'
 ]
 dynamic = ["version"]
 license-files = ["LICENSE"]
