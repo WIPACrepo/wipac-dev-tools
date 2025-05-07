@@ -4,7 +4,7 @@ from collections.abc import Callable
 from functools import partialmethod, wraps
 from typing import Any, Union
 
-# prometheus imports
+# 'prometheus' imports
 try:
     from prometheus_client import (
         Counter,
