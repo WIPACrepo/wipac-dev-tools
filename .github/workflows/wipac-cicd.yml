@@ -20,7 +20,7 @@ jobs:
           set -euo pipefail; echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
           rm -rf wipac_dev_tools/
       - id: versions
-        uses: WIPACrepo/wipac-dev-py-versions-action@v2.5
+        uses: WIPACrepo/wipac-dev-py-versions-action@v2.6-alpha
 
 
   ############################################################################
