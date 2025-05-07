@@ -254,7 +254,7 @@ jobs:
 
       # Build Python Package
       - if: steps.next-version.outputs.version != ''
-        uses: WIPACrepo/wipac-dev-py-build-action@v1.1-alpha
+        uses: WIPACrepo/wipac-dev-py-build-action@v1.1
         # -> uses the most recent git tag for versioning (aka the one made above)
         # -> creates 'dist/' files
 
