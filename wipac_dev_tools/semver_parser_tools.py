@@ -112,19 +112,3 @@ def get_py_semver_range_for_project(project_dir: Path = Path(".")) -> str:
 
     else:
         raise Exception("could not find pyproject.toml nor setup.cfg")
-
-
-def get_py_semver_series_for_project(
-    project_dir: Path = Path("."),
-) -> List[Tuple[int, int]]:
-    """Get the semver range listed out for a given project dir.
-
-    Ex: [(3,9), (3,10), (3,11)]
-    """
-    semver_range = get_py_semver_range_for_project(project_dir)
-    top_python = get_latest_py3_release()
-    return list_all_majmin_versions(
-        major=top_python[0],
-        semver_range=semver_range,
-        max_minor=top_python[1],
-    )
