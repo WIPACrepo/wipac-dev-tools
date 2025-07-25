@@ -3,12 +3,13 @@
 import asyncio
 import functools
 import logging
+from typing import Optional
 
 
 def restart_on_failure(
     display_name: str,
     delay_seconds: int,
-    logger: logging.Logger | None = None,
+    logger: Optional[logging.Logger] = None,
     initial_delay: int = 0,
 ):
     """Decorator to restart an async function on failure after delay.
