@@ -1,6 +1,7 @@
 """Test enviro_tools.py."""
 
 import dataclasses as dc
+import json
 import os
 import pathlib
 import shutil
@@ -508,6 +509,23 @@ def test_029__dict_class_int() -> None:
         Config, dict_kv_joiner=" = ", collection_sep=" | "
     )
     assert config.FOO == {OneArgClass("this-is-my-extra-cool-string"): 2}
+
+
+@pytest.mark.usefixtures("isolated_env")
+def test_030_dict_json() -> None:
+    """Test normal use case."""
+
+    class ConfigJson(dict):
+        def __init__(self, data: str):
+            self.update(json.loads(data))
+
+    @dc.dataclass(frozen=True)
+    class Config:
+        FOO: ConfigJson
+
+    os.environ["FOO"] = '{"foo": 1, "bar": 2, "baz": 3}'
+    config = from_environment_as_dataclass(Config)
+    assert config.FOO == {"bar": 2, "baz": 3, "foo": 1}
 
 
 @pytest.mark.usefixtures("isolated_env")

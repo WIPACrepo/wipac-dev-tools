@@ -117,10 +117,13 @@ def test_00(
         assert not found_future_third_party
 
 
-def test_10__log_dataclass(caplog: Any) -> None:
+@pytest.mark.parametrize("sensitives,obfuscate", [
+    ([], False),
+    (["my_token", "AUTHOR", "secretive_number", "YouShallNotPass"], True),
+    (["my_token", "AUTHOR", "secretive_number", "YouShallNotPass", "CustomVal"], ["CustomVal"]),
+])
+def test_10__log_dataclass(sensitives, obfuscate, caplog: Any) -> None:
     """Test `set_level()` with multiple level cases (upper, lower."""
-    senstives = ["my_token", "AUTHOR", "secretive_number", "YouShallNotPass"]
-
     @dc.dataclass(frozen=True)
     class Config:
         # sensitives
@@ -128,6 +131,7 @@ def test_10__log_dataclass(caplog: Any) -> None:
         AUTHOR: str
         secretive_number: str
         YouShallNotPass: str
+        CustomVal: str
         # others
         foo: str
         BAR: str
@@ -140,6 +144,7 @@ def test_10__log_dataclass(caplog: Any) -> None:
         AUTHOR=value,
         secretive_number=value,
         YouShallNotPass=value,
+        CustomVal=value,
         foo=value,
         BAR=value,
         Baz=value,
@@ -154,7 +159,7 @@ def test_10__log_dataclass(caplog: Any) -> None:
             logger=logger,
             level=level,  # type: ignore[arg-type]
             prefix=prefix,
-            obfuscate_sensitive_substrings=True,
+            obfuscate_sensitive_substrings=obfuscate,
         )
 
     # assert
@@ -169,7 +174,7 @@ def test_10__log_dataclass(caplog: Any) -> None:
                 assert record.levelname == level
                 assert record.msg.startswith(prefix + " ")
                 # check obfuscations
-                if field.name in senstives:
+                if field.name in sensitives:
                     assert "***" in record.msg and value not in record.msg
                 else:
                     assert "***" not in record.msg and value in record.msg
