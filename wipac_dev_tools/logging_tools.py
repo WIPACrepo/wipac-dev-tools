@@ -111,7 +111,7 @@ def log_dataclass(
     for field in dataclasses.fields(dclass):
         val = getattr(dclass, field.name)
         if obfuscate_sensitive_substrings is True or obfuscate_collection:
-            if obfuscate_collection and field.name in obfuscate_sensitive_substrings:
+            if obfuscate_collection and field.name in obfuscate_sensitive_substrings:  # type: ignore
                 val = '***'
             else:
                 val = obfuscate_value_if_sensitive(field.name, val)
