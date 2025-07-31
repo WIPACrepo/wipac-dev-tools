@@ -1,7 +1,7 @@
 """Common tools to supplement/assist the standard logging package."""
 
 import argparse
-from collections.abc import Container
+from collections.abc import Collection
 import dataclasses
 import logging
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING, TypeVar, Union
@@ -93,7 +93,7 @@ def log_dataclass(
     logger: LogggerObjectOrName,
     level: LoggerLevel,
     prefix: str = "",
-    obfuscate_sensitive_substrings: Union[bool, Container[str]] = False,
+    obfuscate_sensitive_substrings: Union[bool, Collection[str]] = False,
 ) -> DataclassT:
     """Log a dataclass instance's fields and members.
 
@@ -106,11 +106,12 @@ def log_dataclass(
         raise TypeError(f"Expected instantiated dataclass: 'dclass' ({dclass})")
 
     logger_fn = get_logger_fn(logger, level)
+    obfuscate_collection = isinstance(obfuscate_sensitive_substrings, Collection)
 
     for field in dataclasses.fields(dclass):
         val = getattr(dclass, field.name)
-        if obfuscate_sensitive_substrings:
-            if isinstance(obfuscate_sensitive_substrings, Container) and field.name in obfuscate_sensitive_substrings:
+        if obfuscate_sensitive_substrings is True or obfuscate_collection:
+            if obfuscate_collection and field.name in obfuscate_sensitive_substrings:
                 val = '***'
             else:
                 val = obfuscate_value_if_sensitive(field.name, val)

@@ -224,6 +224,7 @@ def from_environment_as_dataclass(
         dict_kv_joiner - the delimiter that joins key-value pairs ("a=1 b=2 c=1")
         log_vars - what level to log the collected environment variables (set to `None` to not log)
         obfuscate_log_vars - whether to obfuscate log vars, or a custom list of vars to obfuscate
+                             (as well as the regular obfuscated vars)
 
     Returns:
         a dataclass instance mapping configuration keys to configuration values
