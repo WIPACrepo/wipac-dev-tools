@@ -1,6 +1,7 @@
 """Common tools to supplement/assist the standard logging package."""
 
 import argparse
+from collections.abc import Container
 import dataclasses
 import logging
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING, TypeVar, Union
@@ -92,7 +93,7 @@ def log_dataclass(
     logger: LogggerObjectOrName,
     level: LoggerLevel,
     prefix: str = "",
-    obfuscate_sensitive_substrings: bool = False,
+    obfuscate_sensitive_substrings: Union[bool, Container[str]] = False,
 ) -> DataclassT:
     """Log a dataclass instance's fields and members.
 
@@ -109,7 +110,10 @@ def log_dataclass(
     for field in dataclasses.fields(dclass):
         val = getattr(dclass, field.name)
         if obfuscate_sensitive_substrings:
-            val = obfuscate_value_if_sensitive(field.name, val)
+            if isinstance(obfuscate_sensitive_substrings, Container) and field.name in obfuscate_sensitive_substrings:
+                val = '***'
+            else:
+                val = obfuscate_value_if_sensitive(field.name, val)
         logger_fn(f"{prefix+' 'if prefix else ''}{field.name}: {val}")
 
     return dclass

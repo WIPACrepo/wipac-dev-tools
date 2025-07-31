@@ -192,6 +192,7 @@ def from_environment_as_dataclass(
     collection_sep: Optional[str] = None,
     dict_kv_joiner: str = "=",
     log_vars: Optional[logging_tools.LoggerLevel] = "WARNING",
+    obfuscate_log_vars: Optional[Union[bool, list[str]]] = True,
 ) -> DataclassT:
     """Obtain configuration values from the OS environment formatted in a
     dataclass.
@@ -222,6 +223,7 @@ def from_environment_as_dataclass(
         collection_sep - the delimiter to split collections on ("1 2 5")
         dict_kv_joiner - the delimiter that joins key-value pairs ("a=1 b=2 c=1")
         log_vars - what level to log the collected environment variables (set to `None` to not log)
+        obfuscate_log_vars - whether to obfuscate log vars, or a custom list of vars to obfuscate
 
     Returns:
         a dataclass instance mapping configuration keys to configuration values
@@ -279,7 +281,7 @@ def from_environment_as_dataclass(
         TypeError - If an argument or indicated value is not a legal type
     """
     return _from_environment_as_dataclass(
-        dclass, collection_sep, dict_kv_joiner, log_vars
+        dclass, collection_sep, dict_kv_joiner, log_vars, obfuscate_log_vars
     )
 
 
@@ -442,6 +444,7 @@ def _from_environment_as_dataclass(
     collection_sep: Optional[str],
     dict_kv_joiner: str,
     log_vars: Optional[logging_tools.LoggerLevel],
+    obfuscate_log_vars: Optional[Union[bool, list[str]]],
 ) -> DataclassT:
     # check args
     _validate_delimiters(collection_sep, dict_kv_joiner)
@@ -483,6 +486,6 @@ def _from_environment_as_dataclass(
             logging.getLogger(),
             log_vars,
             prefix="(env)",
-            obfuscate_sensitive_substrings=True,
+            obfuscate_sensitive_substrings=obfuscate_log_vars if obfuscate_log_vars else True,
         )
     return env_vars_dc
