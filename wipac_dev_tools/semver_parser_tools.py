@@ -101,20 +101,22 @@ def get_py_semver_range_for_project(project_dir: Path = Path(".")) -> str:
 
     if (project_dir / "pyproject.toml").is_file():
         # ex: requires-python = ">=3.8, <3.13"
-        pat = re.compile(r"requires-python = \"(?P<semver_range>[^\"]+)\"$")
+        # ex: requires-python  =  ">=3.9, <3.14"  # a comment
+        pat = re.compile(r'requires-python\s*=\s*"(?P<semver_range>[^"]+)"(?:\s*#.*)?$')
         with open(project_dir / "pyproject.toml") as f:
             for line in f:
                 if m := pat.match(line):
-                    return m.group("semver_range")
+                    return m.group("semver_range").strip()
         raise Exception("could not find `requires-python` entry in pyproject.toml")
 
     if (project_dir / "setup.cfg").is_file():
         # ex: python_requires = >=3.8, <3.13
-        pat = re.compile(r"python_requires = (?P<semver_range>.+)$")
+        # ex: python_requires  =  >=3.8, <3.13  # a comment
+        pat = re.compile(r"python_requires\s*=\s*(?P<semver_range>[^#]+?)(?:\s*#.*)?$")
         with open(project_dir / "setup.cfg") as f:
             for line in f:
                 if m := pat.match(line):
-                    return m.group("semver_range")
+                    return m.group("semver_range").strip()
         raise Exception("could not find `python_requires` entry in setup.cfg")
 
     else:
