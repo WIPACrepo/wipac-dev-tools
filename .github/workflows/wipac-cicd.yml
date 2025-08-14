@@ -16,7 +16,7 @@ jobs:
         with:
           ref: ${{ github.sha }}  # lock to triggered commit (github.ref is dynamic)
       - id: versions
-        uses: WIPACrepo/wipac-dev-py-versions-action@v2.6
+        uses: WIPACrepo/wipac-dev-py-versions-action@v2.7
 
 
   ############################################################################
@@ -69,8 +69,9 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           ref: ${{ github.ref }}  # dont lock to sha (action needs to push)
-      - uses: WIPACrepo/wipac-dev-py-setup-action@v5.0
+      - uses: WIPACrepo/wipac-dev-py-setup-action@v5.2
         with:
+          mode: PACKAGING_AND_PYPI
           python_min: 3.9
           pypi_name: wipac-dev-tools
           author: WIPAC Developers
@@ -83,9 +84,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          ref: ${{ github.ref }}  # dont lock to sha (action needs to push)
-      - uses: WIPACrepo/wipac-dev-py-dependencies-action@v3.0
+          ref: ${{ github.sha }}  # lock to triggered commit (github.ref is dynamic)
+      - uses: WIPACrepo/wipac-dev-py-dependencies-action@v3.1
 
 
   ############################################################################
@@ -177,11 +177,11 @@ jobs:
 
 
   ############################################################################
-  # RELEASE
+  # TAG + RELEASE
   #############################################################################
 
   tag-and-release:
-    # only run on main/master/default
+    # only run on main/default
     if: format('refs/heads/{0}', github.event.repository.default_branch) == github.ref
     needs: [
       py-versions,
@@ -191,61 +191,14 @@ jobs:
       py-dependencies,
       tests,
     ]
-    runs-on: ubuntu-latest
-    concurrency: tag-and-release  # prevent any possible race conditions
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # required to see tags and commits
-          ref: ${{ github.sha }}  # lock to triggered commit ('github.ref' is dynamic)
-      - uses: actions/setup-python@v5  # needed for building project
-        with:
-          python-version: "${{ fromJSON(needs.py-versions.outputs.matrix)[0] }}"
-
-      # Get Next Version & Tag
-      - uses: WIPACrepo/wipac-dev-next-version-action@v1.2
-        id: next-version
-        with:
-          force-patch-if-no-commit-token: true
-          ignore-paths: |
-            **/README.md
-            .github/**
-            .gitignore
-            dependencies-logs/**
-            tests/**
-      - if: steps.next-version.outputs.version != ''
-        name: Tag New Version
-        run: |
-          set -euo pipefail; echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
-          git tag v${{ steps.next-version.outputs.version }}  # note: prepend 'v'
-          git push origin --tags
-
-      # Build Python Package
-      - if: steps.next-version.outputs.version != ''
-        uses: WIPACrepo/wipac-dev-py-build-action@v1.1
-        # -> uses the most recent git tag for versioning (aka the one made above)
-        # -> creates 'dist/' files
-
-      # Grab artifacts created by 'WIPACrepo/wipac-dev-py-dependencies-action'
-      - if: steps.next-version.outputs.version != ''
-        uses: actions/download-artifact@v4
-        with:
-          name: py-dependencies-logs
-          path: pydep-release-assets/
-
-      # GitHub Release
-      - if: steps.next-version.outputs.version != ''
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/*
-            pydep-release-assets/**/*
-          tag_name: v${{ steps.next-version.outputs.version }}  # must match git tag above
-          generate_release_notes: true
-
-      # PyPI Release
-      - if: steps.next-version.outputs.version != ''
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+    uses: WIPACrepo/wipac-dev-workflows/.github/workflows/tag-and-release.yml@v1.7
+    permissions: # for GITHUB_TOKEN
+      contents: write
+    with:
+      project-type: python
+      python-version: "${{ fromJSON(needs.py-versions.outputs.matrix)[0] }}"
+      release-artifacts: |
+        py-dependencies-logs
+      publish-to-pypi: true
+    secrets:
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
