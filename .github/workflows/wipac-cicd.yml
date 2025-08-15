@@ -2,6 +2,7 @@ name: ci/cd
 
 on:
   push:
+    # only on branch pushes
     branches: [ '**' ]
     tags-ignore: [ '**' ]
 
