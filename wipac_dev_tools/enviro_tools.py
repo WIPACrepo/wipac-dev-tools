@@ -392,7 +392,7 @@ class TypeHintDeconstructor:
     @staticmethod
     def deconstruct_from_dc_field(
         field: dataclasses.Field,
-    ) -> Tuple[type | Type[Literal], Optional[Tuple[type | Type[Literal], ...]]]:
+    ) -> Tuple[type | Type[Literal], Optional[Tuple[type | Type[Literal], ...]]]:  # type: ignore
         """Take a type hint and return its type and its arguments' types."""
         TypeHintDeconstructor._check_invalid_typehints(field.type, tuple(), field)
 
