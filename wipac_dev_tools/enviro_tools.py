@@ -317,8 +317,7 @@ def from_environment_as_dataclass(
 class LiteralTypeException(Exception):
     """Raised when the type is the 'Literal' type, which is handled very differently."""
 
-    def __init__(self, typ_origin: Any, typ_args: tuple):
-        self.type_origin = typ_origin
+    def __init__(self, typ_args: tuple):
         self.typ_args = typ_args
 
 
@@ -386,8 +385,8 @@ class TypeHintDeconstructor:
                 f"'int | None', or 'None | str'"
                 ")"
             )
-        elif typ_origin == Literal or any(t == Literal for t in typ_args):
-            raise LiteralTypeException(typ_origin=typ_origin, typ_args=typ_args)
+        elif typ_origin == Literal:
+            raise LiteralTypeException(typ_args=typ_args)
         # fall-through: okay
 
     @staticmethod
@@ -499,17 +498,14 @@ def _from_environment_as_dataclass(
             typ, typ_args = TypeHintDeconstructor.deconstruct_from_dc_field(field)
         except LiteralTypeException as e:
             # test if value is in literal-type's list of choices
-            if e.type_origin == Literal:
-                if env_val in e.typ_args:
-                    env_var_attrs[field.name] = env_val
-                    continue
-                else:
-                    raise ValueError(
-                        f"'{field.type}'-indicated value is not a legal value: "
-                        f"var='{field.name}' value='{env_val}' -- choices: {e.typ_args})"
-                    )
-            elif any(t == Literal for t in e.typ_args):
-                raise ValueError("HERE") from e
+            if env_val in e.typ_args:
+                env_var_attrs[field.name] = env_val
+                continue
+            else:
+                raise ValueError(
+                    f"'{field.type}'-indicated value is not a legal value: "
+                    f"var='{field.name}' value='{env_val}' -- choices: {e.typ_args})"
+                )
 
         # cast value to type
         try:
