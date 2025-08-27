@@ -397,7 +397,8 @@ def deconstruct_typehint(
     too_nested_error_msg = (
         f"'{field.type}' is not a supported type: field='{field.name}' "
         f"(typehints must resolve to 'type' within 1 nesting, "
-        f"or 2 if using 'Final', 'Optional', or a None-'Union' pairing)"
+        f"or 2 if using 'Final', 'Optional', or a None-'Union' pairing) "
+        f" -- ({typ_origin=}, {typ_args=})"
     )
     if not isinstance(typ_origin, type):
         raise ValueError(too_nested_error_msg)
@@ -487,6 +488,8 @@ def _from_environment_as_dataclass(
             logging.getLogger(),
             log_vars,
             prefix="(env)",
-            obfuscate_sensitive_substrings=obfuscate_log_vars if obfuscate_log_vars else True,
+            obfuscate_sensitive_substrings=(
+                obfuscate_log_vars if obfuscate_log_vars else True
+            ),
         )
     return env_vars_dc
