@@ -8,7 +8,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
+from typing import Any, Dict, FrozenSet, List, Literal, Optional, Set, Union
 
 import pytest
 from typing_extensions import Final
@@ -651,6 +651,19 @@ def test_062__optional_dict(typo) -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
+def test_070__literal() -> None:
+    """Test normal use case."""
+
+    @dc.dataclass(frozen=True)
+    class Config:
+        FOO: Literal["english", "spanish", "french"]
+
+    os.environ["FOO"] = "english"
+    config = from_environment_as_dataclass(Config)
+    assert config.FOO == "english"
+
+
+@pytest.mark.usefixtures("isolated_env")
 def test_100_error__missing_required() -> None:
     """Test error use case."""
 
@@ -740,7 +753,7 @@ def test_105_error__overly_nested_type_alias() -> None:
     os.environ["FOO"] = "doesn't matter, this won't get read before error"
     with pytest.raises(ValueError) as cm:
         from_environment_as_dataclass(Config)
-    assert str(cm.value) == (
+    assert str(cm.value).startswith(
         "'typing.List[typing.Dict[str, int]]' is not a "
         "supported type: field='FOO' (typehints "
         "must resolve to 'type' within 1 nesting, or "
@@ -818,6 +831,27 @@ def test_110_error__any() -> None:
     os.environ["FOO"] = "foo bar baz"
     with pytest.raises(ValueError):
         from_environment_as_dataclass(Config)
+
+
+@pytest.mark.usefixtures("isolated_env")
+def test_111__literal_dict() -> None:
+    """Test normal use case."""
+
+    # NOT YET SUPPORTED, MAYBE SOMEDAY
+
+    @dc.dataclass(frozen=True)
+    class Config:
+        FOO: dict[Literal["greeting"], Literal["hello", "hi", "howdy"]]
+
+    os.environ["FOO"] = "greeting:hello"
+    with pytest.raises(ValueError) as cm:
+        from_environment_as_dataclass(Config)
+    assert str(cm.value).startswith(
+        "'dict[typing.Literal['greeting'], typing.Literal['hello', 'hi', 'howdy']]' "
+        "is not a supported type: field='FOO' (typehints "
+        "must resolve to 'type' within 1 nesting, or "
+        "2 if using 'Final', 'Optional', or a None-'Union' pairing)"
+    )
 
 
 @pytest.mark.usefixtures("isolated_env")
