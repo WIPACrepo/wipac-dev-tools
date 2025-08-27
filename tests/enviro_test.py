@@ -664,6 +664,19 @@ def test_070__literal() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
+def test_071__literal_dict() -> None:
+    """Test normal use case."""
+
+    @dc.dataclass(frozen=True)
+    class Config:
+        FOO: dict[Literal["greeting"], Literal["hello", "hi", "howdy"]]
+
+    os.environ["FOO"] = "greeting:hello"
+    config = from_environment_as_dataclass(Config)
+    assert config.FOO == {"greeting": "hello"}
+
+
+@pytest.mark.usefixtures("isolated_env")
 def test_100_error__missing_required() -> None:
     """Test error use case."""
 
