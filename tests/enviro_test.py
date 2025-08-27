@@ -8,7 +8,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
+from typing import Any, Dict, FrozenSet, List, Literal, Optional, Set, Union
 
 import pytest
 from typing_extensions import Final
@@ -648,6 +648,19 @@ def test_062__optional_dict(typo) -> None:
     os.environ["FOO"] = "foo=1 bar=2 baz=3"
     config = from_environment_as_dataclass(Config)
     assert config.FOO == {"bar": "2", "baz": "3", "foo": "1"}
+
+
+@pytest.mark.usefixtures("isolated_env")
+def test_070__literal() -> None:
+    """Test normal use case."""
+
+    @dc.dataclass(frozen=True)
+    class Config:
+        FOO: Literal["hello", "hi", "howdy"]
+
+    os.environ["FOO"] = "hello"
+    config = from_environment_as_dataclass(Config)
+    assert config.FOO == "hello"
 
 
 @pytest.mark.usefixtures("isolated_env")
