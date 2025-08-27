@@ -656,7 +656,7 @@ def test_070__literal() -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Literal["hello", "hi", "howdy"]
+        FOO: Literal["english", "spanish", "french"]
 
     os.environ["FOO"] = "hello"
     config = from_environment_as_dataclass(Config)

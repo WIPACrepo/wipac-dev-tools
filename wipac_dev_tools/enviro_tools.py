@@ -9,6 +9,7 @@ import types
 from typing import (
     Any,
     Dict,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -47,6 +48,13 @@ sdict = Dict[str, Any]
 
 
 # ---------------------------------------------------------------------------------------
+
+
+class LiteralTypeException(Exception):
+    """Raised when the type is the 'Literal' type, which is handled very differently."""
+
+    def __init__(self, typ_args: tuple):
+        self.typ_args = typ_args
 
 
 def _typecast(source: str, type_: type) -> RetVal:
@@ -346,6 +354,8 @@ def _check_invalid_typehints(
             f"'int | None', or 'None | str'"
             ")"
         )
+    elif typ_origin == Literal:
+        raise LiteralTypeException(typ_args=typ_args)
     # fall-through: okay
 
 
@@ -362,7 +372,7 @@ def deconstruct_typehint(
         typ_origin, typ_args = field.type.__origin__, field.type.__args__
     elif sys.version_info >= (3, 10) and isinstance(field.type, types.UnionType):
         # Ex:
-        #   None | int, bool | str, ...
+        #   None | int, bool | str, ...q
         typ_origin, typ_args = Union, field.type.__args__
     elif isinstance(field.type, type):
         # Ex:
@@ -465,18 +475,28 @@ def _from_environment_as_dataclass(
             continue
 
         # get type
-        typ, arg_typs = deconstruct_typehint(field)
-
-        # cast value to type
         try:
-            env_var_attrs[field.name] = _typecast_for_dataclass(
-                env_val, typ, arg_typs, collection_sep, dict_kv_joiner
-            )
-        except ValueError as e:
-            raise ValueError(
-                f"'{field.type}'-indicated value is not a legal value: "
-                f"var='{field.name}' value='{env_val}'"
-            ) from e
+            typ, arg_typs = deconstruct_typehint(field)
+        except LiteralTypeException as e:
+            # test if value is in literal-type's list of choices
+            if env_val in e.typ_args:
+                env_var_attrs[field.name] = env_val
+            else:
+                raise ValueError(
+                    f"'{field.type}'-indicated value is not a legal value: "
+                    f"var='{field.name}' value='{env_val}' (options: {e.typ_args})"
+                )
+        else:
+            # cast value to type
+            try:
+                env_var_attrs[field.name] = _typecast_for_dataclass(
+                    env_val, typ, arg_typs, collection_sep, dict_kv_joiner
+                )
+            except ValueError as e:
+                raise ValueError(
+                    f"'{field.type}'-indicated value is not a legal value: "
+                    f"var='{field.name}' value='{env_val}'"
+                ) from e
 
     # to dataclass!
     env_vars_dc = _cast_to_dataclass(dclass, env_var_attrs)
