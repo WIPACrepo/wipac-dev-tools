@@ -309,9 +309,20 @@ def from_environment_as_dataclass(
         ValueError - If an indicated value is not a legal value
         TypeError - If an argument or indicated value is not a legal type
     """
-    return _from_environment_as_dataclass(
-        dclass, collection_sep, dict_kv_joiner, log_vars, obfuscate_log_vars
-    )
+    env_vars_dc = _from_environment_as_dataclass(dclass, collection_sep, dict_kv_joiner)
+
+    if log_vars:
+        logging_tools.log_dataclass(
+            env_vars_dc,
+            logging.getLogger(),
+            log_vars,
+            prefix="(env)",
+            obfuscate_sensitive_substrings=(
+                obfuscate_log_vars if obfuscate_log_vars else True
+            ),
+        )
+
+    return env_vars_dc
 
 
 class LiteralTypeException(Exception):
@@ -474,8 +485,6 @@ def _from_environment_as_dataclass(
     dclass: Type[DataclassT],
     collection_sep: Optional[str],
     dict_kv_joiner: str,
-    log_vars: Optional[logging_tools.LoggerLevel],
-    obfuscate_log_vars: Optional[Union[bool, list[str]]],
 ) -> DataclassT:
     # check args
     typecaster = TypeCaster(collection_sep, dict_kv_joiner)
@@ -516,18 +525,5 @@ def _from_environment_as_dataclass(
                 f"var='{field.name}' value='{env_val}'"
             ) from e
 
-    # to dataclass!
-    env_vars_dc = _cast_to_dataclass(dclass, env_var_attrs)
-
-    # log & return
-    if log_vars:
-        logging_tools.log_dataclass(
-            env_vars_dc,
-            logging.getLogger(),
-            log_vars,
-            prefix="(env)",
-            obfuscate_sensitive_substrings=(
-                obfuscate_log_vars if obfuscate_log_vars else True
-            ),
-        )
-    return env_vars_dc
+    # return as a dataclass!
+    return _cast_to_dataclass(dclass, env_var_attrs)
