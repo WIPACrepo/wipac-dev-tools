@@ -152,47 +152,74 @@ def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
 # ---------------------------------------------------------------------------------------
 
 
-def _typecast_for_dataclass(
-    env_val: str,
-    typ: type,
-    arg_typs: Optional[Tuple[type, ...]],
-    collection_sep: Optional[str],
-    dict_kv_joiner: str,
-) -> Any:
-    """Collect the typecast value."""
+class TypeCaster:
+    """Class for type-casting values."""
 
-    if typ == list:
-        _list = env_val.split(collection_sep)
-        if arg_typs:
-            return [arg_typs[0](x) for x in _list]
-        return _list
+    def __init__(
+        self,
+        collection_sep: Optional[str],
+        dict_kv_joiner: str,
+    ):
+        self._validate_delimiters(collection_sep, dict_kv_joiner)
+        self.collection_sep = collection_sep
+        self.dict_kv_joiner = dict_kv_joiner
 
-    elif typ == dict:
-        _dict = {
-            x.split(dict_kv_joiner)[0]: x.split(dict_kv_joiner)[1]
-            for x in env_val.split(collection_sep)
-        }
-        if arg_typs:
-            return {arg_typs[0](k): arg_typs[1](v) for k, v in _dict.items()}
-        return _dict
+    @staticmethod
+    def _validate_delimiters(
+        collection_sep: Optional[str], dict_kv_joiner: str
+    ) -> None:
+        if (
+            (dict_kv_joiner == collection_sep)
+            or (
+                not collection_sep and " " in dict_kv_joiner
+            )  # collection_sep=None is \s+
+            or (collection_sep and collection_sep in dict_kv_joiner)
+        ):
+            raise RuntimeError(
+                r"'collection_sep' ('None'='\s+') cannot overlap with 'dict_kv_joiner': "
+                f"'{collection_sep}' & '{dict_kv_joiner}'"
+            )
 
-    elif typ == set:
-        _set = set(env_val.split(collection_sep))
-        if arg_typs:
-            return {arg_typs[0](x) for x in _set}
-        return _set
+    def typecast_for_dataclass(
+        self,
+        env_val: str,
+        typ: type,
+        arg_typs: Optional[Tuple[type, ...]],
+    ) -> Any:
+        """Collect the typecast value."""
 
-    elif typ == frozenset:
-        _frozenset = frozenset(env_val.split(collection_sep))
-        if arg_typs:
-            return {arg_typs[0](x) for x in _frozenset}
-        return _frozenset
+        if typ == list:
+            _list = env_val.split(self.collection_sep)
+            if arg_typs:
+                return [arg_typs[0](x) for x in _list]
+            return _list
 
-    elif typ == bool:
-        return strtobool(env_val)
+        elif typ == dict:
+            _dict = {
+                x.split(self.dict_kv_joiner)[0]: x.split(self.dict_kv_joiner)[1]
+                for x in env_val.split(self.collection_sep)
+            }
+            if arg_typs:
+                return {arg_typs[0](k): arg_typs[1](v) for k, v in _dict.items()}
+            return _dict
 
-    else:
-        return typ(env_val)
+        elif typ == set:
+            _set = set(env_val.split(self.collection_sep))
+            if arg_typs:
+                return {arg_typs[0](x) for x in _set}
+            return _set
+
+        elif typ == frozenset:
+            _frozenset = frozenset(env_val.split(self.collection_sep))
+            if arg_typs:
+                return {arg_typs[0](x) for x in _frozenset}
+            return _frozenset
+
+        elif typ == bool:
+            return strtobool(env_val)
+
+        else:
+            return typ(env_val)
 
 
 def from_environment_as_dataclass(
@@ -418,18 +445,6 @@ def deconstruct_typehint(
     return typ_origin, typ_args
 
 
-def _validate_delimiters(collection_sep: Optional[str], dict_kv_joiner: str) -> None:
-    if (
-        (dict_kv_joiner == collection_sep)
-        or (not collection_sep and " " in dict_kv_joiner)  # collection_sep=None is \s+
-        or (collection_sep and collection_sep in dict_kv_joiner)
-    ):
-        raise RuntimeError(
-            r"'collection_sep' ('None'='\s+') cannot overlap with 'dict_kv_joiner': "
-            f"'{collection_sep}' & '{dict_kv_joiner}'"
-        )
-
-
 def _validate_is_non_instantiated_dataclass(dclass: Type[DataclassT]) -> None:
     if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
         raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
@@ -459,7 +474,7 @@ def _from_environment_as_dataclass(
     obfuscate_log_vars: Optional[Union[bool, list[str]]],
 ) -> DataclassT:
     # check args
-    _validate_delimiters(collection_sep, dict_kv_joiner)
+    typecaster = TypeCaster(collection_sep, dict_kv_joiner)
     _validate_is_non_instantiated_dataclass(dclass)
 
     # iterate fields and find env vars
@@ -489,8 +504,8 @@ def _from_environment_as_dataclass(
         else:
             # cast value to type
             try:
-                env_var_attrs[field.name] = _typecast_for_dataclass(
-                    env_val, typ, arg_typs, collection_sep, dict_kv_joiner
+                env_var_attrs[field.name] = typecaster.typecast_for_dataclass(
+                    env_val, typ, arg_typs
                 )
             except ValueError as e:
                 raise ValueError(
