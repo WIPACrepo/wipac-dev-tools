@@ -847,8 +847,8 @@ def test_111__literal_dict() -> None:
     with pytest.raises(ValueError) as cm:
         from_environment_as_dataclass(Config)
     assert str(cm.value).startswith(
-        "'typing.List[typing.Dict[str, int]]' is not a "
-        "supported type: field='FOO' (typehints "
+        "'dict[typing.Literal['greeting'], typing.Literal['hello', 'hi', 'howdy']]' "
+        "is not a supported type: field='FOO' (typehints "
         "must resolve to 'type' within 1 nesting, or "
         "2 if using 'Final', 'Optional', or a None-'Union' pairing)"
     )
