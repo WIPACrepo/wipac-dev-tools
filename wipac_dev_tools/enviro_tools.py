@@ -180,16 +180,16 @@ class TypeCaster:
                 f"'{collection_sep}' & '{dict_kv_joiner}'"
             )
 
-    def typecast_for_dataclass(
+    def typecast(
         self,
-        env_val: str,
+        val: str,
         typ: type,
         arg_typs: Optional[Tuple[type, ...]],
     ) -> Any:
         """Collect the typecast value."""
 
         if typ == list:
-            _list = env_val.split(self.collection_sep)
+            _list = val.split(self.collection_sep)
             if arg_typs:
                 return [arg_typs[0](x) for x in _list]
             return _list
@@ -197,29 +197,29 @@ class TypeCaster:
         elif typ == dict:
             _dict = {
                 x.split(self.dict_kv_joiner)[0]: x.split(self.dict_kv_joiner)[1]
-                for x in env_val.split(self.collection_sep)
+                for x in val.split(self.collection_sep)
             }
             if arg_typs:
                 return {arg_typs[0](k): arg_typs[1](v) for k, v in _dict.items()}
             return _dict
 
         elif typ == set:
-            _set = set(env_val.split(self.collection_sep))
+            _set = set(val.split(self.collection_sep))
             if arg_typs:
                 return {arg_typs[0](x) for x in _set}
             return _set
 
         elif typ == frozenset:
-            _frozenset = frozenset(env_val.split(self.collection_sep))
+            _frozenset = frozenset(val.split(self.collection_sep))
             if arg_typs:
                 return {arg_typs[0](x) for x in _frozenset}
             return _frozenset
 
         elif typ == bool:
-            return strtobool(env_val)
+            return strtobool(val)
 
         else:
-            return typ(env_val)
+            return typ(val)
 
 
 def from_environment_as_dataclass(
@@ -504,9 +504,7 @@ def _from_environment_as_dataclass(
         else:
             # cast value to type
             try:
-                env_var_attrs[field.name] = typecaster.typecast_for_dataclass(
-                    env_val, typ, arg_typs
-                )
+                env_var_attrs[field.name] = typecaster.typecast(env_val, typ, arg_typs)
             except ValueError as e:
                 raise ValueError(
                     f"'{field.type}'-indicated value is not a legal value: "
