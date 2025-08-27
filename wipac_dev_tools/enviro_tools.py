@@ -18,7 +18,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    _LiteralSpecialForm,
     _SpecialForm,
     cast,
 )
@@ -384,9 +383,7 @@ class TypeHintDeconstructor:
     @staticmethod
     def deconstruct_from_dc_field(
         field: dataclasses.Field,
-    ) -> Tuple[
-        type | _LiteralSpecialForm, Optional[Tuple[type | _LiteralSpecialForm, ...]]
-    ]:
+    ) -> Tuple[type | type(Literal), Optional[Tuple[type | type(Literal), ...]]]:
         """Take a type hint and return its type and its arguments' types."""
         TypeHintDeconstructor._check_invalid_typehints(field.type, tuple(), field)
 
@@ -435,10 +432,10 @@ class TypeHintDeconstructor:
             f"or 2 if using 'Final', 'Optional', or a None-'Union' pairing) "
             f" -- ({typ_origin=}, {typ_args=})"
         )
-        if not isinstance(typ_origin, type | _LiteralSpecialForm):
+        if not isinstance(typ_origin, type | type(Literal)):
             raise ValueError(too_nested_error_msg)
         if typ_args and not (
-            all(isinstance(x, type | _LiteralSpecialForm) for x in typ_args)
+            all(isinstance(x, type | type(Literal)) for x in typ_args)
         ):
             raise ValueError(too_nested_error_msg)
 
