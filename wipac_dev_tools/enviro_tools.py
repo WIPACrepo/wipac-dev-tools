@@ -18,6 +18,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    _LiteralGenericAlias,
     _SpecialForm,
     cast,
 )
@@ -48,13 +49,6 @@ sdict = Dict[str, Any]
 
 
 # ---------------------------------------------------------------------------------------
-
-
-class LiteralTypeException(Exception):
-    """Raised when the type is the 'Literal' type, which is handled very differently."""
-
-    def __init__(self, typ_args: tuple):
-        self.typ_args = typ_args
 
 
 def _typecast(source: str, type_: type) -> RetVal:
@@ -385,14 +379,14 @@ class TypeHintDeconstructor:
                 f"'int | None', or 'None | str'"
                 ")"
             )
-        elif typ_origin == Literal:
-            raise LiteralTypeException(typ_args=typ_args)
         # fall-through: okay
 
     @staticmethod
     def deconstruct_from_dc_field(
         field: dataclasses.Field,
-    ) -> Tuple[type, Optional[Tuple[type, ...]]]:
+    ) -> Tuple[
+        type | _LiteralGenericAlias, Optional[Tuple[type | _LiteralGenericAlias, ...]]
+    ]:
         """Take a type hint and return its type and its arguments' types."""
         TypeHintDeconstructor._check_invalid_typehints(field.type, tuple(), field)
 
@@ -441,9 +435,11 @@ class TypeHintDeconstructor:
             f"or 2 if using 'Final', 'Optional', or a None-'Union' pairing) "
             f" -- ({typ_origin=}, {typ_args=})"
         )
-        if not isinstance(typ_origin, type):
+        if not isinstance(typ_origin, type | _LiteralGenericAlias):
             raise ValueError(too_nested_error_msg)
-        if typ_args and not (all(isinstance(x, type) for x in typ_args)):
+        if typ_args and not (
+            all(isinstance(x, type | _LiteralGenericAlias) for x in typ_args)
+        ):
             raise ValueError(too_nested_error_msg)
 
         return typ_origin, typ_args
@@ -494,26 +490,26 @@ def _from_environment_as_dataclass(
             continue
 
         # get type
-        try:
-            typ, arg_typs = TypeHintDeconstructor.deconstruct_from_dc_field(field)
-        except LiteralTypeException as e:
+        typ, arg_typs = TypeHintDeconstructor.deconstruct_from_dc_field(field)
+
+        if typ == Literal:
             # test if value is in literal-type's list of choices
-            if env_val in e.typ_args:
+            if arg_typs and env_val in arg_typs:
                 env_var_attrs[field.name] = env_val
             else:
                 raise ValueError(
                     f"'{field.type}'-indicated value is not a legal value: "
                     f"var='{field.name}' value='{env_val}' -- choices: {e.typ_args})"
                 )
-        else:
-            # cast value to type
-            try:
-                env_var_attrs[field.name] = typecaster.typecast(env_val, typ, arg_typs)
-            except ValueError as e:
-                raise ValueError(
-                    f"'{field.type}'-indicated value is not a legal value: "
-                    f"var='{field.name}' value='{env_val}'"
-                ) from e
+
+        # cast value to type
+        try:
+            env_var_attrs[field.name] = typecaster.typecast(env_val, typ, arg_typs)
+        except ValueError as e:
+            raise ValueError(
+                f"'{field.type}'-indicated value is not a legal value: "
+                f"var='{field.name}' value='{env_val}'"
+            ) from e
 
     # to dataclass!
     env_vars_dc = _cast_to_dataclass(dclass, env_var_attrs)
