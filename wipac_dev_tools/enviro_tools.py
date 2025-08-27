@@ -177,14 +177,14 @@ class TypeCaster:
         self,
         val: str,
         typ: type,
-        arg_typs: Optional[Tuple[type, ...]],
+        typ_args: Optional[Tuple[type, ...]],
     ) -> Any:
         """Collect the typecast value."""
 
         if typ == list:
             _list = val.split(self.collection_sep)
-            if arg_typs:
-                return [arg_typs[0](x) for x in _list]
+            if typ_args:
+                return [typ_args[0](x) for x in _list]
             return _list
 
         elif typ == dict:
@@ -192,20 +192,20 @@ class TypeCaster:
                 x.split(self.dict_kv_joiner)[0]: x.split(self.dict_kv_joiner)[1]
                 for x in val.split(self.collection_sep)
             }
-            if arg_typs:
-                return {arg_typs[0](k): arg_typs[1](v) for k, v in _dict.items()}
+            if typ_args:
+                return {typ_args[0](k): typ_args[1](v) for k, v in _dict.items()}
             return _dict
 
         elif typ == set:
             _set = set(val.split(self.collection_sep))
-            if arg_typs:
-                return {arg_typs[0](x) for x in _set}
+            if typ_args:
+                return {typ_args[0](x) for x in _set}
             return _set
 
         elif typ == frozenset:
             _frozenset = frozenset(val.split(self.collection_sep))
-            if arg_typs:
-                return {arg_typs[0](x) for x in _frozenset}
+            if typ_args:
+                return {typ_args[0](x) for x in _frozenset}
             return _frozenset
 
         elif typ == bool:
@@ -314,6 +314,13 @@ def from_environment_as_dataclass(
     )
 
 
+class LiteralTypeException(Exception):
+    """Raised when the type is the 'Literal' type, which is handled very differently."""
+
+    def __init__(self, typ_args: tuple):
+        self.typ_args = typ_args
+
+
 class TypeHintDeconstructor:
     """Class for deconstructing type hints."""
 
@@ -378,6 +385,8 @@ class TypeHintDeconstructor:
                 f"'int | None', or 'None | str'"
                 ")"
             )
+        elif typ_origin == Literal:
+            raise LiteralTypeException(typ_args=typ_args)
         # fall-through: okay
 
     @staticmethod
@@ -432,11 +441,9 @@ class TypeHintDeconstructor:
             f"or 2 if using 'Final', 'Optional', or a None-'Union' pairing) "
             f" -- ({typ_origin=}, {typ_args=})"
         )
-        if not isinstance(typ_origin, type | type(Literal)):
+        if not isinstance(typ_origin, type):
             raise ValueError(too_nested_error_msg)
-        if typ_args and not (
-            all(isinstance(x, type | type(Literal)) for x in typ_args)
-        ):
+        if typ_args and not (all(isinstance(x, type) for x in typ_args)):
             raise ValueError(too_nested_error_msg)
 
         return typ_origin, typ_args
@@ -487,21 +494,22 @@ def _from_environment_as_dataclass(
             continue
 
         # get type
-        typ, arg_typs = TypeHintDeconstructor.deconstruct_from_dc_field(field)
-
-        if typ == Literal:
+        try:
+            typ, typ_args = TypeHintDeconstructor.deconstruct_from_dc_field(field)
+        except LiteralTypeException as e:
             # test if value is in literal-type's list of choices
-            if arg_typs and env_val in arg_typs:
+            if env_val in e.typ_args:
                 env_var_attrs[field.name] = env_val
+                continue
             else:
                 raise ValueError(
                     f"'{field.type}'-indicated value is not a legal value: "
-                    f"var='{field.name}' value='{env_val}' -- choices: {arg_typs})"
+                    f"var='{field.name}' value='{env_val}' -- choices: {e.typ_args})"
                 )
 
         # cast value to type
         try:
-            env_var_attrs[field.name] = typecaster.typecast(env_val, typ, arg_typs)
+            env_var_attrs[field.name] = typecaster.typecast(env_val, typ, typ_args)
         except ValueError as e:
             raise ValueError(
                 f"'{field.type}'-indicated value is not a legal value: "

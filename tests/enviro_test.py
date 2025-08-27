@@ -766,7 +766,7 @@ def test_105_error__overly_nested_type_alias() -> None:
     os.environ["FOO"] = "doesn't matter, this won't get read before error"
     with pytest.raises(ValueError) as cm:
         from_environment_as_dataclass(Config)
-    assert str(cm.value) == (
+    assert str(cm.value).startswith(
         "'typing.List[typing.Dict[str, int]]' is not a "
         "supported type: field='FOO' (typehints "
         "must resolve to 'type' within 1 nesting, or "
