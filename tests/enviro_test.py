@@ -658,9 +658,9 @@ def test_070__literal() -> None:
     class Config:
         FOO: Literal["english", "spanish", "french"]
 
-    os.environ["FOO"] = "hello"
+    os.environ["FOO"] = "english"
     config = from_environment_as_dataclass(Config)
-    assert config.FOO == "hello"
+    assert config.FOO == "english"
 
 
 @pytest.mark.usefixtures("isolated_env")

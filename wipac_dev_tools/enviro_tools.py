@@ -499,7 +499,7 @@ def _from_environment_as_dataclass(
             else:
                 raise ValueError(
                     f"'{field.type}'-indicated value is not a legal value: "
-                    f"var='{field.name}' value='{env_val}' (options: {e.typ_args})"
+                    f"var='{field.name}' value='{env_val}' -- choices: {e.typ_args})"
                 )
         else:
             # cast value to type
