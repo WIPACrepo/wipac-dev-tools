@@ -42,8 +42,12 @@ def set_level(
             additional loggers, each paired with a logging level, which are not
             considered first-party nor third-party loggers. **These have the highest precedence**
         `use_coloredlogs`
-            if True, will import and use the `coloredlogs` package.
-            This will set the logger format and use colored text.
+            *DEPRECATED* -- will use the WIPACDevToolsFormatter formatter
+        `formatter`
+            a logging.Formatter instance to use for all logging, use `WIPACDevToolsFormatter()`
+            for a fairly detailed logger
+        `utc`
+            whether to use UTC time
     """
 ```
 
