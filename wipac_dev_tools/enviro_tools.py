@@ -386,7 +386,9 @@ class TypeHintDeconstructor:
                 f"'int | None', or 'None | str'"
                 ")"
             )
-        elif typ_origin == Literal or any(t == Literal for t in typ_args):
+        elif typ_origin == Literal or (
+            typ_args and any(t == Literal for t in typ_args)
+        ):
             raise LiteralTypeException(typ_origin=typ_origin, typ_args=typ_args)
         # fall-through: okay
 
