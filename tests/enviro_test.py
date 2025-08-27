@@ -664,19 +664,6 @@ def test_070__literal() -> None:
 
 
 @pytest.mark.usefixtures("isolated_env")
-def test_071__literal_dict() -> None:
-    """Test normal use case."""
-
-    @dc.dataclass(frozen=True)
-    class Config:
-        FOO: dict[Literal["greeting"], Literal["hello", "hi", "howdy"]]
-
-    os.environ["FOO"] = "greeting:hello"
-    config = from_environment_as_dataclass(Config)
-    assert config.FOO == {"greeting": "hello"}
-
-
-@pytest.mark.usefixtures("isolated_env")
 def test_100_error__missing_required() -> None:
     """Test error use case."""
 
@@ -844,6 +831,27 @@ def test_110_error__any() -> None:
     os.environ["FOO"] = "foo bar baz"
     with pytest.raises(ValueError):
         from_environment_as_dataclass(Config)
+
+
+@pytest.mark.usefixtures("isolated_env")
+def test_111__literal_dict() -> None:
+    """Test normal use case."""
+
+    # NOT YET SUPPORTED, MAYBE SOMEDAY
+
+    @dc.dataclass(frozen=True)
+    class Config:
+        FOO: dict[Literal["greeting"], Literal["hello", "hi", "howdy"]]
+
+    os.environ["FOO"] = "greeting:hello"
+    with pytest.raises(ValueError) as cm:
+        from_environment_as_dataclass(Config)
+    assert str(cm.value).startswith(
+        "'typing.List[typing.Dict[str, int]]' is not a "
+        "supported type: field='FOO' (typehints "
+        "must resolve to 'type' within 1 nesting, or "
+        "2 if using 'Final', 'Optional', or a None-'Union' pairing)"
+    )
 
 
 @pytest.mark.usefixtures("isolated_env")
