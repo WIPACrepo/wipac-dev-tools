@@ -1,9 +1,10 @@
 """Common tools to supplement/assist the standard logging package."""
 
 import argparse
-from collections.abc import Collection
 import dataclasses
 import logging
+import time
+from collections.abc import Collection
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING, TypeVar, Union
 
 from typing_extensions import Literal
@@ -112,7 +113,7 @@ def log_dataclass(
         val = getattr(dclass, field.name)
         if obfuscate_sensitive_substrings is True or obfuscate_collection:
             if obfuscate_collection and field.name in obfuscate_sensitive_substrings:  # type: ignore
-                val = '***'
+                val = "***"
             else:
                 val = obfuscate_value_if_sensitive(field.name, val)
         logger_fn(f"{prefix+' 'if prefix else ''}{field.name}: {val}")
@@ -146,9 +147,16 @@ def _set_and_share(log_name: str, level: LoggerLevel, text: str) -> None:
 class WIPACDevToolsFormatter(logging.Formatter):
     """A fairly detailed formatter that is similar to coloredlogs's format."""
 
-    def __init__(self):
+    def __init__(self, include_line_location: bool = True):
         super().__init__(
-            "%(asctime)s.%(msecs)03d [%(levelname)8s] %(name)s[%(process)d] %(message)s <%(filename)s:%(lineno)s/%(funcName)s()>",
+            fmt=(
+                "%(asctime)s.%(msecs)03d [%(levelname)8s] %(name)s[%(process)d] %(message)s"
+                + (
+                    " <%(filename)s:%(lineno)s/%(funcName)s()>"
+                    if include_line_location
+                    else ""
+                )
+            ),
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
@@ -163,6 +171,7 @@ def set_level(
     specialty_loggers: Optional[Dict[LogggerObjectOrName, LoggerLevel]] = None,
     use_coloredlogs: bool = False,
     formatter: Union[WIPACDevToolsFormatter, logging.Formatter, None] = None,
+    utc: bool = False,
 ) -> None:
     """Set the level of loggers of various precedence.
 
@@ -185,6 +194,8 @@ def set_level(
         `formatter`
             a logging.Formatter instance to use for all logging, use `WIPACDevToolsFormatter()`
             for a fairly detailed logger
+        `utc`
+            whether to use UTC time
     """
     if use_coloredlogs:
         logging.getLogger().warning(
@@ -193,7 +204,15 @@ def set_level(
         )
         formatter = WIPACDevToolsFormatter()
 
-    return _set_level(
+    if formatter:
+        hand = logging.StreamHandler()
+        hand.setFormatter(formatter)
+        logging.getLogger().addHandler(hand)
+
+    if utc:
+        logging.Formatter.converter = time.gmtime  # set logs to utc time
+
+    _configure_levels(
         first_party_level=level.upper(),  # type: ignore
         #
         first_parties=list(
@@ -205,8 +224,6 @@ def set_level(
         #
         future_third_parties=_to_list(future_third_parties),
         #
-        formatter=formatter,
-        #
         specialty_loggers=(
             {_logger_to_name(k): v for k, v in specialty_loggers.items()}
             if specialty_loggers
@@ -215,19 +232,14 @@ def set_level(
     )
 
 
-def _set_level(
+def _configure_levels(
     first_party_level: LoggerLevel,
     first_parties: List[str],
     third_party_level: LoggerLevel,
     future_third_parties: List[str],
-    formatter: Union[WIPACDevToolsFormatter, logging.Formatter, None],
     specialty_loggers: Dict[str, LoggerLevel],
 ) -> None:
     # set root -> first_party_level
-    if formatter:
-        hand = logging.StreamHandler()
-        hand.setFormatter(formatter)
-        logging.getLogger().addHandler(hand)
     logging.getLogger().setLevel(first_party_level)
     logging.getLogger().info(f"Root Logger: '' ({first_party_level})")
 
