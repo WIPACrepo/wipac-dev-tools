@@ -387,7 +387,7 @@ class TypeHintDeconstructor:
                 ")"
             )
         elif typ_origin == Literal or (
-            typ_args and any(isinstance(t, type(Literal["foo"])) for t in typ_args)
+            typ_args and any(t == Literal for t in typ_args)
         ):
             raise LiteralTypeException(typ_origin=typ_origin, typ_args=typ_args)
         # fall-through: okay
