@@ -2,7 +2,11 @@
 
 from collections.abc import Callable, Coroutine
 from functools import partialmethod, wraps
-from typing import Any, Concatenate, ParamSpec, TypeVar, Union
+from typing import Any, Union
+try:
+    from typing import Concatenate, ParamSpec, TypeVar
+except ImportError:
+    from typing_extensions import Concatenate, ParamSpec, TypeVar
 
 # 'prometheus' imports
 try:
