@@ -115,7 +115,9 @@ def PromWrapper(prom_metric_fn: Callable[[PromWrapperSelfType], PromWrapperMetri
         def func(self, prom_metric, my_arg):
             prom_metric.inc()
     """
-    def wrapper[**P, R](method: Callable[Concatenate[PromWrapperSelfType, PromWrapperMetricType, P], R]) -> Callable[Concatenate[PromWrapperSelfType, P], R]:
+    P = ParamSpec('P')
+    R = TypeVar('R')
+    def wrapper(method: Callable[Concatenate[PromWrapperSelfType, PromWrapperMetricType, P], R]) -> Callable[Concatenate[PromWrapperSelfType, P], R]:
         _metric = None
 
         @wraps(method)
@@ -142,7 +144,9 @@ def AsyncPromWrapper(prom_metric_fn: Callable[[PromWrapperSelfType], PromWrapper
         async def func(self, prom_metric, my_arg):
             prom_metric.inc()
     """
-    def wrapper[**P, R](method: Callable[Concatenate[PromWrapperSelfType, PromWrapperMetricType, P], Awaitable[R]]) -> Callable[Concatenate[PromWrapperSelfType, P], Awaitable[R]]:
+    P = ParamSpec('P')
+    R = TypeVar('R')
+    def wrapper(method: Callable[Concatenate[PromWrapperSelfType, PromWrapperMetricType, P], Awaitable[R]]) -> Callable[Concatenate[PromWrapperSelfType, P], Awaitable[R]]:
         _metric = None
 
         @wraps(method)
