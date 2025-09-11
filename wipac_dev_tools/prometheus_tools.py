@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from functools import partialmethod, wraps
-from typing import Any, Union
+from typing import Any, Awaitable, Concatenate, ParamSpec, Protocol, TypeVar, Union
 
 # 'prometheus' imports
 try:
@@ -94,7 +94,14 @@ class GlobalLabels:
     enum = partialmethod(_wrap, Enum)
 
 
-def PromWrapper(prom_metric_fn):
+class PromWrapperSelfType(Protocol):
+    prometheus: GlobalLabels
+
+
+PromWrapperMetricType = Union[Counter, Gauge, Summary, Histogram, Info, Enum]
+
+
+def PromWrapper(prom_metric_fn: Callable[[PromWrapperSelfType], PromWrapperMetricType]):
     """
     Create a metric instance for a classmethod, using the class
     instance `self` during creation.  Pass the metric to the
@@ -108,11 +115,11 @@ def PromWrapper(prom_metric_fn):
         def func(self, prom_metric, my_arg):
             prom_metric.inc()
     """
-    def wrapper(method):
+    def wrapper[**P, R](method: Callable[Concatenate[PromWrapperSelfType, PromWrapperMetricType, P], R]) -> Callable[Concatenate[PromWrapperSelfType, P], R]:
         _metric = None
 
         @wraps(method)
-        def _impl(self, *args, **kwargs):
+        def _impl(self, *args: P.args, **kwargs: P.kwargs) -> Any:
             nonlocal _metric
             if not _metric:
                 _metric = prom_metric_fn(self)
@@ -121,7 +128,7 @@ def PromWrapper(prom_metric_fn):
     return wrapper
 
 
-def AsyncPromWrapper(prom_metric_fn):
+def AsyncPromWrapper(prom_metric_fn: Callable[[PromWrapperSelfType], PromWrapperMetricType]):
     """
     Create a metric instance for a classmethod, using the class
     instance `self` during creation.  Pass the metric to the
@@ -135,11 +142,11 @@ def AsyncPromWrapper(prom_metric_fn):
         async def func(self, prom_metric, my_arg):
             prom_metric.inc()
     """
-    def wrapper(method):
+    def wrapper[**P, R](method: Callable[Concatenate[PromWrapperSelfType, PromWrapperMetricType, P], Awaitable[R]]) -> Callable[Concatenate[PromWrapperSelfType, P], Awaitable[R]]:
         _metric = None
 
         @wraps(method)
-        async def _impl(self, *args, **kwargs):
+        async def _impl(self, *args: P.args, **kwargs: P.kwargs) -> Any:
             nonlocal _metric
             if not _metric:
                 _metric = prom_metric_fn(self)
