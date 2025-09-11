@@ -176,6 +176,7 @@ def test_prom_timer():
     metric = REGISTRY.get_sample_value('ggg_sum', {
         "foo": "bar"
     })
+    assert metric
     assert .1 <= metric <= .11
 
 
@@ -194,4 +195,5 @@ async def test_prom_timer_async():
     metric = REGISTRY.get_sample_value('ggg_sum', {
         "foo": "bar"
     })
+    assert metric
     assert .1 <= metric <= .11

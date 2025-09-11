@@ -1,8 +1,8 @@
 """Tools for Prometheus monitoring."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from functools import partialmethod, wraps
-from typing import Any, Awaitable, Concatenate, ParamSpec, Protocol, TypeVar, Union
+from typing import Any, Concatenate, ParamSpec, TypeVar, Union
 
 # 'prometheus' imports
 try:
@@ -94,9 +94,7 @@ class GlobalLabels:
     enum = partialmethod(_wrap, Enum)
 
 
-class PromWrapperSelfType(Protocol):
-    prometheus: GlobalLabels
-
+PromWrapperSelfType = Any
 
 PromWrapperMetricType = Union[Counter, Gauge, Summary, Histogram, Info, Enum]
 
@@ -122,7 +120,7 @@ def PromWrapper(prom_metric_fn: Callable[[PromWrapperSelfType], PromWrapperMetri
         _metric = None
 
         @wraps(method)
-        def _impl(self, *args: P.args, **kwargs: P.kwargs) -> Any:
+        def _impl(self, *args: P.args, **kwargs: P.kwargs) -> R:
             nonlocal _metric
             if not _metric:
                 _metric = prom_metric_fn(self)
@@ -148,11 +146,11 @@ def AsyncPromWrapper(prom_metric_fn: Callable[[PromWrapperSelfType], PromWrapper
     P = ParamSpec('P')
     R = TypeVar('R')
 
-    def wrapper(method: Callable[Concatenate[PromWrapperSelfType, PromWrapperMetricType, P], Awaitable[R]]) -> Callable[Concatenate[PromWrapperSelfType, P], Awaitable[R]]:
+    def wrapper(method: Callable[Concatenate[PromWrapperSelfType, PromWrapperMetricType, P], Coroutine[Any, Any, R]]) -> Callable[Concatenate[PromWrapperSelfType, P], Coroutine[Any, Any, R]]:
         _metric = None
 
         @wraps(method)
-        async def _impl(self, *args: P.args, **kwargs: P.kwargs) -> Any:
+        async def _impl(self, *args: P.args, **kwargs: P.kwargs) -> R:
             nonlocal _metric
             if not _metric:
                 _metric = prom_metric_fn(self)
