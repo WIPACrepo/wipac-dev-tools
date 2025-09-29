@@ -113,16 +113,16 @@ class CVMFSRegistryTools:
         # step 2: was the tag a non-specific tag (like 'latest', 'v4.1', 'v4', etc.)
         # -- case 1: user gave 'latest'
         if source_tag == "latest":
-            for source_tag in self.iter_x_y_z_tags():
-                LOGGER.debug(f"resolved 'latest' to youngest X.Y.Z tag: {source_tag}")
-                return source_tag
+            for t in self.iter_x_y_z_tags():
+                LOGGER.debug(f"resolved 'latest' to youngest X.Y.Z tag: {t}")
+                return t
         # -- case 2: user gave an non-specific semver tag (like 'v4.1', 'v4', etc.)
         elif RE_VERSION_X_Y.fullmatch(source_tag) or RE_VERSION_X.fullmatch(source_tag):
-            for source_tag in self.iter_x_y_z_tags():
+            for t in self.iter_x_y_z_tags():
                 # ex: '3.1.4' startswith '3.1.'
-                if source_tag.startswith(source_tag + "."):
-                    LOGGER.debug(f"resolved '{source_tag}' to '{source_tag}'")
-                    return source_tag
+                if t.startswith(source_tag + "."):
+                    LOGGER.debug(f"resolved '{source_tag}' to '{t}'")
+                    return t
 
         # fall-through
         raise ImageNotFoundException(source_tag)
