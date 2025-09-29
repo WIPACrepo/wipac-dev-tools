@@ -28,7 +28,7 @@ class ImageNotFoundException(Exception):
 ########################################################################################
 
 
-class ImageToolsCVMFS:
+class CVMFSRegistryTools:
     """Tools for working with CVMFS images."""
 
     def __init__(self, cvmfs_images_dir: Path, image_name: str):
@@ -125,7 +125,7 @@ class ImageToolsCVMFS:
 ########################################################################################
 
 
-class ImageToolsDockerHub:
+class DockerHubRegistryTools:
     """Tools for working with DockerHub images."""
 
     def __init__(self, api_tags_url: str):
