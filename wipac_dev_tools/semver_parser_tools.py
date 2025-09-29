@@ -26,10 +26,19 @@ RE_VERSION_PREFIX_V = re.compile(r"(v|V)\d{1,3}(\.\d{1,3}(\.\d{1,3})?)?$")
 
 
 def strip_v_prefix(docker_tag: str) -> str:
-    """Remove the v-prefix for semver tags."""
+    """Remove the v-prefix for semver tags.
+
+    Examples:
+        v4     -> 4
+        v5.1   -> 5.1
+        v3.6.9 -> 3.6.9
+
+        Also...
+        6.0    -> 6.0
+        vfoo   -> vfoo
+    """
     if RE_VERSION_PREFIX_V.fullmatch(docker_tag):
-        # v4 -> 4; v5.1 -> 5.1; v3.6.9 -> 3.6.9
-        docker_tag = docker_tag.lstrip("v")
+        docker_tag = docker_tag.lstrip("vV")  # handle both 'v' and 'V'
 
     if not docker_tag or not docker_tag.strip():
         raise ValueError(docker_tag)
