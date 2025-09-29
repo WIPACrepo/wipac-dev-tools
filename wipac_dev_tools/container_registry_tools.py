@@ -28,7 +28,7 @@ class ImageNotFoundException(Exception):
 ########################################################################################
 
 
-class ImageCVMFS:
+class ImageToolsCVMFS:
     """Tools for working with CVMFS images."""
 
     def __init__(self, cvmfs_images_dir: Path):
