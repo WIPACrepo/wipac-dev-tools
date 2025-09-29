@@ -12,6 +12,7 @@ __all__ = [
     "logging_tools",
     "strtobool",
     "argparse_tools",
+    "container_registry_tools",
     "data_safety_tools",
     "timing_tools",
     "prometheus_tools",  # not imported above b/c module has optional dependencies

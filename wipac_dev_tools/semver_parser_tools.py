@@ -20,6 +20,36 @@ except (ImportError, ModuleNotFoundError) as _exc:
 LOGGER = logging.getLogger(__name__)
 
 
+########################################################################################
+# BASIC SEMVER-PARSING TOOLS
+########################################################################################
+
+# NOTE: for security, limit the regex section lengths (with trusted input we'd use + and *)
+# https://cwe.mitre.org/data/definitions/1333.html
+RE_VERSION_X_Y_Z = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}$")
+RE_VERSION_X_Y = re.compile(r"\d{1,3}\.\d{1,3}$")
+RE_VERSION_X = re.compile(r"\d{1,3}$")
+
+RE_VERSION_PREFIX_V = re.compile(r"(v|V)\d{1,3}(\.\d{1,3}(\.\d{1,3})?)?$")
+
+
+def strip_v_prefix(docker_tag: str) -> str:
+    """Remove the v-prefix for semver tags."""
+    if RE_VERSION_PREFIX_V.fullmatch(docker_tag):
+        # v4 -> 4; v5.1 -> 5.1; v3.6.9 -> 3.6.9
+        docker_tag = docker_tag.lstrip("v")
+
+    if not docker_tag or not docker_tag.strip():
+        raise ValueError(docker_tag)
+
+    return docker_tag
+
+
+########################################################################################
+# PYTHON VERSION TOOLS
+########################################################################################
+
+
 def get_latest_py3_release() -> Tuple[int, int]:
     """Return the latest python3 release version (supported by GitHub) as
     tuple."""
@@ -68,6 +98,11 @@ def is_python_eol(python_version: str) -> bool:
     See https://devguide.python.org/versions/ or https://endoflife.date/python
     """
     return time.time() > get_python_eol_ts(python_version)
+
+
+########################################################################################
+# PYTHON PROJECT TOOLS
+########################################################################################
 
 
 def list_all_majmin_versions(
