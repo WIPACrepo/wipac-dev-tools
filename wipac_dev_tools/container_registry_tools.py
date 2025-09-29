@@ -1,6 +1,7 @@
 """Utilities for dealing with docker/cvmfs/singularity images."""
 
 import logging
+import re
 from pathlib import Path
 from typing import Iterable, Union
 
@@ -24,18 +25,24 @@ class ImageNotFoundException(Exception):
         super().__init__(f"Image '{image}' cannot be found.")
 
 
+IMAGE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
+
 ########################################################################################
 # REGISTRY: CVMFS -- apptainer directory/sandbox containers
 ########################################################################################
 
 
 class CVMFSRegistryTools:
-    """Tools for working with CVMFS images."""
+    """Tools for working with CVMFS images directory."""
 
     def __init__(self, cvmfs_images_dir: Path, image_name: str):
+
         # ex: /cvmfs/icecube.opensciencegrid.org/containers/realtime/
         self.cvmfs_images_dir = cvmfs_images_dir
+
         # ex: skymap_scanner
+        if not IMAGE_NAME_PATTERN.fullmatch(image_name):
+            raise ValueError("'image_name' is invalid.")
         self.image_name = image_name
 
     def get_image_path(
@@ -127,11 +134,16 @@ class CVMFSRegistryTools:
 
 
 class DockerHubRegistryTools:
-    """Tools for working with DockerHub images."""
+    """Tools for working with the Docker Hub API."""
 
-    def __init__(self, api_tags_url: str):
-        # ex: https://hub.docker.com/v2/repositories/icecube/skymap_scanner/tags
-        self.api_tags_url = api_tags_url
+    def __init__(self, image_namespace: str, image_name: str):
+        if not IMAGE_NAME_PATTERN.fullmatch(image_namespace):
+            raise ValueError("'image_namespace' is invalid.")
+
+        if not IMAGE_NAME_PATTERN.fullmatch(image_name):
+            raise ValueError("'image_name' is invalid.")
+
+        self.api_tags_url = f"https://hub.docker.com/v2/repositories/{image_namespace}/{image_name}/tags"
 
     def request_info(self, tag: str) -> tuple[dict, str]:
         """Get the json dict from GET @ Docker Hub, and the non v-prefixed tag (see below).
