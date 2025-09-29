@@ -23,6 +23,8 @@ T = TypeVar("T")
 
 LogggerObjectOrName = Union[str, logging.Logger]
 
+_WDT_HANDLER = "wipacdevtools-root"
+
 
 # ---------------------------------------------------------------------------------------
 
@@ -205,9 +207,20 @@ def set_level(
         formatter = WIPACDevToolsFormatter()
 
     if formatter:
-        hand = logging.StreamHandler()
-        hand.setFormatter(formatter)
-        logging.getLogger().addHandler(hand)
+        # check if caller already attached a handler of our own type/name
+        # yes -> just update the formatter
+        if ours := [
+            h
+            for h in logging.getLogger().handlers
+            if getattr(h, "name", None) == _WDT_HANDLER
+        ]:
+            ours[0].setFormatter(formatter)  # override
+        # no -> add the new formatter
+        else:
+            handler = logging.StreamHandler()
+            handler.set_name(_WDT_HANDLER)  # see detection logic above
+            handler.setFormatter(formatter)
+            logging.getLogger().addHandler(handler)
 
     if utc:
         logging.Formatter.converter = time.gmtime  # set logs to utc time
