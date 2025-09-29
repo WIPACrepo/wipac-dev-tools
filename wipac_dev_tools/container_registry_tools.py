@@ -1,4 +1,4 @@
-"""Utilities for dealing with docker/cvmfs/singularity images."""
+"""Utilities for working with container registries."""
 
 import logging
 import re
