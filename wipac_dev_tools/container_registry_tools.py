@@ -4,6 +4,8 @@ import logging
 from pathlib import Path
 from typing import Iterable, Union
 
+import requests
+
 from .semver_parser_tools import (
     RE_VERSION_X,
     RE_VERSION_X_Y,
@@ -125,3 +127,44 @@ class ImageCVMFS:
 ########################################################################################
 # REGISTRY: DOCKERHUB
 ########################################################################################
+
+
+class ImageToolsDockerHub:
+    """Tools for working with DockerHub images."""
+
+    def __init__(self, api_tags_url: str):
+        # ex: https://hub.docker.com/v2/repositories/icecube/skymap_scanner/tags
+        self.api_tags_url = api_tags_url
+
+    def request_info(self, tag: str) -> tuple[dict, str]:
+        """Get the json dict from GET @ Docker Hub, and the non v-prefixed tag (see below).
+
+        Accepts v-prefixed tags, like 'v2.3.4', 'v4', etc. -- and non-v-prefixed tags.
+        """
+        LOGGER.info(f"retrieving tag info on docker hub: {tag}")
+
+        # prep tag
+        try:
+            tag = strip_v_prefix(tag)
+        except ValueError as e:
+            raise ImageNotFoundException(tag) from e
+
+        # look for tag on docker hub
+        try:
+            LOGGER.debug(f"looking at {self.api_tags_url} for {tag}...")
+            r = requests.get(f"{self.api_tags_url.rstrip('/')}/{tag}")
+            r.raise_for_status()
+            resp = r.json()
+        # -> http issue
+        except requests.exceptions.HTTPError as e:
+            LOGGER.exception(e)
+            raise ImageNotFoundException(tag) from e
+        # -> tag issue
+        except Exception as e:
+            LOGGER.exception(e)
+            raise ImageNotFoundException(tag) from ValueError(
+                "Image tag verification failed"
+            )
+
+        LOGGER.debug(resp)
+        return resp, tag
