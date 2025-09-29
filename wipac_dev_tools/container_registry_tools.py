@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Iterable, Union
 
 import requests
+from dateutil import parser as dateutil_parser
 
 from .semver_parser_tools import (
     RE_VERSION_X,
@@ -121,7 +122,7 @@ class CVMFSRegistryTools:
 
 
 ########################################################################################
-# REGISTRY: DOCKERHUB
+# REGISTRY: DOCKER HUB
 ########################################################################################
 
 
@@ -164,3 +165,12 @@ class DockerHubRegistryTools:
 
         LOGGER.debug(resp)
         return resp, tag
+
+    @staticmethod
+    def parse_image_ts(info: dict) -> float:
+        """Get the timestamp for when the image was created."""
+        try:
+            return dateutil_parser.parse(info["last_updated"]).timestamp()
+        except Exception as e:
+            LOGGER.exception(e)
+            raise e
