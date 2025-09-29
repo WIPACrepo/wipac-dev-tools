@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Union
 
 from .semver_parser_tools import (
     RE_VERSION_X,
@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 class ImageNotFoundException(Exception):
     """Raised when an image (tag) cannot be found."""
 
-    def __init__(self, image: str | Path):
+    def __init__(self, image: Union[str, Path]):
         super().__init__(f"Image '{image}' cannot be found.")
 
 
