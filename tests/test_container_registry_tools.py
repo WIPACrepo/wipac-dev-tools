@@ -130,7 +130,7 @@ class _DummyResp:
     def __init__(self, status_code: int, payload: dict[str, Any]):
         self.status_code = status_code
         self._payload = payload
-        self.url = "https://hub.docker.com/…"
+        self.url = "https://foo-hub-docker.com/"
         self.reason = "OK" if status_code == 200 else "Not Found"
 
     def raise_for_status(self) -> None:
@@ -151,7 +151,9 @@ def test_2000_dockerhub_request_info_strips_v_and_returns_json(
         assert url.endswith("/4.1.5")
         return _DummyResp(200, payload)
 
-    monkeypatch.setattr("skydriver.container_registry_tools.requests.get", fake_get)
+    monkeypatch.setattr(
+        "wipac_dev_tools.container_registry_tools.requests.get", fake_get
+    )
 
     dht = DockerHubRegistryTools("icecube", "skymap_scanner")
     info, tag = dht.request_info("v4.1.5")
@@ -167,7 +169,9 @@ def test_2010_dockerhub_request_info_http_error_raises(
     def fake_get(url: str) -> _DummyResp:  # noqa: ANN001
         return _DummyResp(404, {"detail": "not found"})
 
-    monkeypatch.setattr("skydriver.container_registry_tools.requests.get", fake_get)
+    monkeypatch.setattr(
+        "wipac_dev_tools.container_registry_tools.requests.get", fake_get
+    )
 
     dht = DockerHubRegistryTools("icecube", "skymap_scanner")
     with pytest.raises(ImageNotFoundException):
