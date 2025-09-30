@@ -41,7 +41,9 @@ def cvmfs_dir(tmp_path: Path) -> Path:
     does not correlate with filesystem age.
     """
     semver_order = ["4.1.5", "4.0.2", "3.9.9"]
-    junk = ["latest", "foo", "4.1", "4"]
+
+    # only junk that won't be parsed or matched as semver tags
+    junk = ["foo", "junk", "test-tag"]
 
     for tag in [*semver_order, *junk]:
         (tmp_path / f"skymap_scanner:{tag}").mkdir(parents=True)
