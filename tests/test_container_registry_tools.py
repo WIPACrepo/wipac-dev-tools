@@ -43,13 +43,13 @@ def cvmfs_dir(tmp_path: Path) -> Path:
     semver_order = ["4.1.5", "4.0.2", "3.9.9"]
 
     # only junk that won't be parsed or matched as semver tags
-    junk = ["foo", "junk", "test-tag"]
+    non_semvers = ["foo", "feat", "test-tag"]
 
-    for tag in [*semver_order, *junk]:
+    for tag in [*semver_order, *non_semvers]:
         (tmp_path / f"skymap_scanner:{tag}").mkdir(parents=True)
 
     # assign random mtimes
-    for tag in [*semver_order, *junk]:
+    for tag in [*semver_order, *non_semvers]:
         p = tmp_path / f"skymap_scanner:{tag}"
         mtime = time.time() + random.uniform(-10_000, 10_000)  # ± ~3 hours range
         os.utime(p, (mtime, mtime))
@@ -91,6 +91,7 @@ def test_1010_get_image_path_exists_and_missing(
 def test_1020_resolve_tag_exact(cvmfs_tools: CVMFSRegistryTools) -> None:
     """resolve_tag should return the tag unchanged if it exists exactly."""
     assert cvmfs_tools.resolve_tag("4.0.2") == "4.0.2"
+    assert cvmfs_tools.resolve_tag("foo") == "foo"
 
 
 def test_1030_resolve_tag_latest(cvmfs_tools: CVMFSRegistryTools) -> None:
