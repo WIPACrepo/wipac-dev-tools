@@ -62,25 +62,27 @@ class CVMFSRegistryTools:
         return dpath
 
     def iter_x_y_z_tags(self) -> Iterable[str]:
-        """Iterate over all 'X.Y.Z' skymap scanner tags on CVMFS, youngest to oldest."""
+        """Iterate over all 'X.Y.Z' skymap scanner tags on CVMFS, newest semver to oldest."""
+        x_y_z_tags: list[tuple[tuple[int, int, int], str]] = []
 
-        # grab all container dirs -- ordered by age
-        # ex: /cvmfs/icecube.opensciencegrid.org/containers/realtime/skymap_scanner:*
-        cvmfs_tags = sorted(
-            self.cvmfs_images_dir.glob(f"{self.image_name}:*"),
-            key=lambda x: x.stat().st_mtime,  # filesystem modification time
-            reverse=True,  # newest -> oldest
-        )
-
-        # yield only 'X.Y.Z' tags
-        for p in cvmfs_tags:
+        for p in self.cvmfs_images_dir.glob(f"{self.image_name}:*"):
             try:
                 tag = p.name.split(":", maxsplit=1)[1]
             except IndexError:
                 continue
             if not RE_VERSION_X_Y_Z.fullmatch(tag):
                 continue
-            # tag is a full 'X.Y.Z' tag
+            parts = tag.split(".")
+            x_y_z_tags.append(
+                (
+                    (int(parts[0]), int(parts[1]), int(parts[2])),
+                    tag,
+                )
+            )
+
+        # yield tags in reverse semver order (v4.0.1 before v3.9.8)
+        # -> sort by 'x_y_z' (tuple), yield 'tag' (str)
+        for _, tag in sorted(x_y_z_tags, key=lambda t: t[0], reverse=True):
             yield tag
 
     def resolve_tag(self, source_tag: str) -> str:
