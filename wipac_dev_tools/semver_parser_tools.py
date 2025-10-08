@@ -72,6 +72,10 @@ def get_latest_py3_release() -> Tuple[int, int]:
     return int(version.split(".")[0]), int(version.split(".")[1])
 
 
+class PythonVersionNotFoundException(Exception):
+    """Raised when a specific version of Python is not found."""
+
+
 def get_python_eol_ts(python_version: str) -> float:
     """Return the end-of-life timestamp of a python version.
 
@@ -88,7 +92,7 @@ def get_python_eol_ts(python_version: str) -> float:
             p for p in resp["result"]["releases"] if p["name"] == python_version
         )
     except StopIteration:
-        raise ValueError(f"no info on {python_version}")
+        raise PythonVersionNotFoundException(python_version)
 
     return parser.parse(info["eolFrom"]).timestamp()
 
