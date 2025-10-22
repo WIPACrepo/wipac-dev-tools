@@ -93,7 +93,7 @@ jobs:
       - uses: WIPACrepo/wipac-dev-recent-run-check-action@first
         id: recent
         with:
-          window-seconds: 901
+          window-seconds: 900
 
       - if: ${{ steps.recent.outputs.ran_recently == 'false' }}
         uses: WIPACrepo/wipac-dev-py-dependencies-action@v3.2
