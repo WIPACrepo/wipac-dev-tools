@@ -94,7 +94,7 @@ jobs:
         with:
           window-seconds: 900
       - if: ${{ steps.recent.outputs.ran_recently == 'false' }}
-        uses: WIPACrepo/wipac-dev-py-dependencies-action@v3.2
+        uses: WIPACrepo/wipac-dev-py-dependencies-action@v3.4
 
 
   ############################################################################
