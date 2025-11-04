@@ -75,7 +75,7 @@ jobs:
       - uses: WIPACrepo/wipac-dev-py-setup-action@v5.7
         with:
           mode: PACKAGING_AND_PYPI
-          python_min: 3.9
+          python_min: 3.10
           pypi_name: wipac-dev-tools
           author: WIPAC Developers
           author_email: developers@icecube.wisc.edu
