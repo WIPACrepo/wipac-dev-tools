@@ -150,6 +150,9 @@ class WIPACDevToolsFormatter(logging.Formatter):
     """A fairly detailed formatter that is similar to coloredlogs's format."""
 
     def __init__(self, include_line_location: bool = True):
+        """Args:
+        include_line_location - whether the include the source code location for each log line
+        """
         super().__init__(
             fmt=(
                 "%(asctime)s.%(msecs)03d [%(levelname)8s] %(name)s[%(process)d] %(message)s"
@@ -206,21 +209,24 @@ def set_level(
         )
         formatter = WIPACDevToolsFormatter()
 
-    if formatter:
-        # check if caller already attached a handler of our own type/name
-        # yes -> just update the formatter
-        if ours := [
-            h
-            for h in logging.getLogger().handlers
-            if getattr(h, "name", None) == _WDT_HANDLER
-        ]:
-            ours[0].setFormatter(formatter)  # override
-        # no -> add the new formatter
-        else:
-            handler = logging.StreamHandler()
-            handler.set_name(_WDT_HANDLER)  # see detection logic above
-            handler.setFormatter(formatter)
-            logging.getLogger().addHandler(handler)
+    # if no formatter was given, use 'WIPACDevToolsFormatter' but w/ no line locations
+    if not formatter:
+        formatter = WIPACDevToolsFormatter(include_line_location=False)
+
+    # check if caller already attached a handler of our own type/name
+    # yes -> just update the formatter
+    if ours := [
+        h
+        for h in logging.getLogger().handlers
+        if getattr(h, "name", None) == _WDT_HANDLER
+    ]:
+        ours[0].setFormatter(formatter)  # override
+    # no -> add the new formatter
+    else:
+        handler = logging.StreamHandler()
+        handler.set_name(_WDT_HANDLER)  # see detection logic above
+        handler.setFormatter(formatter)
+        logging.getLogger().addHandler(handler)
 
     if utc:
         logging.Formatter.converter = time.gmtime  # set logs to utc time
