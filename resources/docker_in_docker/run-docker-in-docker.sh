@@ -211,7 +211,7 @@ fi
 
 # Build the in-container loader command — load every tar
 if find "$saved_images_dir" -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
-    DIND_INNER_LOAD_CMD='find /saved-images -maxdepth 1 -type f -name "*.tar" -exec sh -c "echo Loading: {}; time docker load -i {}" \\;'
+    DIND_INNER_LOAD_CMD='for f in /saved-images/*.tar; do [[ -e "$f" ]] || break; echo "Loading: $f"; time docker load -i "$f"; done'
 else
     DIND_INNER_LOAD_CMD=""
 fi
