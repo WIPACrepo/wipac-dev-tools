@@ -46,18 +46,20 @@ print_env_var() {
     fi
 
     # Print nicely formatted entry
-    echo "║    - ${var}="
-    if [[ -n "$val" ]]; then
-        echo "║        ${val}"
-    else
-        echo "║        <unset>"
-    fi
-
+    # var name
     if [[ "$is_required" == "true" ]]; then
-        echo "║        (required) ${desc}"
+        echo "║    - $(printf '%-69s' "${var} (required)")║"
     else
-        echo "║        (optional) ${desc}"
+        echo "║    - $(printf '%-69s' "${var} (optional)")║"
     fi
+    # value
+    if [[ -n "$val" ]]; then
+        echo "║        $(printf '%-67s' "\"$val\"")║"
+    else
+        echo "║        $(printf '%-67s' "<unset>")║"
+    fi
+    # description
+    echo "║        $(printf '%-67s' "$desc")║"
 }
 
 print_env_var DIND_OUTER_IMAGE          true  "image to run as the outer (DIND) container"
