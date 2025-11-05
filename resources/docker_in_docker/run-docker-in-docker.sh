@@ -49,7 +49,9 @@ print_env_var() {
     fi
 
     # Print nicely formatted entry
+    # name
     echo "║    - $(printf '%-69s' "${var}")║"
+    # value
     if [[ -n "$val" ]]; then
         # strip ANSI codes for length comparison
         local clean
@@ -63,11 +65,13 @@ print_env_var() {
     else
         echo "║        $(printf '%-67s' "<unset>")║"
     fi
+    # desc
     echo "║        $(printf '%-67s' "$desc")║"
+    # is_required?
     if [[ "$is_required" == "true" ]]; then
-        echo "║    $(printf '%-67s' "${var} [required]")║"
+        echo "║        $(printf '%-67s' "[required]")║"
     else
-        echo "║    $(printf '%-67s' "${var} [optional]")║"
+        echo "║        $(printf '%-67s' "[optional]")║"
     fi
 }
 
