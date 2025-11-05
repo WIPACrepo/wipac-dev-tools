@@ -62,7 +62,10 @@ set -x
 ########################################################################
 # Install Apptainer build dependencies
 ########################################################################
-sudo apt-get update
+if [[ $(find /var/lib/apt/lists -type f -mtime -1 | wc -l) -eq 0 ]]; then
+    # only if apt lists are older than 1 day
+    sudo apt-get update
+fi
 sudo apt-get install -y \
     build-essential \
     libseccomp-dev \

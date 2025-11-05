@@ -67,7 +67,10 @@ if ! command -v sysbox-runc >/dev/null 2>&1; then
 
     wget https://downloads.nestybox.com/sysbox/releases/v0.6.4/sysbox-ce_0.6.4-0.linux_amd64.deb
     docker rm $(docker ps -a -q) -f || echo "ok: no docker containers to remove"
-    sudo apt-get update
+    if [[ $(find /var/lib/apt/lists -type f -mtime -1 | wc -l) -eq 0 ]]; then
+        # only if apt lists are older than 1 day
+        sudo apt-get update
+    fi
     sudo apt-get install -y jq ./sysbox-ce_0.6.4-0.linux_amd64.deb
 else
     echo "Sysbox runtime already installed."
