@@ -138,6 +138,8 @@ stage_tar_file() {
     local dest
     dest="$saved_images_dir/$(basename "$src")"
 
+    echo "Staging tar '$src' to '$dest'..."
+
     if [[ -e "$dest" ]]; then
         echo "::error::basename conflict: '$dest' already exists; cannot stage '$src'"
         exit 1
@@ -154,6 +156,8 @@ tarify_image_then_stage() {
     tar_path="$saved_images_dir/${safe_name}.tar"
     lockfile="$tar_path.lock"
 
+    echo "Saving image '$img' to '$tar_path'..."
+
     if [[ -e "$tar_path" ]]; then
         echo "::error::basename conflict: '$tar_path' already exists; cannot save image '$img'"
         exit 1
@@ -162,7 +166,6 @@ tarify_image_then_stage() {
     exec {lockfd}> "$lockfile"
     flock "$lockfd"
     if [[ ! -s "$tar_path" ]]; then
-        echo "Saving image '$img' to '$tar_path'..."
 
         # Verify image exists before trying to save
         if ! docker image inspect "$img" >/dev/null 2>&1; then
@@ -182,6 +185,8 @@ tarify_image_then_stage() {
 
         [[ -s "$tmp_out" ]] || { echo "::error::empty tar produced for $img"; rm -f "$tmp_out" "$lockfile"; flock -u "$lockfd"; exit 1; }
         mv -f "$tmp_out" "$tar_path"
+    else
+        echo "> ok: image '$img' already exists at '$tar_path'."
     fi
     flock -u "$lockfd"
     rm -f "$lockfile" || true
@@ -195,18 +200,18 @@ if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
                 echo "::error::'$token' (file from 'DIND_INNER_IMAGES_TO_FORWARD') must be either a .tar file or docker image."
                 exit 1
             else
-                stage_tar_file "$(realpath "$token")"
+                time stage_tar_file "$(realpath "$token")"
             fi
         else
             # assume this is a docker image
-            tarify_image_then_stage "$token"
+            time tarify_image_then_stage "$token"
         fi
     done
 fi
 
 # Build the in-container loader command — load every tar
 if find "$saved_images_dir" -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
-    DIND_INNER_LOAD_CMD='find /saved-images -maxdepth 1 -type f -name "*.tar" -exec docker load -i {} \;'
+    DIND_INNER_LOAD_CMD='find /saved-images -maxdepth 1 -type f -name "*.tar" -exec sh -c "echo Loading: {}; time docker load -i {}" \\;'
 else
     DIND_INNER_LOAD_CMD=""
 fi
