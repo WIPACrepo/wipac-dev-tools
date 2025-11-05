@@ -114,47 +114,6 @@ if [[ -z "${DIND_OUTER_CMD:-}" ]]; then
 fi
 
 ########################################################################
-# Resolve images/files into a list of absolute tar paths
-########################################################################
-
-to_save_list=()
-absolute_tar_list=()
-
-# Tokenize respecting simple spaces (user supplies space-separated entries)
-for token in ${DIND_INNER_IMAGES_TO_FORWARD}; do
-    if [[ -f "$token" ]]; then
-        # An existing tar file
-        absolute_tar_list+=( "$(realpath "$token")" )
-    else
-        # Assume docker image ref; will save as .tar into cache
-        to_save_list+=( "$token" )
-    fi
-done
-
-# Save any images to cache as .tar, lock-protected
-saved_tar_list=()
-for img in "${to_save_list[@]}"; do
-    safe_name="$(echo "$img" | tr '/:' '--')"
-    tar_path="$saved_images_dir/${safe_name}.tar"
-    lockfile="$tar_path.lock"
-
-    if [[ ! -s "$tar_path" ]]; then
-        exec {lockfd}> "$lockfile"
-        flock "$lockfd"
-        if [[ ! -s "$tar_path" ]]; then
-            echo "Saving image '$img' to '$tar_path'..."
-            tmp_out="$(mktemp "$tar_path.XXXXXX")"
-            docker image inspect "$img" >/dev/null
-            docker save -o "$tmp_out" "$img"
-            mv -f "$tmp_out" "$tar_path"
-        fi
-        flock -u "$lockfd"
-        rm -f "$lockfile" || true
-    fi
-    saved_tar_list+=( "$tar_path" )
-done
-
-########################################################################
 # Prepare host dirs for inner Docker writable layers & temp
 ########################################################################
 if [[ -z "${DIND_HOST_BASE:-}" ]]; then
@@ -169,32 +128,50 @@ inner_docker_tmp="$DIND_HOST_BASE/tmp"
 mkdir -p "$inner_docker_root" "$inner_docker_tmp"
 
 ########################################################################
-# Compute container-visible tar paths and volume mounts
+# inner images: resolve tokens → save if image → build paths & mounts
 ########################################################################
 
-# Tars created from local Docker images — these will live in the shared cache
-# and will be visible inside the container at /saved-images/<basename>
-container_tar_paths=()
-for tar_path in "${saved_tar_list[@]}"; do
-    container_tar_paths+=( "/saved-images/$(basename "$tar_path")" )
-done
-
-# Tars that already exist on disk (user-supplied absolute paths)
-# These will be mounted directly into the container at the same absolute path
+FORWARD_TAR_PATHS=""
 abs_tar_volume_flags=()
-for abs_path in "${absolute_tar_list[@]}"; do
-    container_tar_paths+=( "$abs_path" )
-    abs_tar_volume_flags+=( "-v" "$abs_path:$abs_path:ro" )
+
+for token in ${DIND_INNER_IMAGES_TO_FORWARD}; do
+    if [[ -f "$token" ]]; then
+        # Existing tar file → mount at same absolute path and forward that path
+        abs_path="$(readlink -f "$token" 2>/dev/null || python3 -c 'import os,sys;print(os.path.abspath(sys.argv[1]))' "$token")"
+        abs_tar_volume_flags+=( "-v" "$abs_path:$abs_path:ro" )
+        FORWARD_TAR_PATHS+=" $abs_path"
+    else
+        # Docker image ref → save (no compression) into cache if missing, then forward /saved-images/<basename>
+        safe_name="$(echo "$token" | tr '/:' '--')"
+        tar_path="$saved_images_dir/${safe_name}.tar"
+        lockfile="$tar_path.lock"
+
+        if [[ ! -s "$tar_path" ]]; then
+            exec {lockfd}> "$lockfile"
+            flock "$lockfd"
+            if [[ ! -s "$tar_path" ]]; then
+                echo "Saving image '$token' to '$tar_path'..."
+                tmp_out="$(mktemp "$tar_path.XXXXXX")"
+                docker image inspect "$token" >/dev/null
+                docker save -o "$tmp_out" "$token"
+                mv -f "$tmp_out" "$tar_path"
+            fi
+            flock -u "$lockfd"
+            rm -f "$lockfile" || true
+        fi
+
+        FORWARD_TAR_PATHS+=" /saved-images/$(basename "$tar_path")"
+    fi
 done
 
-# Join container tar paths into a single space-separated string for env
-FORWARD_TAR_PATHS="${container_tar_paths[*]}"
+# Trim leading space if present
+FORWARD_TAR_PATHS="${FORWARD_TAR_PATHS# }"
 
 # Build the in-container loader command
 if [[ -n "${FORWARD_TAR_PATHS:-}" ]]; then
     DIND_INNER_LOAD_CMD='for t in ${FORWARD_TAR_PATHS}; do docker load -i "$t"; done'
 else
-    DIND_INNER_LOAD_CMD="echo 'ok: No tar paths were provided/resolved.'"
+    DIND_INNER_LOAD_CMD="echo 'ok: No .tar image paths were provided/resolved.'"
 fi
 
 ########################################################################
