@@ -54,7 +54,14 @@ print_env_var() {
     fi
     # value
     if [[ -n "$val" ]]; then
-        echo "║        $(printf '%-67s' "\"$val\"")║"
+        # strip ANSI codes for length comparison
+        local clean="$(echo -e "$val" | sed 's/\x1b\[[0-9;]*m//g')"
+        if (( ${#clean} > 67 )); then
+            # if too long, print raw (no right border)
+            echo "║        \"$val\""
+        else
+            echo "║        $(printf '%-67s' "\"$val\"")║"
+        fi
     else
         echo "║        $(printf '%-67s' "<unset>")║"
     fi

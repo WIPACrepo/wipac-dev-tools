@@ -45,10 +45,10 @@ echo
 # Section 1 — Print system & Docker info
 ########################################################################
 echo
-echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "╔═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╗"
 echo "$_ECHO_HEADER"
 echo "║                      Checking Docker Installation...                      ║"
-echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo "╚═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╝"
 docker --version
 echo "Docker CLI check complete."
 
@@ -56,10 +56,10 @@ echo "Docker CLI check complete."
 # Section 2 — Install Sysbox (if missing)
 ########################################################################
 echo
-echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "╔═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╗"
 echo "$_ECHO_HEADER"
 echo "║                       Installing Sysbox Runtime...                        ║"
-echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo "╚═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╝"
 if ! command -v sysbox-runc >/dev/null 2>&1; then
     echo "Sysbox not found — installing..."
     temp_dir=$(mktemp -d)
@@ -78,10 +78,10 @@ echo "Sysbox installation step complete."
 # Section 3 — Verify Sysbox service
 ########################################################################
 echo
-echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "╔═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╗"
 echo "$_ECHO_HEADER"
 echo "║                        Verifying Sysbox Service...                        ║"
-echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo "╚═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╝"
 if ! systemctl is-active --quiet sysbox; then
     echo "::error::Sysbox could not be activated."
     sudo systemctl status sysbox -n20 || true
@@ -96,10 +96,10 @@ echo "Sysbox verification step complete."
 # Section 4 — Create Docker network
 ########################################################################
 echo
-echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "╔═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╗"
 echo "$_ECHO_HEADER"
 echo "║                        Creating Docker Network...                         ║"
-echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo "╚═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╝"
 if ! docker network inspect "$DOCKER_NETWORK_NAME" >/dev/null 2>&1; then
     echo "Creating docker network: $DOCKER_NETWORK_NAME"
     docker network create "$DOCKER_NETWORK_NAME"
