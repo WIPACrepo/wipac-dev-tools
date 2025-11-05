@@ -62,7 +62,7 @@ set -x
 ########################################################################
 # Install Apptainer build dependencies
 ########################################################################
-if [[ $(find /var/lib/apt/lists -type f -mtime -1 | wc -l) -eq 0 ]]; then
+if [[ $(sudo find /var/lib/apt/lists -type f -mtime -1 | wc -l) -eq 0 ]]; then
     # only if apt lists are older than 1 day
     sudo apt-get update
 fi
