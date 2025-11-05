@@ -74,9 +74,9 @@ print_env_var() {
 # Required
 print_env_var DIND_OUTER_IMAGE                 true  "image to run as the outer (DIND) container"
 print_env_var DIND_NETWORK                     true  "docker network name for the outer container"
-print_env_var DIND_INNER_IMAGES_TO_FORWARD     true  "space-separated image refs or absolute .tar paths"
 
 # Optional
+print_env_var DIND_INNER_IMAGES_TO_FORWARD     false "space-separated image refs or absolute .tar paths"
 print_env_var DIND_FORWARD_ENV_PREFIXES        false "space-separated prefixes to forward"
 print_env_var DIND_FORWARD_ENV_VARS            false "space-separated exact var names to forward"
 print_env_var DIND_BIND_RO_DIRS                false "space-separated host dirs to bind read-only at same path"
@@ -187,20 +187,22 @@ tarify_image_then_stage() {
     rm -f "$lockfile" || true
 }
 
-for token in ${DIND_INNER_IMAGES_TO_FORWARD:-}; do
-    if [[ -f "$token" ]]; then
-        # file must be a .tar file
-        if [[ "$token" != *.tar ]]; then
-            echo "::error::'$token' (file from 'DIND_INNER_IMAGES_TO_FORWARD') must be either a .tar file or docker image."
-            exit 1
+if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
+    for token in ${DIND_INNER_IMAGES_TO_FORWARD}; do
+        if [[ -f "$token" ]]; then
+            # file must be a .tar file
+            if [[ "$token" != *.tar ]]; then
+                echo "::error::'$token' (file from 'DIND_INNER_IMAGES_TO_FORWARD') must be either a .tar file or docker image."
+                exit 1
+            else
+                stage_tar_file "$(realpath "$token")"
+            fi
         else
-            stage_tar_file "$(realpath "$token")"
+            # assume this is a docker image
+            tarify_image_then_stage "$token"
         fi
-    else
-        # assume this is a docker image
-        tarify_image_then_stage "$token"
-    fi
-done
+    done
+fi
 
 # Build the in-container loader command — load every tar
 if find /saved-images -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
