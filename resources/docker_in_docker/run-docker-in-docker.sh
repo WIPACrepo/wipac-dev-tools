@@ -116,18 +116,6 @@ fi
 ########################################################################
 # Resolve images/files into a list of absolute tar paths
 ########################################################################
-_realpath() {
-    # portable realpath
-    if command -v realpath >/dev/null 2>&1; then
-        realpath "$1"
-    else
-        # best-effort fallback
-        python3 - <<'PY'
-import os, sys
-print(os.path.abspath(sys.argv[1]))
-PY
-    fi
-}
 
 to_save_list=()
 absolute_tar_list=()
@@ -136,14 +124,14 @@ absolute_tar_list=()
 for token in ${DIND_INNER_IMAGES_TO_FORWARD}; do
     if [[ -f "$token" ]]; then
         # An existing tar file
-        absolute_tar_list+=( "$(_realpath "$token")" )
+        absolute_tar_list+=( "$(realpath "$token")" )
     else
         # Assume docker image ref; will save as .tar into cache
         to_save_list+=( "$token" )
     fi
 done
 
-# Save any images to cache as .tar (no compression), lock-protected
+# Save any images to cache as .tar, lock-protected
 saved_tar_list=()
 for img in "${to_save_list[@]}"; do
     safe_name="$(echo "$img" | tr '/:' '--')"
@@ -181,29 +169,36 @@ inner_docker_tmp="$DIND_HOST_BASE/tmp"
 mkdir -p "$inner_docker_root" "$inner_docker_tmp"
 
 ########################################################################
-# Compute container-visible tar paths and mounts
+# Compute container-visible tar paths and volume mounts
 ########################################################################
-# All tars saved to cache will be visible under /saved-images/<basename>
+
+# Tars created from local Docker images — these will live in the shared cache
+# and will be visible inside the container at /saved-images/<basename>
 container_tar_paths=()
-for p in "${saved_tar_list[@]}"; do
-    container_tar_paths+=( "/saved-images/$(basename "$p")" )
-done
-# Pre-supplied absolute tars must be bind-mounted at the same absolute path
-for p in "${absolute_tar_list[@]}"; do
-    container_tar_paths+=( "$p" )
+for tar_path in "${saved_tar_list[@]}"; do
+    container_tar_paths+=( "/saved-images/$(basename "$tar_path")" )
 done
 
-# Build volume flags for pre-supplied absolute tars
+# Tars that already exist on disk (user-supplied absolute paths)
+# These will be mounted directly into the container at the same absolute path
 abs_tar_volume_flags=()
-for p in "${absolute_tar_list[@]}"; do
-    abs_tar_volume_flags+=( "-v" "$p:$p:ro" )
+for abs_path in "${absolute_tar_list[@]}"; do
+    container_tar_paths+=( "$abs_path" )
+    abs_tar_volume_flags+=( "-v" "$abs_path:$abs_path:ro" )
 done
 
 # Join container tar paths into a single space-separated string for env
 FORWARD_TAR_PATHS="${container_tar_paths[*]}"
 
+# Build the in-container loader command
+if [[ -n "${FORWARD_TAR_PATHS:-}" ]]; then
+    DIND_INNER_LOAD_CMD='for t in ${FORWARD_TAR_PATHS}; do docker load -i "$t"; done'
+else
+    DIND_INNER_LOAD_CMD="echo 'ok: No tar paths were provided/resolved.'"
+fi
+
 ########################################################################
-# Run outer container: load all tars, then exec DIND_OUTER_CMD
+# Run outer container: load images (if any), then exec user command
 ########################################################################
 echo
 echo "╔═══════════════════════════════════════════════════════════════════════════╗"
@@ -257,14 +252,7 @@ docker run --rm --privileged \
     \
     "$DIND_OUTER_IMAGE" /bin/bash -c "\
         set -euo pipefail; \
-        if [[ -n \"\${FORWARD_TAR_PATHS:-}\" ]]; then \
-            for t in \${FORWARD_TAR_PATHS}; do \
-                echo \"Loading: \$t\"; \
-                docker load -i \"\$t\"; \
-            done; \
-        else \
-            echo '::warning::No tar paths were provided/resolved.'; \
-        fi; \
+        $DIND_INNER_LOAD_CMD; \
         exec $DIND_OUTER_CMD \
     "
 
