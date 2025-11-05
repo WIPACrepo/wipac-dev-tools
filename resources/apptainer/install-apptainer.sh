@@ -1,11 +1,43 @@
 #!/bin/bash
 set -euo pipefail
-echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+
+########################################################################
+# Apptainer Installation Script
+#
+# Installs Apptainer from source along with dependencies
+# following the official installation guide:
+# https://github.com/apptainer/apptainer/blob/main/INSTALL.md
+########################################################################
+
+APPTAINER_VERSION="v1.3.2"
+
+echo
+echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "║                                                                           ║"
+_ECHO_HEADER="║               Apptainer Install Utility — WIPAC Developers                ║"
+echo "$_ECHO_HEADER"
+echo "║                                                                           ║"
+echo "╠═══════════════════════════════════════════════════════════════════════════╣"
+echo "║  Host System Info:                                                        ║"
+echo "║    - Host:      $(printf '%-58s' "$(hostname)")║"
+echo "║    - User:      $(printf '%-58s' "$(whoami)")║"
+echo "║    - Kernel:    $(printf '%-58s' "$(uname -r)")║"
+echo "║    - Platform:  $(printf '%-58s' "$(uname -s) $(uname -m)")║"
+echo "║    - OS:        $(printf '%-58s' "$(lsb_release -ds 2>/dev/null || echo 'Unknown OS')")║"
+echo "║    - Timestamp: $(printf '%-58s' "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")")║"
+echo "╠═══════════════════════════════════════════════════════════════════════════╣"
+echo "║  This script will:                                                        ║"
+echo "║   - Install all required Apptainer build dependencies                     ║"
+echo "║   - Clone Apptainer from GitHub and build version $(printf '%-24s' "$APPTAINER_VERSION")║"
+echo "║   - Install AppArmor profile (Ubuntu 23.10+ only)                         ║"
+echo "║   - Install squashfuse for running .sif files                             ║"
+echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo
+
 set -x
 
 ########################################################################
 # Install Apptainer build dependencies
-# https://github.com/apptainer/apptainer/blob/main/INSTALL.md#installing-apptainer
 ########################################################################
 sudo apt-get update
 sudo apt-get install -y \
@@ -25,7 +57,7 @@ sudo apt-get install -y \
 ########################################################################
 git clone https://github.com/apptainer/apptainer.git
 cd apptainer
-git checkout v1.3.2
+git checkout "$APPTAINER_VERSION"
 ./mconfig
 cd $(/bin/pwd)/builddir
 make
@@ -34,7 +66,6 @@ apptainer --version
 
 ########################################################################
 # Add AppArmor profile (Ubuntu 23.10+)
-# https://github.com/apptainer/apptainer/blob/main/INSTALL.md#apparmor-profile-ubuntu-2310
 ########################################################################
 sudo tee /etc/apparmor.d/apptainer << 'EOF'
 # Permit unprivileged user namespace creation for apptainer starter
@@ -54,3 +85,13 @@ sudo systemctl reload apparmor
 ########################################################################
 sudo apt-get update
 sudo apt-get install -y squashfuse
+
+set +x
+echo
+echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "$_ECHO_HEADER"
+echo "║                            Installation Done.                             ║"
+echo "╠═══════════════════════════════════════════════════════════════════════════╣"
+echo "║  Version:   $(printf '%-62s' "$(apptainer --version 2>/dev/null || echo 'installed')")║"
+echo "║  Location:  $(printf '%-62s' "$(command -v apptainer 2>/dev/null || echo '/usr/local/bin/apptainer')")║"
+echo "╚═══════════════════════════════════════════════════════════════════════════╝"
