@@ -128,46 +128,67 @@ inner_docker_tmp="$DIND_HOST_BASE/tmp"
 mkdir -p "$inner_docker_root" "$inner_docker_tmp"
 
 ########################################################################
-# inner images: resolve tokens → save if image → build paths & mounts
+# inner images: resolve tokens → stage/save into single cache dir
+# - All files end up directly under $saved_images_dir
+# - If a file with the same name already exists there → ERROR
 ########################################################################
 
-FORWARD_TAR_PATHS=""
-abs_tar_volume_flags=()
+stage_tar_file() {
+    local src="$1"
+    local dest
+    dest="$saved_images_dir/$(basename "$src")"
 
-for token in ${DIND_INNER_IMAGES_TO_FORWARD}; do
+    if [[ -e "$dest" ]]; then
+        echo "::error::basename conflict: '$dest' already exists; cannot stage '$src'"
+        exit 1
+    fi
+
+    # symlink, fallback to cp
+    ln "$src" "$dest" 2>/dev/null || cp -f "$src" "$dest"
+}
+
+tarify_image_then_stage() {
+    local img="$1"
+    local safe_name tar_path lockfile tmp_out
+    safe_name="$(echo "$img" | tr '/:' '--')"
+    tar_path="$saved_images_dir/${safe_name}.tar"
+    lockfile="$tar_path.lock"
+
+    if [[ -e "$tar_path" ]]; then
+        echo "::error::basename conflict: '$tar_path' already exists; cannot save image '$img'"
+        exit 1
+    fi
+
+    exec {lockfd}> "$lockfile"
+    flock "$lockfd"
+    if [[ ! -s "$tar_path" ]]; then
+        echo "Saving image '$img' to '$tar_path'..."
+        tmp_out="$(mktemp "$tar_path.XXXXXX")"
+        docker image inspect "$img" >/dev/null
+        docker save -o "$tmp_out" "$img"
+        [[ -s "$tmp_out" ]] || { echo "::error::empty tar produced for $img"; exit 1; }
+        mv -f "$tmp_out" "$tar_path"
+    fi
+    flock -u "$lockfd"
+    rm -f "$lockfile" || true
+}
+
+for token in ${DIND_INNER_IMAGES_TO_FORWARD:-}; do
     if [[ -f "$token" ]]; then
-        # Existing tar file → mount at same absolute path and forward that path
-        abs_path="$(readlink -f "$token" 2>/dev/null || python3 -c 'import os,sys;print(os.path.abspath(sys.argv[1]))' "$token")"
-        abs_tar_volume_flags+=( "-v" "$abs_path:$abs_path:ro" )
-        FORWARD_TAR_PATHS+=" $abs_path"
-    else
-        # Docker image ref → save (no compression) into cache if missing, then forward /saved-images/<basename>
-        safe_name="$(echo "$token" | tr '/:' '--')"
-        tar_path="$saved_images_dir/${safe_name}.tar"
-        lockfile="$tar_path.lock"
-
-        if [[ ! -s "$tar_path" ]]; then
-            exec {lockfd}> "$lockfile"
-            flock "$lockfd"
-            if [[ ! -s "$tar_path" ]]; then
-                echo "Saving image '$token' to '$tar_path'..."
-                tmp_out="$(mktemp "$tar_path.XXXXXX")"
-                docker image inspect "$token" >/dev/null
-                docker save -o "$tmp_out" "$token"
-                mv -f "$tmp_out" "$tar_path"
-            fi
-            flock -u "$lockfd"
-            rm -f "$lockfile" || true
+        # file must be a .tar file
+        if [[ "$token" != *.tar ]]; then
+            echo "::error::'$token' (file from 'DIND_INNER_IMAGES_TO_FORWARD') must be either a .tar file or docker image."
+            exit 1
+        else
+            stage_tar_file "$(realpath "$token")"
         fi
-
-        FORWARD_TAR_PATHS+=" /saved-images/$(basename "$tar_path")"
+    else
+        # assume this is a docker image
+        tarify_image_then_stage "$token"
     fi
 done
 
-# Trim leading space if present
-FORWARD_TAR_PATHS="${FORWARD_TAR_PATHS# }"
-
-# Build the in-container loader command
+# Build the in-container loader command — load every tar
 if [[ -n "${FORWARD_TAR_PATHS:-}" ]]; then
     DIND_INNER_LOAD_CMD='find /saved-images -maxdepth 1 -type f -name "*.tar" -exec docker load -i {} \;'
 else
