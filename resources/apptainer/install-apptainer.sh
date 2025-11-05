@@ -7,9 +7,28 @@ set -euo pipefail
 # Installs Apptainer from source along with dependencies
 # following the official installation guide:
 # https://github.com/apptainer/apptainer/blob/main/INSTALL.md
+#
+# Optional flag:
+#   --sif   Install squashfuse (needed for running .sif files directly)
 ########################################################################
 
 APPTAINER_VERSION="v1.3.2"
+
+INSTALL_SQUASHFUSE=false # default value. see below
+
+# Parse args
+for arg in "$@"; do
+    case "$arg" in
+        --sif)
+            INSTALL_SQUASHFUSE=true
+            ;;
+        *)
+            echo "::error::Unknown argument: $arg"
+            echo "Usage: $0 [--sif]"
+            exit 1
+            ;;
+    esac
+done
 
 echo
 echo "╔═══════════════════════════════════════════════════════════════════════════╗"
@@ -29,8 +48,12 @@ echo "╠═══════════════════════�
 echo "║  This script will:                                                        ║"
 echo "║   - Install all required Apptainer build dependencies                     ║"
 echo "║   - Clone Apptainer from GitHub and build version $(printf '%-24s' "$APPTAINER_VERSION")║"
+if [[ "$INSTALL_SQUASHFUSE" == true ]]; then
+    echo "║   - Install squashfuse for running .sif files                             ║"
+else
+    echo "║   - Skip squashfuse installation (use --sif to include)                   ║"
+fi
 echo "║   - Install AppArmor profile (Ubuntu 23.10+ only)                         ║"
-echo "║   - Install squashfuse for running .sif files                             ║"
 echo "╚═══════════════════════════════════════════════════════════════════════════╝"
 echo
 
@@ -81,10 +104,11 @@ EOF
 sudo systemctl reload apparmor
 
 ########################################################################
-# Install squashfuse (required for running .sif directly)
+# Optionally install squashfuse (required for running .sif directly)
 ########################################################################
-sudo apt-get update
-sudo apt-get install -y squashfuse
+if [[ "$INSTALL_SQUASHFUSE" == true ]]; then
+    sudo apt-get install -y squashfuse
+fi
 
 set +x
 echo
@@ -94,4 +118,9 @@ echo "║                            Installation Done.                         
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
 echo "║  Version:   $(printf '%-62s' "$(apptainer --version 2>/dev/null || echo 'installed')")║"
 echo "║  Location:  $(printf '%-62s' "$(command -v apptainer 2>/dev/null || echo '/usr/local/bin/apptainer')")║"
+if [[ "$INSTALL_SQUASHFUSE" == true ]]; then
+    echo "║  squashfuse: $(printf '%-62s' "installed")║"
+else
+    echo "║  squashfuse: $(printf '%-62s' "skipped (--sif not provided)")║"
+fi
 echo "╚═══════════════════════════════════════════════════════════════════════════╝"
