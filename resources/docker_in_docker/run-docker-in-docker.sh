@@ -67,25 +67,21 @@ print_env_var() {
     fi
     # desc
     echo "║        $(printf '%-67s' "$desc")║"
-    # is_required?
-    if [[ "$is_required" == "true" ]]; then
-        echo "║        $(printf '%-67s' "[required]")║"
-    else
-        echo "║        $(printf '%-67s' "[optional]")║"
-    fi
 }
 
 # Required
+echo "║  [Required]                                                               ║"
 print_env_var DIND_OUTER_IMAGE                 true  "image to run as the outer (DIND) container"
 print_env_var DIND_NETWORK                     true  "docker network name for the outer container"
 
 # Optional
+echo "║  [Optional]                                                               ║"
 print_env_var DIND_INNER_IMAGES_TO_FORWARD     false "space-separated image refs or absolute .tar paths"
 print_env_var DIND_FORWARD_ENV_PREFIXES        false "space-separated prefixes to forward"
 print_env_var DIND_FORWARD_ENV_VARS            false "space-separated exact var names to forward"
 print_env_var DIND_BIND_RO_DIRS                false "space-separated host dirs to bind read-only at same path"
 print_env_var DIND_BIND_RW_DIRS                false "space-separated host dirs to bind read-write at same path"
-print_env_var DIND_OUTER_CMD                   false "command run inside outer container AFTER docker loads (default: bash)"
+print_env_var DIND_OUTER_CMD                   false "command run inside outer container AFTER docker loads"
 print_env_var DIND_CACHE_ROOT                  false "path to store auto-saved image tars (default: ~/.cache/dind)"
 print_env_var DIND_HOST_BASE                   false "base path for inner Docker storage"
 print_env_var DIND_EXTRA_ARGS                  false "extra args appended to docker run"
