@@ -47,11 +47,7 @@ print_env_var() {
 
     # Print nicely formatted entry
     # var name
-    if [[ "$is_required" == "true" ]]; then
-        echo "║    - $(printf '%-69s' "${var} (required)")║"
-    else
-        echo "║    - $(printf '%-69s' "${var} (optional)")║"
-    fi
+    echo "║    - $(printf '%-69s' "${var}")║"
     # value
     if [[ -n "$val" ]]; then
         # strip ANSI codes for length comparison
@@ -67,6 +63,12 @@ print_env_var() {
     fi
     # description
     echo "║        $(printf '%-67s' "$desc")║"
+    # required?
+    if [[ "$is_required" == "true" ]]; then
+        echo "║    $(printf '%-67s' "${var} [required]")║"
+    else
+        echo "║    $(printf '%-67s' "${var} [optional]")║"
+    fi
 }
 
 print_env_var DIND_OUTER_IMAGE          true  "image to run as the outer (DIND) container"
