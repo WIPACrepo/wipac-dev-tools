@@ -163,10 +163,24 @@ tarify_image_then_stage() {
     flock "$lockfd"
     if [[ ! -s "$tar_path" ]]; then
         echo "Saving image '$img' to '$tar_path'..."
+
+        # Verify image exists before trying to save
+        if ! docker image inspect "$img" >/dev/null 2>&1; then
+            echo "::error::'$img' is not a valid local image (docker image inspect failed)"
+            flock -u "$lockfd"
+            rm -f "$lockfile" || true
+            exit 1
+        fi
+
         tmp_out="$(mktemp "$tar_path.XXXXXX")"
-        docker image inspect "$img" >/dev/null
-        docker save -o "$tmp_out" "$img"
-        [[ -s "$tmp_out" ]] || { echo "::error::empty tar produced for $img"; exit 1; }
+        if ! docker save -o "$tmp_out" "$img" >/dev/null 2>&1; then
+            echo "::error::Failed to save image '$img' to tarball."
+            rm -f "$tmp_out" "$lockfile" || true
+            flock -u "$lockfd"
+            exit 1
+        fi
+
+        [[ -s "$tmp_out" ]] || { echo "::error::empty tar produced for $img"; rm -f "$tmp_out" "$lockfile"; flock -u "$lockfd"; exit 1; }
         mv -f "$tmp_out" "$tar_path"
     fi
     flock -u "$lockfd"
@@ -189,7 +203,7 @@ for token in ${DIND_INNER_IMAGES_TO_FORWARD:-}; do
 done
 
 # Build the in-container loader command — load every tar
-if [[ -n "${FORWARD_TAR_PATHS:-}" ]]; then
+if find /saved-images -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
     DIND_INNER_LOAD_CMD='find /saved-images -maxdepth 1 -type f -name "*.tar" -exec docker load -i {} \;'
 else
     DIND_INNER_LOAD_CMD=""
