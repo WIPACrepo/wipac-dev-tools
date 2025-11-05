@@ -169,14 +169,28 @@ FORWARD_TAR_PATHS="${FORWARD_TAR_PATHS# }"
 
 # Build the in-container loader command
 if [[ -n "${FORWARD_TAR_PATHS:-}" ]]; then
-    DIND_INNER_LOAD_CMD='for t in ${FORWARD_TAR_PATHS}; do docker load -i "$t"; done'
+    DIND_INNER_LOAD_CMD='find /saved-images -maxdepth 1 -type f -name "*.tar" -exec docker load -i {} \;'
 else
-    DIND_INNER_LOAD_CMD="echo 'ok: No .tar image paths were provided/resolved.'"
+    DIND_INNER_LOAD_CMD=""
 fi
 
 ########################################################################
 # Run outer container: load images (if any), then exec user command
 ########################################################################
+
+if [[ -n "${DIND_INNER_LOAD_CMD:-}" ]]; then
+    _CMD="\
+        set -euo pipefail; \
+        $DIND_INNER_LOAD_CMD; \
+        exec $DIND_OUTER_CMD \
+    "
+else
+    _CMD="\
+        set -euo pipefail; \
+        exec $DIND_OUTER_CMD \
+    "
+fi
+
 echo
 echo "╔═══════════════════════════════════════════════════════════════════════════╗"
 echo "$_ECHO_HEADER"
@@ -198,8 +212,6 @@ docker run --rm --privileged \
     -v "$inner_docker_root:/var/lib/docker" \
     -v "$inner_docker_tmp:$inner_docker_tmp" \
     -e DOCKER_TMPDIR="$inner_docker_tmp" \
-    \
-    -e FORWARD_TAR_PATHS="$FORWARD_TAR_PATHS" \
     \
     $( \
         for d in ${DIND_BIND_RO_DIRS:-}; do \
@@ -227,11 +239,7 @@ docker run --rm --privileged \
     \
     $( [[ -n "${DIND_EXTRA_ARGS:-}" ]] && echo "$DIND_EXTRA_ARGS" ) \
     \
-    "$DIND_OUTER_IMAGE" /bin/bash -c "\
-        set -euo pipefail; \
-        $DIND_INNER_LOAD_CMD; \
-        exec $DIND_OUTER_CMD \
-    "
+    "$DIND_OUTER_IMAGE" /bin/bash -c "$_CMD"
 
 set +x
 echo
