@@ -119,11 +119,11 @@ echo "╔═══════════════════════�
 echo "$_ECHO_HEADER"
 echo "║                            Installation Done.                             ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
-echo "║  Version:   $(printf '%-62s' "$(apptainer --version 2>/dev/null || echo 'installed')")║"
-echo "║  Location:  $(printf '%-62s' "$(command -v apptainer 2>/dev/null || echo '/usr/local/bin/apptainer')")║"
+echo "║  Version:    $(printf '%-61s' "$(apptainer --version 2>/dev/null || echo 'installed')")║"
+echo "║  Location:   $(printf '%-61s' "$(command -v apptainer 2>/dev/null || echo '/usr/local/bin/apptainer')")║"
 if [[ "$INSTALL_SQUASHFUSE" == true ]]; then
-    echo "║  squashfuse: $(printf '%-62s' "installed")║"
+    echo "║  squashfuse: $(printf '%-61s' "installed")║"
 else
-    echo "║  squashfuse: $(printf '%-62s' "skipped (--sif not provided)")║"
+    echo "║  squashfuse: $(printf '%-61s' "skipped (--sif not provided)")║"
 fi
 echo "╚═══════════════════════════════════════════════════════════════════════════╝"
