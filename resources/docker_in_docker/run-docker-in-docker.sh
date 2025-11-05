@@ -110,8 +110,8 @@ fi
 if [[ -z "${DIND_CACHE_ROOT:-}" ]]; then
     DIND_CACHE_ROOT="$HOME/.cache/dind"
 fi
-mkdir -p "$DIND_CACHE_ROOT/saved-images"
 saved_images_dir="$DIND_CACHE_ROOT/saved-images"
+mkdir -p "$saved_images_dir"
 
 if [[ -z "${DIND_OUTER_CMD:-}" ]]; then
     DIND_OUTER_CMD="bash"
@@ -209,7 +209,7 @@ if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
 fi
 
 # Build the in-container loader command — load every tar
-if find /saved-images -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
+if find "$saved_images_dir" -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
     DIND_INNER_LOAD_CMD='find /saved-images -maxdepth 1 -type f -name "*.tar" -exec docker load -i {} \;'
 else
     DIND_INNER_LOAD_CMD=""
