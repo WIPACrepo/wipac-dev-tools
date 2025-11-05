@@ -18,11 +18,14 @@ echo "║  Purpose:     Launch a privileged outer Docker container that hosts an
 echo "║               inner Docker daemon.                                        ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
 echo "║  Details:                                                                 ║"
-echo "║   - Saves DIND_INNER_IMAGE to a tarball on host (lock-protected writing)  ║"
+echo "║   - Accepts a SPACE-SEPARATED list via DIND_INNER_IMAGES_TO_FORWARD of:   ║"
+echo "║       • Docker image refs (e.g., repo/name:tag)                           ║"
+echo "║       • Or absolute paths to existing .tar files                          ║"
+echo "║   - For images, saves (no compression) to a shared cache as .tar          ║"
 echo "║   - Mounts host dirs for inner Docker (/var/lib/docker and temp)          ║"
 echo "║   - Forwards selected env vars into the outer container                   ║"
 echo "║   - Mounts specified RO/RW paths                                          ║"
-echo "║   - Loads inner image inside outer container, then runs DIND_OUTER_CMD    ║"
+echo "║   - Loads ALL requested tars inside the outer container, then runs CMD    ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
 echo "║  Host System Info:                                                        ║"
 echo "║    - Host:      $(printf '%-58s' "$(hostname)")║"
@@ -46,12 +49,11 @@ print_env_var() {
     fi
 
     # Print nicely formatted entry
-    # var name
     echo "║    - $(printf '%-69s' "${var}")║"
-    # value
     if [[ -n "$val" ]]; then
         # strip ANSI codes for length comparison
-        local clean="$(echo -e "$val" | sed 's/\x1b\[[0-9;]*m//g')"
+        local clean
+        clean="$(echo -e "$val" | sed 's/\x1b\[[0-9;]*m//g')"
         if (( ${#clean} > 67 )); then
             # if too long, print raw (no right border)
             echo "║        \"$val\""
@@ -61,9 +63,7 @@ print_env_var() {
     else
         echo "║        $(printf '%-67s' "<unset>")║"
     fi
-    # description
     echo "║        $(printf '%-67s' "$desc")║"
-    # required?
     if [[ "$is_required" == "true" ]]; then
         echo "║    $(printf '%-67s' "${var} [required]")║"
     else
@@ -71,19 +71,20 @@ print_env_var() {
     fi
 }
 
-print_env_var DIND_OUTER_IMAGE          true  "image to run as the outer (DIND) container"
-print_env_var DIND_INNER_IMAGE          true  "image that must be available inside the outer container"
-print_env_var DIND_NETWORK              true  "docker network name for the outer container"
-print_env_var DIND_FORWARD_ENV_PREFIXES true  "space-separated prefixes to forward"
-print_env_var DIND_FORWARD_ENV_VARS     true  "space-separated exact var names to forward"
-print_env_var DIND_BIND_RO_DIRS         true  "space-separated host dirs to bind read-only at same path"
-print_env_var DIND_BIND_RW_DIRS         true  "space-separated host dirs to bind read-write at same path"
-print_env_var DIND_OUTER_CMD            true  "command run inside outer container AFTER docker load"
+# Required
+print_env_var DIND_OUTER_IMAGE                 true  "image to run as the outer (DIND) container"
+print_env_var DIND_NETWORK                     true  "docker network name for the outer container"
+print_env_var DIND_INNER_IMAGES_TO_FORWARD     true  "space-separated image refs or absolute .tar paths"
 
-print_env_var DIND_CACHE_ROOT           false "path to store tarballs (default: ~/.cache/dind)"
-print_env_var DIND_HOST_BASE            false "base path for inner Docker storage"
-print_env_var DIND_IMAGE_TAR_NAME       false "override tarball filename"
-print_env_var DIND_EXTRA_ARGS           false "extra args appended to docker run"
+# Optional
+print_env_var DIND_FORWARD_ENV_PREFIXES        false "space-separated prefixes to forward"
+print_env_var DIND_FORWARD_ENV_VARS            false "space-separated exact var names to forward"
+print_env_var DIND_BIND_RO_DIRS                false "space-separated host dirs to bind read-only at same path"
+print_env_var DIND_BIND_RW_DIRS                false "space-separated host dirs to bind read-write at same path"
+print_env_var DIND_OUTER_CMD                   false "command run inside outer container AFTER docker loads (default: bash)"
+print_env_var DIND_CACHE_ROOT                  false "path to store auto-saved image tars (default: ~/.cache/dind)"
+print_env_var DIND_HOST_BASE                   false "base path for inner Docker storage"
+print_env_var DIND_EXTRA_ARGS                  false "extra args appended to docker run"
 
 echo "╚═══════════════════════════════════════════════════════════════════════════╝"
 echo
@@ -93,55 +94,77 @@ echo
 ########################################################################
 if ! systemctl is-active --quiet sysbox; then
     echo "::error::Sysbox runtime is required for Docker-in-Docker but is not active."
-    echo "Install via: https://github.com/nestybox/sysbox, or see wipac-dev-tools resources for recommendations"
+    echo "Install via: https://github.com/nestybox/sysbox"
     exit 1
 else
     echo "Sysbox runtime (required for Docker-in-Docker) is active."
 fi
 
-
 ########################################################################
-# Cache root (optional, with default)
+# Defaults
 ########################################################################
 if [[ -z "${DIND_CACHE_ROOT:-}" ]]; then
     DIND_CACHE_ROOT="$HOME/.cache/dind"
 fi
-mkdir -p "$DIND_CACHE_ROOT"
-
-########################################################################
-# Derive a filesystem-safe tarball name from DIND_INNER_IMAGE if not provided
-########################################################################
-if [[ -z "${DIND_IMAGE_TAR_NAME:-}" ]]; then
-    # ex: "icecube/skymap_scanner:local" -> "icecube-skymap_scanner-local.tar.gz"
-    safe_name="$(echo "$DIND_INNER_IMAGE" | tr '/:' '--')"
-    DIND_IMAGE_TAR_NAME="${safe_name}.tar.gz"
-fi
-
+mkdir -p "$DIND_CACHE_ROOT/saved-images"
 saved_images_dir="$DIND_CACHE_ROOT/saved-images"
-mkdir -p "$saved_images_dir"
-inner_tar_gz="$saved_images_dir/$DIND_IMAGE_TAR_NAME"
-lockfile="$inner_tar_gz.lock"
+
+if [[ -z "${DIND_OUTER_CMD:-}" ]]; then
+    DIND_OUTER_CMD="bash"
+fi
 
 ########################################################################
-# Create compressed inner-image tarball (shared, lock-protected)
+# Resolve images/files into a list of absolute tar paths
 ########################################################################
-if [[ ! -s "$inner_tar_gz" ]]; then
-    exec {lockfd}> "$lockfile"
-    flock "$lockfd"
-    if [[ ! -s "$inner_tar_gz" ]]; then
-        tmp_gz="$(mktemp "$inner_tar_gz.XXXXXX")"
-        # Verify image exists locally
-        docker image inspect "$DIND_INNER_IMAGE" >/dev/null
-        if command -v pigz >/dev/null 2>&1; then
-            docker save "$DIND_INNER_IMAGE" | pigz -1 > "$tmp_gz"
-        else
-            docker save "$DIND_INNER_IMAGE" | gzip -1 > "$tmp_gz"
-        fi
-        mv -f "$tmp_gz" "$inner_tar_gz"
+_realpath() {
+    # portable realpath
+    if command -v realpath >/dev/null 2>&1; then
+        realpath "$1"
+    else
+        # best-effort fallback
+        python3 - <<'PY'
+import os, sys
+print(os.path.abspath(sys.argv[1]))
+PY
     fi
-    flock -u "$lockfd"
-    rm -f "$lockfile" || true
-fi
+}
+
+to_save_list=()
+absolute_tar_list=()
+
+# Tokenize respecting simple spaces (user supplies space-separated entries)
+for token in ${DIND_INNER_IMAGES_TO_FORWARD}; do
+    if [[ -f "$token" ]]; then
+        # An existing tar file
+        absolute_tar_list+=( "$(_realpath "$token")" )
+    else
+        # Assume docker image ref; will save as .tar into cache
+        to_save_list+=( "$token" )
+    fi
+done
+
+# Save any images to cache as .tar (no compression), lock-protected
+saved_tar_list=()
+for img in "${to_save_list[@]}"; do
+    safe_name="$(echo "$img" | tr '/:' '--')"
+    tar_path="$saved_images_dir/${safe_name}.tar"
+    lockfile="$tar_path.lock"
+
+    if [[ ! -s "$tar_path" ]]; then
+        exec {lockfd}> "$lockfile"
+        flock "$lockfd"
+        if [[ ! -s "$tar_path" ]]; then
+            echo "Saving image '$img' to '$tar_path'..."
+            tmp_out="$(mktemp "$tar_path.XXXXXX")"
+            docker image inspect "$img" >/dev/null
+            docker save -o "$tmp_out" "$img"
+            mv -f "$tmp_out" "$tar_path"
+        fi
+        flock -u "$lockfd"
+        rm -f "$lockfile" || true
+    fi
+    saved_tar_list+=( "$tar_path" )
+done
 
 ########################################################################
 # Prepare host dirs for inner Docker writable layers & temp
@@ -158,7 +181,29 @@ inner_docker_tmp="$DIND_HOST_BASE/tmp"
 mkdir -p "$inner_docker_root" "$inner_docker_tmp"
 
 ########################################################################
-# Run outer container: load inner image, then exec DIND_OUTER_CMD
+# Compute container-visible tar paths and mounts
+########################################################################
+# All tars saved to cache will be visible under /saved-images/<basename>
+container_tar_paths=()
+for p in "${saved_tar_list[@]}"; do
+    container_tar_paths+=( "/saved-images/$(basename "$p")" )
+done
+# Pre-supplied absolute tars must be bind-mounted at the same absolute path
+for p in "${absolute_tar_list[@]}"; do
+    container_tar_paths+=( "$p" )
+done
+
+# Build volume flags for pre-supplied absolute tars
+abs_tar_volume_flags=()
+for p in "${absolute_tar_list[@]}"; do
+    abs_tar_volume_flags+=( "-v" "$p:$p:ro" )
+done
+
+# Join container tar paths into a single space-separated string for env
+FORWARD_TAR_PATHS="${container_tar_paths[*]}"
+
+########################################################################
+# Run outer container: load all tars, then exec DIND_OUTER_CMD
 ########################################################################
 echo
 echo "╔═══════════════════════════════════════════════════════════════════════════╗"
@@ -176,37 +221,50 @@ docker run --rm --privileged \
     --network="$DIND_NETWORK" \
     \
     -v "$saved_images_dir:/saved-images:ro" \
+    ${abs_tar_volume_flags[@]+"${abs_tar_volume_flags[@]}"} \
     \
     -v "$inner_docker_root:/var/lib/docker" \
     -v "$inner_docker_tmp:$inner_docker_tmp" \
     -e DOCKER_TMPDIR="$inner_docker_tmp" \
     \
+    -e FORWARD_TAR_PATHS="$FORWARD_TAR_PATHS" \
+    \
     $( \
-        for d in $DIND_BIND_RO_DIRS; do \
+        for d in ${DIND_BIND_RO_DIRS:-}; do \
             echo -n " -v $d:$d:ro"; \
         done \
     ) \
     $( \
-        for d in $DIND_BIND_RW_DIRS; do \
+        for d in ${DIND_BIND_RW_DIRS:-}; do \
             echo -n " -v $d:$d"; \
         done \
     ) \
     \
     $( \
-        regex="$(echo "$DIND_FORWARD_ENV_PREFIXES" | sed 's/ \+/|/g')"; \
-        env | grep -E "^(${regex})" | cut -d'=' -f1 | sed 's/^/--env /' | tr '\n' ' ' \
+        if [[ -n "${DIND_FORWARD_ENV_PREFIXES:-}" ]]; then \
+            regex="$(echo "$DIND_FORWARD_ENV_PREFIXES" | sed 's/ \+/|/g')"; \
+            env | grep -E "^(${regex})" | cut -d'=' -f1 | sed 's/^/--env /' | tr '\n' ' '; \
+        fi \
     ) \
     \
     $( \
-        for k in $DIND_FORWARD_ENV_VARS; do \
-            env | grep -q "^$k=" && echo -n " --env $k"; \
+        for k in ${DIND_FORWARD_ENV_VARS:-}; do \
+            if env | grep -q "^$k="; then echo -n " --env $k"; fi; \
         done \
     ) \
     \
     $( [[ -n "${DIND_EXTRA_ARGS:-}" ]] && echo "$DIND_EXTRA_ARGS" ) \
     \
     "$DIND_OUTER_IMAGE" /bin/bash -c "\
-        docker load -i /saved-images/$(basename "$inner_tar_gz") && \
+        set -euo pipefail; \
+        if [[ -n \"\${FORWARD_TAR_PATHS:-}\" ]]; then \
+            for t in \${FORWARD_TAR_PATHS}; do \
+                echo \"Loading: \$t\"; \
+                docker load -i \"\$t\"; \
+            done; \
+        else \
+            echo '::warning::No tar paths were provided/resolved.'; \
+        fi; \
         exec $DIND_OUTER_CMD \
     "
 
