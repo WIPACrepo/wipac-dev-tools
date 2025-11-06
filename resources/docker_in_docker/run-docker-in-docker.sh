@@ -141,18 +141,23 @@ mkdir -p "$inner_docker_root" "$inner_docker_tmp"
 #   mounted separately and loaded recursively alongside mounted srcN dirs.
 ########################################################################
 
-verify_dir_has_only_tars() {
-    local dir="$1"
-    local invalid_file
-    invalid_file="$(find "$dir" -mindepth 1 -maxdepth 1 -type f ! -name '*.tar' -printf '%f
-' | head -n 1 || true)"
-    if [[ -n "$invalid_file" ]]; then
-        echo "::error::'$dir' contains non-tar file '$invalid_file'; all files must be .tar for this script."
-        return 1
-    else
-        return 0
-    fi
-}
+# Verify that every file in a tar parent directory is one of the allowed tars from DIND_INNER_IMAGES_TO_FORWARD
+python -c "
+from pathlib import Path
+import os
+
+fpaths = []
+
+for token in os.getenv('DIND_INNER_IMAGES_TO_FORWARD').split():
+    p = Path(token).resolve()
+    if p.exists():
+        fpaths.append(p)
+
+for p in fpaths:
+    for other in p.parent.iterdir():
+        if other not in fpaths:
+            raise RuntimeException(f'DIND_INNER_IMAGES_TO_FORWARD entry {p}'s directory contains an entry not also supplied')
+"
 
 # Data structures for mounting parent dirs exactly once
 declare -A tar_dir_to_index=()
@@ -167,20 +172,14 @@ if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
                 echo "::error::'$token' (file from 'DIND_INNER_IMAGES_TO_FORWARD') must be a .tar"
                 exit 1
             else
-                abs="$(realpath "$token")"
-                tar_dir="$(dirname "$abs")"
-                if verify_dir_has_only_tars "$tar_dir"; then
-                    if [[ -v tar_dir_to_index["$tar_dir"] ]]; then
-                        mount_index="${tar_dir_to_index[$tar_dir]}"
-                    else
-                        mount_index="$next_src_index"
-                        tar_dir_to_index["$tar_dir"]="$mount_index"
-                        tar_mount_flags+=("-v" "$tar_dir:/saved-images/src${mount_index}:ro")
-                        next_src_index=$((next_src_index + 1))
-                    fi
+                tar_dir="$(dirname "$(realpath "$token")")"
+                if [[ -v tar_dir_to_index["$tar_dir"] ]]; then
+                    mount_index="${tar_dir_to_index[$tar_dir]}"
                 else
-                    echo "::error::Directory '$tar_dir' failed verification (non-tar file present)."
-                    exit 1
+                    mount_index="$next_src_index"
+                    tar_dir_to_index["$tar_dir"]="$mount_index"
+                    tar_mount_flags+=("-v" "$tar_dir:/saved-images/src${mount_index}:ro")
+                    next_src_index=$((next_src_index + 1))
                 fi
             fi
         else
