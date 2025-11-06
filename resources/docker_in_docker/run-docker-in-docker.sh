@@ -18,13 +18,13 @@ echo "║  Purpose:     Launch a privileged outer Docker container that hosts an
 echo "║               inner Docker daemon.                                        ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
 echo "║  Details:                                                                 ║"
-echo "║   - Mounts host dirs for inner Docker (/var/lib/docker and temp)          ║"
-echo "║   - Forwards selected env vars into the outer container                   ║"
-echo "║   - Mounts specified RO/RW paths                                          ║"
 echo "║   - Accepts a SPACE-SEPARATED list via DIND_INNER_IMAGES_TO_FORWARD of:   ║"
 echo "║       • Docker image refs (e.g., repo/name:tag)                           ║"
 echo "║       • Or absolute paths to existing .tar files                          ║"
 echo "║   - For images, saves (no compression) to a shared cache as .tar          ║"
+echo "║   - Mounts host dirs for inner Docker (/var/lib/docker and temp)          ║"
+echo "║   - Forwards selected env vars into the outer container                   ║"
+echo "║   - Mounts specified RO/RW paths                                          ║"
 echo "║   - Loads ALL requested tars inside the outer container, then runs CMD    ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
 echo "║  Host System Info:                                                        ║"
@@ -76,7 +76,7 @@ print_env_var DIND_NETWORK                     true  "docker network name for th
 
 # Optional
 echo "║  [Optional]                                                               ║"
-print_env_var DIND_INNER_IMAGES_TO_FORWARD     false "space-separated image refs (or absolute .tar paths to mv)"
+print_env_var DIND_INNER_IMAGES_TO_FORWARD     false "space-separated image refs or absolute .tar paths"
 print_env_var DIND_FORWARD_ENV_PREFIXES        false "space-separated prefixes to forward"
 print_env_var DIND_FORWARD_ENV_VARS            false "space-separated exact var names to forward"
 print_env_var DIND_BIND_RO_DIRS                false "space-separated host dirs to bind read-only at same path"
@@ -122,10 +122,11 @@ mkdir -p "$saved_images_dir"
 # Prepare host dirs for inner Docker writable layers & temp
 ########################################################################
 if [[ -z "${DIND_HOST_BASE:-}" ]]; then
+    _uuid="$(uuidgen 2>/dev/null || date +%s)-$$"
     if [[ -n "${RUNNER_TEMP:-}" ]]; then
-        DIND_HOST_BASE="$RUNNER_TEMP/dind-$(uuidgen)"
+        DIND_HOST_BASE="$RUNNER_TEMP/dind-$_uuid"
     else
-        DIND_HOST_BASE="/tmp/dind-$(uuidgen)"
+        DIND_HOST_BASE="/tmp/dind-$_uuid"
     fi
 fi
 inner_docker_root="$DIND_HOST_BASE/lib"
@@ -133,109 +134,65 @@ inner_docker_tmp="$DIND_HOST_BASE/tmp"
 mkdir -p "$inner_docker_root" "$inner_docker_tmp"
 
 ########################################################################
-# inner images: resolve tokens → stage/save into single cache dir
-# - All files end up directly under $saved_images_dir
-# - If a file with the same name already exists there → ERROR
+# Inner images: multi-subdir mount strategy
+# - For file tokens: mount each parent dir read-only under /saved-images/srcN
+#   and verify the directory contains only .tar files.
+# - For image tokens: docker save into $saved_images_dir (cache), which is
+#   mounted separately and loaded recursively alongside mounted srcN dirs.
 ########################################################################
 
-stage_tar_file() {
-    local src="$1"
-    local dest
-    local lockfile
-
-    dest="$saved_images_dir/$(basename "$src")"
-    lockfile="${dest}.lock"
-
-    echo "Staging tar '$src' to '$dest'..."
-
-    # Exclusive lock for this basename — multiproc safe
-    exec {lockfd}> "$lockfile"
-    flock "$lockfd"
-    if [[ -e "$dest" ]]; then
-        echo "::error::basename conflict: '$dest' already exists; cannot stage '$src'"
-        flock -u "$lockfd"
-        rm -f "$lockfile" || true
-        exit 1
+verify_dir_has_only_tars() {
+    local dir="$1"
+    local invalid_file
+    invalid_file="$(find "$dir" -mindepth 1 -maxdepth 1 -type f ! -name '*.tar' -printf '%f
+' | head -n 1 || true)"
+    if [[ -n "$invalid_file" ]]; then
+        echo "::error::'$dir' contains non-tar file '$invalid_file'; all files must be .tar for this script."
+        return 1
     else
-        # Atomic finalize — mv it!
-        # Move under the lock; if cross-device, fallback to cp+unlink
-        if ! mv "$src" "$dest" 2>/dev/null; then
-            cp -f "$src" "$dest"
-            rm -f "$src"
-        fi
-        flock -u "$lockfd"
-        rm -f "$lockfile" || true
+        return 0
     fi
 }
 
-
-tarify_image_then_stage() {
-    local img="$1"
-    local safe_name tar_path lockfile tmp_out
-    safe_name="$(echo "$img" | tr '/:' '--')"
-    tar_path="$saved_images_dir/${safe_name}.tar"
-    lockfile="$tar_path.lock"
-
-    echo "Saving image '$img' to '$tar_path'..."
-
-    if [[ -e "$tar_path" ]]; then
-        echo "::error::basename conflict: '$tar_path' already exists; cannot save image '$img'"
-        exit 1
-    fi
-
-    exec {lockfd}> "$lockfile"
-    flock "$lockfd"
-    if [[ ! -s "$tar_path" ]]; then
-
-        # Verify image exists before trying to save
-        if ! docker image inspect "$img" >/dev/null 2>&1; then
-            echo "::error::'$img' is not a valid local image (docker image inspect failed)"
-            flock -u "$lockfd"
-            rm -f "$lockfile" || true
-            exit 1
-        fi
-
-        tmp_out="$(mktemp "$tar_path.XXXXXX")"
-        if ! docker save -o "$tmp_out" "$img" >/dev/null 2>&1; then
-            echo "::error::Failed to save image '$img' to tarball."
-            rm -f "$tmp_out" "$lockfile" || true
-            flock -u "$lockfd"
-            exit 1
-        fi
-
-        [[ -s "$tmp_out" ]] || { echo "::error::empty tar produced for $img"; rm -f "$tmp_out" "$lockfile"; flock -u "$lockfd"; exit 1; }
-        mv -f "$tmp_out" "$tar_path"
-    else
-        echo "> ok: image '$img' already exists at '$tar_path'."
-    fi
-    flock -u "$lockfd"
-    rm -f "$lockfile" || true
-}
+# Data structures for mounting parent dirs exactly once
+declare -A tar_dir_to_index=()
+declare -a tar_mount_flags=()
+next_src_index=0
 
 if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
     for token in ${DIND_INNER_IMAGES_TO_FORWARD}; do
         if [[ -f "$token" ]]; then
-            # file must be a .tar file
+            # File token: must be a .tar; mount its parent directory read-only.
             if [[ "$token" != *.tar ]]; then
-                echo "::error::'$token' (file from 'DIND_INNER_IMAGES_TO_FORWARD') must be either a .tar file or docker image."
+                echo "::error::'$token' (file from 'DIND_INNER_IMAGES_TO_FORWARD') must be a .tar"
                 exit 1
             else
-                time stage_tar_file "$(realpath "$token")"
+                abs="$(realpath "$token")"
+                tar_dir="$(dirname "$abs")"
+                if verify_dir_has_only_tars "$tar_dir"; then
+                    if [[ -v tar_dir_to_index["$tar_dir"] ]]; then
+                        mount_index="${tar_dir_to_index[$tar_dir]}"
+                    else
+                        mount_index="$next_src_index"
+                        tar_dir_to_index["$tar_dir"]="$mount_index"
+                        tar_mount_flags+=("-v" "$tar_dir:/saved-images/src${mount_index}:ro")
+                        next_src_index=$((next_src_index + 1))
+                    fi
+                else
+                    echo "::error::Directory '$tar_dir' failed verification (non-tar file present)."
+                    exit 1
+                fi
             fi
         else
-            # assume this is a docker image
+            # Image token: save into cache dir; it will be discovered by the recursive loader
             time tarify_image_then_stage "$token"
         fi
     done
 fi
 
-# Build the in-container loader command — only if forwarding was requested
+# Build the in-container loader command — recursively load all *.tar
 if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
-    if find "$saved_images_dir" -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
-        DIND_INNER_LOAD_CMD='for f in /saved-images/*.tar; do [[ -e "$f" ]] || break; echo "Loading: $f"; time docker load -i "$f"; done'
-    else
-        DIND_INNER_LOAD_CMD=""
-    fi
+    DIND_INNER_LOAD_CMD='shopt -s globstar nullglob; for f in /saved-images/**/*.tar; do [[ -e "$f" ]] || break; echo "Loading: $f"; time docker load -i "$f"; done'
 else
     DIND_INNER_LOAD_CMD=""
 fi
@@ -287,6 +244,7 @@ docker run --rm --privileged \
     --network="$DIND_NETWORK" \
     \
     -v "$saved_images_dir:/saved-images:ro" \
+    ${tar_mount_flags[@]+"${tar_mount_flags[@]}"} \
     \
     -v "$inner_docker_root:/var/lib/docker" \
     -v "$inner_docker_tmp:$inner_docker_tmp" \
