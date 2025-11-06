@@ -151,7 +151,7 @@ stage_tar_file() {
     fi
 
     # symlink, fallback to cp
-    ln "$src" "$dest" 2>/dev/null || cp -f "$src" "$dest"
+    ln -s "$src" "$dest" 2>/dev/null || cp -f "$src" "$dest"
 }
 
 tarify_image_then_stage() {
@@ -214,7 +214,6 @@ if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
     done
 fi
 
-# Build the in-container loader command — load every tar
 # Build the in-container loader command — only if forwarding was requested
 if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
     if find "$saved_images_dir" -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
@@ -226,6 +225,13 @@ else
     DIND_INNER_LOAD_CMD=""
 fi
 
+########################################################################
+# Sanity: ensure outer image exists locally (clear error early)
+########################################################################
+if ! docker image inspect "$DIND_OUTER_IMAGE" >/dev/null 2>&1; then
+    echo "::error::Outer image '$DIND_OUTER_IMAGE' not found locally."
+    exit 1
+fi
 
 ########################################################################
 # Run outer container: load images (if any), then exec user command
@@ -266,7 +272,6 @@ docker run --rm --privileged \
     --network="$DIND_NETWORK" \
     \
     -v "$saved_images_dir:/saved-images:ro" \
-    ${abs_tar_volume_flags[@]+"${abs_tar_volume_flags[@]}"} \
     \
     -v "$inner_docker_root:/var/lib/docker" \
     -v "$inner_docker_tmp:$inner_docker_tmp" \
