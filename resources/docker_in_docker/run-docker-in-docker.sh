@@ -150,8 +150,8 @@ stage_tar_file() {
         exit 1
     fi
 
-    # symlink, fallback to cp
-    ln -s "$src" "$dest" 2>/dev/null || cp -f "$src" "$dest"
+    # symlink only (so deleting/moving the source invalidates the staged entry)
+    ln -s "$src" "$dest"
 }
 
 tarify_image_then_stage() {
