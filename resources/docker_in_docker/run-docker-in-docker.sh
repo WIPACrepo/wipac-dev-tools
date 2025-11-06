@@ -169,6 +169,50 @@ for p in fpaths:
             )
 "
 
+tarify_image_then_stage() {
+    # function to save a docker image as a tar file and put into $saved_images_dir
+    local img="$1"
+    local safe_name tar_path lockfile tmp_out
+    safe_name="$(echo "$img" | tr '/:' '--')"
+    tar_path="$saved_images_dir/${safe_name}.tar"
+    lockfile="$tar_path.lock"
+
+    echo "Saving image '$img' to '$tar_path'..."
+
+    if [[ -e "$tar_path" ]]; then
+        echo "::error::basename conflict: '$tar_path' already exists; cannot save image '$img'"
+        exit 1
+    fi
+
+    exec {lockfd}> "$lockfile"
+    flock "$lockfd"
+    if [[ ! -s "$tar_path" ]]; then
+
+        # Verify image exists before trying to save
+        if ! docker image inspect "$img" >/dev/null 2>&1; then
+            echo "::error::'$img' is not a valid local image (docker image inspect failed)"
+            flock -u "$lockfd"
+            rm -f "$lockfile" || true
+            exit 1
+        fi
+
+        tmp_out="$(mktemp "$tar_path.XXXXXX")"
+        if ! docker save -o "$tmp_out" "$img" >/dev/null 2>&1; then
+            echo "::error::Failed to save image '$img' to tarball."
+            rm -f "$tmp_out" "$lockfile" || true
+            flock -u "$lockfd"
+            exit 1
+        fi
+
+        [[ -s "$tmp_out" ]] || { echo "::error::empty tar produced for $img"; rm -f "$tmp_out" "$lockfile"; flock -u "$lockfd"; exit 1; }
+        mv -f "$tmp_out" "$tar_path"
+    else
+        echo "> ok: image '$img' already exists at '$tar_path'."
+    fi
+    flock -u "$lockfd"
+    rm -f "$lockfile" || true
+}
+
 # Data structures for mounting parent dirs exactly once
 declare -A tar_dir_to_index=()
 declare -a tar_mount_flags=()
