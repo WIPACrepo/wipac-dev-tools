@@ -81,13 +81,22 @@ print_env_var DIND_FORWARD_ENV_PREFIXES        false "space-separated prefixes t
 print_env_var DIND_FORWARD_ENV_VARS            false "space-separated exact var names to forward"
 print_env_var DIND_BIND_RO_DIRS                false "space-separated host dirs to bind read-only at same path"
 print_env_var DIND_BIND_RW_DIRS                false "space-separated host dirs to bind read-write at same path"
-print_env_var DIND_OUTER_CMD                   false "command run inside outer container AFTER docker loads"
 print_env_var DIND_CACHE_ROOT                  false "path to store auto-saved image tars (default: ~/.cache/dind)"
 print_env_var DIND_HOST_BASE                   false "base path for inner Docker storage"
 print_env_var DIND_EXTRA_ARGS                  false "extra args appended to docker run"
 
+# Conditionally Required
+echo "║  [Conditionally Required — only if 'DIND_INNER_IMAGES_TO_FORWARD' is set] ║"
+print_env_var DIND_OUTER_CMD                   false "command run inside outer container AFTER docker loads"
+
 echo "╚═══════════════════════════════════════════════════════════════════════════╝"
 echo
+
+# Policy: images → require command; otherwise run image defaults
+if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" && -z "${DIND_OUTER_CMD:-}" ]]; then
+    echo "::error::When DIND_INNER_IMAGES_TO_FORWARD is set, you must also set DIND_OUTER_CMD (the command to run after images are loaded)."
+    exit 1
+fi
 
 ########################################################################
 # Ensure Sysbox runtime is active (required for Docker-in-Docker)
@@ -108,10 +117,6 @@ if [[ -z "${DIND_CACHE_ROOT:-}" ]]; then
 fi
 saved_images_dir="$DIND_CACHE_ROOT/saved-images"
 mkdir -p "$saved_images_dir"
-
-if [[ -z "${DIND_OUTER_CMD:-}" ]]; then
-    DIND_OUTER_CMD="bash"
-fi
 
 ########################################################################
 # Prepare host dirs for inner Docker writable layers & temp
@@ -210,28 +215,40 @@ if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
 fi
 
 # Build the in-container loader command — load every tar
-if find "$saved_images_dir" -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
-    DIND_INNER_LOAD_CMD='for f in /saved-images/*.tar; do [[ -e "$f" ]] || break; echo "Loading: $f"; time docker load -i "$f"; done'
+# Build the in-container loader command — only if forwarding was requested
+if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
+    if find "$saved_images_dir" -maxdepth 1 -type f -name "*.tar" -print -quit | grep -q .; then
+        DIND_INNER_LOAD_CMD='for f in /saved-images/*.tar; do [[ -e "$f" ]] || break; echo "Loading: $f"; time docker load -i "$f"; done'
+    else
+        DIND_INNER_LOAD_CMD=""
+    fi
 else
     DIND_INNER_LOAD_CMD=""
 fi
+
 
 ########################################################################
 # Run outer container: load images (if any), then exec user command
 ########################################################################
 
+_CMD=""
 if [[ -n "${DIND_INNER_LOAD_CMD:-}" ]]; then
-    _CMD="\
-        set -euo pipefail; \
-        $DIND_INNER_LOAD_CMD; \
-        exec $DIND_OUTER_CMD \
-    "
+    # loader requires a user command per policy
+    if [[ -z "${DIND_OUTER_CMD:-}" ]]; then
+        # this was technically check on script start up by 'DIND_INNER_IMAGES_TO_FORWARD' but just in case...
+        echo "::error::Images were staged to load, but DIND_OUTER_CMD is empty."
+        exit 2
+    else
+        _CMD="/bin/bash -c 'set -euo pipefail; ${DIND_INNER_LOAD_CMD}; exec ${DIND_OUTER_CMD}'"
+    fi
+elif [[ -n "${DIND_OUTER_CMD:-}" ]]; then
+    # only custom command
+    _CMD="/bin/bash -c 'set -euo pipefail; exec ${DIND_OUTER_CMD}'"
 else
-    _CMD="\
-        set -euo pipefail; \
-        exec $DIND_OUTER_CMD \
-    "
+    # no loader, no user command → let Docker run the image default
+    _CMD=""
 fi
+
 
 echo
 echo "╔═══════════════════════════════════════════════════════════════════════════╗"
@@ -281,7 +298,7 @@ docker run --rm --privileged \
     \
     $( [[ -n "${DIND_EXTRA_ARGS:-}" ]] && echo "$DIND_EXTRA_ARGS" ) \
     \
-    "$DIND_OUTER_IMAGE" /bin/bash -c "$_CMD"
+    "$DIND_OUTER_IMAGE" ${_CMD}
 
 set +x
 echo
