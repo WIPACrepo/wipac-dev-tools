@@ -107,6 +107,7 @@ if ! systemctl is-active --quiet sysbox; then
     exit 1
 else
     echo "Sysbox runtime (required for Docker-in-Docker) is active."
+    echo
 fi
 
 ########################################################################
@@ -188,14 +189,6 @@ tarify_image_then_stage() {
     flock "$lockfd"
     if [[ ! -s "$tar_path" ]]; then
 
-        # Verify image exists before trying to save
-        if ! docker image inspect "$img" >/dev/null 2>&1; then
-            echo "::error::'$img' is not a valid local image (docker image inspect failed)"
-            flock -u "$lockfd"
-            rm -f "$lockfile" || true
-            exit 1
-        fi
-
         tmp_out="$(mktemp "$tar_path.XXXXXX")"
         if ! docker save -o "$tmp_out" "$img" >/dev/null 2>&1; then
             echo "::error::Failed to save image '$img' to tarball."
@@ -248,14 +241,6 @@ if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
     DIND_INNER_LOAD_CMD='shopt -s globstar nullglob; for f in /saved-images/**/*.tar; do [[ -e "$f" ]] || break; echo "Loading: $f"; time docker load -i "$f"; done'
 else
     DIND_INNER_LOAD_CMD=""
-fi
-
-########################################################################
-# Sanity: ensure outer image exists locally (clear error early)
-########################################################################
-if ! docker image inspect "$DIND_OUTER_IMAGE" >/dev/null 2>&1; then
-    echo "::error::Outer image '$DIND_OUTER_IMAGE' not found locally."
-    exit 1
 fi
 
 ########################################################################
