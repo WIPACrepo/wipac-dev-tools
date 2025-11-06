@@ -142,11 +142,9 @@ stage_tar_file() {
     local src="$1"
     local dest
     local lockfile
-    local tmp
 
     dest="$saved_images_dir/$(basename "$src")"
     lockfile="${dest}.lock"
-    tmp="${dest}.part.$$"
 
     echo "Staging tar '$src' to '$dest'..."
 
@@ -160,7 +158,11 @@ stage_tar_file() {
         exit 1
     else
         # Atomic finalize — mv it!
-        mv -f "$tmp" "$dest"
+        # Move under the lock; if cross-device, fallback to cp+unlink
+        if ! mv "$src" "$dest" 2>/dev/null; then
+            cp -f "$src" "$dest"
+            rm -f "$src"
+        fi
         flock -u "$lockfd"
         rm -f "$lockfile" || true
     fi
