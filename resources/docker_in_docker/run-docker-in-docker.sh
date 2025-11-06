@@ -18,13 +18,13 @@ echo "║  Purpose:     Launch a privileged outer Docker container that hosts an
 echo "║               inner Docker daemon.                                        ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
 echo "║  Details:                                                                 ║"
+echo "║   - Mounts host dirs for inner Docker (/var/lib/docker and temp)          ║"
+echo "║   - Forwards selected env vars into the outer container                   ║"
+echo "║   - Mounts specified RO/RW paths                                          ║"
 echo "║   - Accepts a SPACE-SEPARATED list via DIND_INNER_IMAGES_TO_FORWARD of:   ║"
 echo "║       • Docker image refs (e.g., repo/name:tag)                           ║"
 echo "║       • Or absolute paths to existing .tar files                          ║"
 echo "║   - For images, saves (no compression) to a shared cache as .tar          ║"
-echo "║   - Mounts host dirs for inner Docker (/var/lib/docker and temp)          ║"
-echo "║   - Forwards selected env vars into the outer container                   ║"
-echo "║   - Mounts specified RO/RW paths                                          ║"
 echo "║   - Loads ALL requested tars inside the outer container, then runs CMD    ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
 echo "║  Host System Info:                                                        ║"
@@ -76,7 +76,7 @@ print_env_var DIND_NETWORK                     true  "docker network name for th
 
 # Optional
 echo "║  [Optional]                                                               ║"
-print_env_var DIND_INNER_IMAGES_TO_FORWARD     false "space-separated image refs or absolute .tar paths"
+print_env_var DIND_INNER_IMAGES_TO_FORWARD     false "space-separated image refs (or absolute .tar paths to mv)"
 print_env_var DIND_FORWARD_ENV_PREFIXES        false "space-separated prefixes to forward"
 print_env_var DIND_FORWARD_ENV_VARS            false "space-separated exact var names to forward"
 print_env_var DIND_BIND_RO_DIRS                false "space-separated host dirs to bind read-only at same path"
@@ -141,18 +141,31 @@ mkdir -p "$inner_docker_root" "$inner_docker_tmp"
 stage_tar_file() {
     local src="$1"
     local dest
+    local lockfile
+    local tmp
+
     dest="$saved_images_dir/$(basename "$src")"
+    lockfile="${dest}.lock"
+    tmp="${dest}.part.$$"
 
     echo "Staging tar '$src' to '$dest'..."
 
+    # Exclusive lock for this basename — multiproc safe
+    exec {lockfd}> "$lockfile"
+    flock "$lockfd"
     if [[ -e "$dest" ]]; then
         echo "::error::basename conflict: '$dest' already exists; cannot stage '$src'"
+        flock -u "$lockfd"
+        rm -f "$lockfile" || true
         exit 1
+    else
+        # Atomic finalize — mv it!
+        mv -f "$tmp" "$dest"
+        flock -u "$lockfd"
+        rm -f "$lockfile" || true
     fi
-
-    # symlink only (so deleting/moving the source invalidates the staged entry)
-    ln -s "$src" "$dest"
 }
+
 
 tarify_image_then_stage() {
     local img="$1"
