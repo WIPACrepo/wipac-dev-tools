@@ -146,23 +146,27 @@ python -c "
 from pathlib import Path
 import os, sys
 
-fpaths = []
-
-tokens = os.getenv('DIND_INNER_IMAGES_TO_FORWARD')
-if not tokens:
+tokens = os.getenv('DIND_INNER_IMAGES_TO_FORWARD') or ''
+if not tokens.strip():
     sys.exit(0)
 
+fpaths = []
 for token in tokens.split():
     p = Path(token).resolve()
-    if not p.suffix == '.tar':
-        raise RuntimeError(f'DIND_INNER_IMAGES_TO_FORWARD entry {p} is not a .tar file')
-    if p.exists():
+    if not p.exists():
+        # token is probably a docker image
+        continue
+    elif not p.is_file() or p.suffix != '.tar':
+        raise RuntimeError(f\"DIND_INNER_IMAGES_TO_FORWARD entry '{p}' is not a .tar file\")
+    else:
         fpaths.append(p)
 
 for p in fpaths:
     for other in p.parent.iterdir():
         if other.resolve() not in fpaths:
-            raise RuntimeError(f'DIND_INNER_IMAGES_TO_FORWARD entry {p} directory contains an entry ({other.name}) not also supplied')
+            raise RuntimeError(
+                f\"Directory '{p.parent}' contains unexpected entry '{other.name}' not listed in DIND_INNER_IMAGES_TO_FORWARD\"
+            )
 "
 
 # Data structures for mounting parent dirs exactly once
