@@ -255,14 +255,16 @@ if [[ -n "${DIND_INNER_LOAD_CMD:-}" ]]; then
         echo "::error::Images were staged to load, but DIND_OUTER_CMD is empty."
         exit 2
     else
-        _CMD="/bin/bash -c 'set -euo pipefail; ${DIND_INNER_LOAD_CMD}; exec ${DIND_OUTER_CMD}'"
+        _CMD="set -euo pipefail; ${DIND_INNER_LOAD_CMD}; exec ${DIND_OUTER_CMD}"
     fi
 elif [[ -n "${DIND_OUTER_CMD:-}" ]]; then
     # only custom command
-    _CMD="/bin/bash -c 'set -euo pipefail; exec ${DIND_OUTER_CMD}'"
+    _CMD="set -euo pipefail; exec ${DIND_OUTER_CMD}"
 else
     # no loader, no user command → let Docker run the image default
     _CMD=""
+    echo "::error::TODO: implement default command logic... tricky with bash -c for the other ones..."
+    exit 3
 fi
 
 
@@ -314,7 +316,7 @@ docker run --rm --privileged \
     \
     $( [[ -n "${DIND_EXTRA_ARGS:-}" ]] && echo "$DIND_EXTRA_ARGS" ) \
     \
-    "$DIND_OUTER_IMAGE" ${_CMD}
+    "$DIND_OUTER_IMAGE" /bin/bash -c "$_CMD"
 
 set +x
 echo
