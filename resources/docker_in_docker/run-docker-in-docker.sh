@@ -144,19 +144,25 @@ mkdir -p "$inner_docker_root" "$inner_docker_tmp"
 # Verify that every file in a tar parent directory is one of the allowed tars from DIND_INNER_IMAGES_TO_FORWARD
 python -c "
 from pathlib import Path
-import os
+import os, sys
 
 fpaths = []
 
-for token in os.getenv('DIND_INNER_IMAGES_TO_FORWARD').split():
+tokens = os.getenv('DIND_INNER_IMAGES_TO_FORWARD')
+if not tokens:
+    sys.exit(0)
+
+for token in tokens.split():
     p = Path(token).resolve()
+    if not p.suffix == '.tar':
+        raise RuntimeError(f'DIND_INNER_IMAGES_TO_FORWARD entry {p} is not a .tar file')
     if p.exists():
         fpaths.append(p)
 
 for p in fpaths:
     for other in p.parent.iterdir():
-        if other not in fpaths:
-            raise RuntimeException(f'DIND_INNER_IMAGES_TO_FORWARD entry {p}'s directory contains an entry not also supplied')
+        if other.resolve() not in fpaths:
+            raise RuntimeError(f'DIND_INNER_IMAGES_TO_FORWARD entry {p} directory contains an entry ({other.name}) not also supplied')
 "
 
 # Data structures for mounting parent dirs exactly once
@@ -167,7 +173,7 @@ next_src_index=0
 if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
     for token in ${DIND_INNER_IMAGES_TO_FORWARD}; do
         if [[ -f "$token" ]]; then
-            # File token: must be a .tar; mount its parent directory read-only.
+            # file token: must be a .tar; mount its parent directory read-only
             if [[ "$token" != *.tar ]]; then
                 echo "::error::'$token' (file from 'DIND_INNER_IMAGES_TO_FORWARD') must be a .tar"
                 exit 1
@@ -183,7 +189,7 @@ if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" ]]; then
                 fi
             fi
         else
-            # Image token: save into cache dir; it will be discovered by the recursive loader
+            # image token: save into cache; discovered by recursive loader
             time tarify_image_then_stage "$token"
         fi
     done
