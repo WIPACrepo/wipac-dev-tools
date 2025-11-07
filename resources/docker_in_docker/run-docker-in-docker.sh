@@ -14,14 +14,15 @@ _ECHO_HEADER="║         Docker-outside-of-Docker (DooD) Utility — WIPAC Deve
 echo "$_ECHO_HEADER"
 echo "║                                                                           ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
-echo "║  Purpose:     Launch a privileged outer Docker container that hosts an    ║"
-echo "║               inner Docker daemon.                                        ║"
+echo "║  Purpose:     Run a container that talks to the *host* Docker daemon      ║"
+echo "║               via the mounted socket. No inner daemon, no tars.           ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
 echo "║  Details:                                                                 ║"
-echo "║   - Mounts host dirs for inner Docker (/var/lib/docker and temp)          ║"
-echo "║   - Forwards selected env vars into the outer container                   ║"
-echo "║   - Mounts specified RO/RW paths                                          ║"
-echo "║   - Loads ALL requested tars inside the outer container, then runs CMD    ║"
+echo "║   - Shares host daemon with: -v /var/run/docker.sock:/var/run/docker.sock ║"
+echo "║   - No '--privileged', no Sysbox, no '/var/lib/docker' bind               ║"
+echo "║   - Forwards selected env vars into the container                         ║"
+echo "║   - Mounts specified RO/RW host paths at same paths inside                ║"
+echo "║   - If no command is provided, image ENTRYPOINT/CMD is used               ║"
 echo "╠═══════════════════════════════════════════════════════════════════════════╣"
 echo "║  Host System Info:                                                        ║"
 echo "║    - Host:      $(printf '%-58s' "$(hostname)")║"
@@ -67,59 +68,31 @@ print_env_var() {
 
 # Required
 echo "║  [Required]                                                               ║"
-print_env_var DOOD_OUTER_IMAGE                 true  "image to run as the outer container"
-print_env_var DOOD_NETWORK                     true  "docker network name for the outer container"
+print_env_var DOOD_OUTER_IMAGE                 true  "image to run"
 
 # Optional
 echo "║  [Optional]                                                               ║"
+print_env_var DOOD_OUTER_CMD                   false "command to run inside; if empty, image default is used"
+print_env_var DOOD_NETWORK                     false "docker network"
+print_env_var DOOD_SOCKET                      false "docker socket path (default: /var/run/docker.sock)"
 print_env_var DOOD_FORWARD_ENV_PREFIXES        false "space-separated prefixes to forward"
 print_env_var DOOD_FORWARD_ENV_VARS            false "space-separated exact var names to forward"
 print_env_var DOOD_BIND_RO_DIRS                false "space-separated host dirs to bind read-only at same path"
 print_env_var DOOD_BIND_RW_DIRS                false "space-separated host dirs to bind read-write at same path"
-print_env_var DOOD_CACHE_ROOT                  false "path to store auto-saved image tars (default: ~/.cache/dind)"
-print_env_var DOOD_HOST_BASE                   false "base path for inner Docker storage"
 print_env_var DOOD_EXTRA_ARGS                  false "extra args appended to docker run"
-
-# Conditionally Required
-echo "║  [Conditionally Required — only if 'DOOD_INNER_IMAGES_TO_FORWARD' is set] ║"
-print_env_var DOOD_OUTER_CMD                   false "command run inside outer container AFTER docker loads"
 
 echo "╚═══════════════════════════════════════════════════════════════════════════╝"
 echo
 
 ########################################################################
-# Defaults
-########################################################################
-if [[ -z "${DOOD_CACHE_ROOT:-}" ]]; then
-    DOOD_CACHE_ROOT="$HOME/.cache/dind"
-fi
-saved_images_dir="$DOOD_CACHE_ROOT/saved-images"
-mkdir -p "$saved_images_dir"
-
-########################################################################
-# Prepare host dirs for inner Docker writable layers & temp
-########################################################################
-if [[ -z "${DOOD_HOST_BASE:-}" ]]; then
-    _uuid="$(uuidgen 2>/dev/null || date +%s)-$$"
-    if [[ -n "${RUNNER_TEMP:-}" ]]; then
-        DOOD_HOST_BASE="$RUNNER_TEMP/dind-$_uuid"
-    else
-        DOOD_HOST_BASE="/tmp/dind-$_uuid"
-    fi
-fi
-inner_docker_root="$DOOD_HOST_BASE/lib"
-inner_docker_tmp="$DOOD_HOST_BASE/tmp"
-mkdir -p "$inner_docker_root" "$inner_docker_tmp"
-
-########################################################################
-# Run outer container
+# Run container using host daemon
 ########################################################################
 
 echo
 echo "╔═══════════════════════════════════════════════════════════════════════════╗"
 echo "$_ECHO_HEADER"
 echo "║                                                                           ║"
-echo "║                 Executing 'docker run' (outer container).                 ║"
+echo "║                          Executing 'docker run'.                          ║"
 echo "║           The next lines are the live command trace (set -x)...           ║"
 echo "╚═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╝"
 echo
@@ -127,7 +100,9 @@ echo
 set -x  # begin live trace of the docker run command
 
 docker run --rm \
-    --network="$DOOD_NETWORK" \
+    \
+    $( [[ -n "${DOOD_NETWORK:-}" ]] && echo "--network=$DOOD_NETWORK" )
+    \
     -v "${DOOD_SOCKET:-"/var/run/docker.sock"}:/var/run/docker.sock" \
     -e DOCKER_HOST="unix:///var/run/docker.sock" \
     \
@@ -157,14 +132,15 @@ docker run --rm \
     \
     $( [[ -n "${DOOD_EXTRA_ARGS:-}" ]] && echo "$DOOD_EXTRA_ARGS" ) \
     \
-    "$DOOD_OUTER_IMAGE" $( [[ -n "${DOOD_OUTER_CMD:-}" ]] && echo "${DOOD_OUTER_CMD}" )
+    "$DOOD_OUTER_IMAGE" \
+    $( [[ -n "${DOOD_OUTER_CMD:-}" ]] && echo "${DOOD_OUTER_CMD}" )
 
-set +x
+set +x  # end live trace
 
 echo
 echo "╔═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╗"
 echo "$_ECHO_HEADER"
 echo "║                                                                           ║"
-echo "║                 The 'docker run' command (outer container)                ║"
-echo "║                      and this utility have concluded.                     ║"
+echo "║  The 'docker run' command has finished for image:                         ║"
+echo "║    $(printf '%-71s' "'$(hostname)'")║"
 echo "╚═══════════════════════════════════════════════════════════════════════════╝"
