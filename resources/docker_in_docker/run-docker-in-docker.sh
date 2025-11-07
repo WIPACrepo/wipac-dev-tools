@@ -312,7 +312,7 @@ docker run --rm \
     \
     $( [[ -n "${DIND_EXTRA_ARGS:-}" ]] && echo "$DIND_EXTRA_ARGS" ) \
     \
-    "$DIND_OUTER_IMAGE" "${DIND_OUTER_CMD:-}"
+    "$DIND_OUTER_IMAGE" $( [[ -n "${DIND_OUTER_CMD:-}" ]] && echo "${DIND_OUTER_CMD}" )
 set +x
 
 
