@@ -92,11 +92,11 @@ print_env_var DIND_OUTER_CMD                   false "command run inside outer c
 echo "╚═══════════════════════════════════════════════════════════════════════════╝"
 echo
 
-# Policy: images → require command; otherwise run image defaults
-if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" && -z "${DIND_OUTER_CMD:-}" ]]; then
-    echo "::error::When DIND_INNER_IMAGES_TO_FORWARD is set, you must also set DIND_OUTER_CMD (the command to run after images are loaded)."
-    exit 1
-fi
+## Policy: images → require command; otherwise run image defaults
+#if [[ -n "${DIND_INNER_IMAGES_TO_FORWARD:-}" && -z "${DIND_OUTER_CMD:-}" ]]; then
+#    echo "::error::When DIND_INNER_IMAGES_TO_FORWARD is set, you must also set DIND_OUTER_CMD (the command to run after images are loaded)."
+#    exit 1
+#fi
 
 ########################################################################
 # Ensure Sysbox runtime is active (required for Docker-in-Docker)
