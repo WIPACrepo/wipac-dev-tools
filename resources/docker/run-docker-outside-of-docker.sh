@@ -8,30 +8,30 @@ set -euo pipefail
 ########################################################################
 
 echo
-echo "╔═══════════════════════════════════════════════════════════════════════════╗"
-echo "║                                                                           ║"
-_ECHO_HEADER="║         Docker-outside-of-Docker (DooD) Utility — WIPAC Developers        ║"
+echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+echo "┃                                                                           ┃"
+_ECHO_HEADER="┃         Docker-outside-of-Docker (DooD) Utility — WIPAC Developers        ┃"
 echo "$_ECHO_HEADER"
-echo "║                                                                           ║"
-echo "╠═══════════════════════════════════════════════════════════════════════════╣"
-echo "║  Purpose:     Run a container that talks to the *host* Docker daemon      ║"
-echo "║               via the mounted socket. No inner daemon, no tars.           ║"
-echo "╠═══════════════════════════════════════════════════════════════════════════╣"
-echo "║  Details:                                                                 ║"
-echo "║   - Shares host daemon with: -v /var/run/docker.sock:/var/run/docker.sock ║"
-echo "║   - No '--privileged', no Sysbox, no '/var/lib/docker' bind               ║"
-echo "║   - Forwards selected env vars into the container                         ║"
-echo "║   - Mounts specified RO/RW host paths at same paths inside                ║"
-echo "║   - If no command is provided, image ENTRYPOINT/CMD is used               ║"
-echo "╠═══════════════════════════════════════════════════════════════════════════╣"
-echo "║  Host System Info:                                                        ║"
-echo "║    - Host:      $(printf '%-58s' "$(hostname)")║"
-echo "║    - User:      $(printf '%-58s' "$(whoami)")║"
-echo "║    - Kernel:    $(printf '%-58s' "$(uname -r)")║"
-echo "║    - Platform:  $(printf '%-58s' "$(uname -s) $(uname -m)")║"
-echo "║    - Timestamp: $(printf '%-58s' "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")")║"
-echo "╠═══════════════════════════════════════════════════════════════════════════╣"
-echo "║  Environment Variables:                                                   ║"
+echo "┃                                                                           ┃"
+echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
+echo "┃  Purpose:     Run a container that talks to the *host* Docker daemon      ┃"
+echo "┃               via the mounted socket. No inner daemon, no tars.           ┃"
+echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
+echo "┃  Details:                                                                 ┃"
+echo "┃   - Shares host daemon with: -v /var/run/docker.sock:/var/run/docker.sock ┃"
+echo "┃   - No '--privileged', no Sysbox, no '/var/lib/docker' bind               ┃"
+echo "┃   - Forwards selected env vars into the container                         ┃"
+echo "┃   - Mounts specified RO/RW host paths at same paths inside                ┃"
+echo "┃   - If no command is provided, image ENTRYPOINT/CMD is used               ┃"
+echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
+echo "┃  Host System Info:                                                        ┃"
+echo "┃    - Host:      $(printf '%-58s' "$(hostname)")┃"
+echo "┃    - User:      $(printf '%-58s' "$(whoami)")┃"
+echo "┃    - Kernel:    $(printf '%-58s' "$(uname -r)")┃"
+echo "┃    - Platform:  $(printf '%-58s' "$(uname -s) $(uname -m)")┃"
+echo "┃    - Timestamp: $(printf '%-58s' "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")")┃"
+echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
+echo "┃  Environment Variables:                                                   ┃"
 
 print_env_var() {
     local var="$1"
@@ -47,7 +47,7 @@ print_env_var() {
 
     # Print nicely formatted entry
     # name
-    echo "║    - $(printf '%-69s' "${var}")║"
+    echo "┃    - $(printf '%-69s' "${var}")┃"
     # value
     if [[ -n "$val" ]]; then
         # strip ANSI codes for length comparison
@@ -55,23 +55,23 @@ print_env_var() {
         clean="$(echo -e "$val" | sed 's/\x1b\[[0-9;]*m//g')"
         if (( ${#clean} > 67 )); then
             # if too long, print raw (no right border)
-            echo "║        \"$val\""
+            echo "┃        \"$val\""
         else
-            echo "║        $(printf '%-67s' "\"$val\"")║"
+            echo "┃        $(printf '%-67s' "\"$val\"")┃"
         fi
     else
-        echo "║        $(printf '%-67s' "<unset>")║"
+        echo "┃        $(printf '%-67s' "<unset>")┃"
     fi
     # desc
-    echo "║        $(printf '%-67s' "$desc")║"
+    echo "┃        $(printf '%-67s' "$desc")┃"
 }
 
 # Required
-echo "║  [Required]                                                               ║"
+echo "┃  [Required]                                                               ┃"
 print_env_var DOOD_OUTER_IMAGE                 true  "image to run"
 
 # Optional
-echo "║  [Optional]                                                               ║"
+echo "┃  [Optional]                                                               ┃"
 print_env_var DOOD_OUTER_CMD                   false "command to run inside; if empty, image default is used"
 print_env_var DOOD_NETWORK                     false "docker network"
 print_env_var DOOD_SOCKET                      false "docker socket path (default: /var/run/docker.sock)"
@@ -81,7 +81,7 @@ print_env_var DOOD_BIND_RO_DIRS                false "space-separated host dirs 
 print_env_var DOOD_BIND_RW_DIRS                false "space-separated host dirs to bind read-write at same path"
 print_env_var DOOD_EXTRA_ARGS                  false "extra args appended to docker run"
 
-echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 echo
 
 ########################################################################
@@ -89,12 +89,12 @@ echo
 ########################################################################
 
 echo
-echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
 echo "$_ECHO_HEADER"
-echo "║                                                                           ║"
-echo "║                          Executing 'docker run'.                          ║"
-echo "║           The next lines are the live command trace (set -x)...           ║"
-echo "╚═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╝"
+echo "┃                                                                           ┃"
+echo "┃                          Executing 'docker run'.                          ┃"
+echo "┃           The next lines are the live command trace (set -x)...           ┃"
+echo "┗━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━┛"
 echo
 
 set -x  # begin live trace of the docker run command
@@ -138,9 +138,9 @@ docker run --rm \
 set +x  # end live trace
 
 echo
-echo "╔═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═ ═╗"
+echo "┏━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━┓"
 echo "$_ECHO_HEADER"
-echo "║                                                                           ║"
-echo "║  The 'docker run' command has finished for image:                         ║"
-echo "║    $(printf '%-71s' "'$(hostname)'")║"
-echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo "┃                                                                           ┃"
+echo "┃  The 'docker run' command has finished for image:                         ┃"
+echo "┃    $(printf '%-71s' "'$(hostname)'")┃"
+echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"

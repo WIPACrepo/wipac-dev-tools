@@ -31,30 +31,30 @@ for arg in "$@"; do
 done
 
 echo
-echo "╔═══════════════════════════════════════════════════════════════════════════╗"
-echo "║                                                                           ║"
-_ECHO_HEADER="║               Apptainer Install Utility — WIPAC Developers                ║"
+echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+echo "┃                                                                           ┃"
+_ECHO_HEADER="┃               Apptainer Install Utility — WIPAC Developers                ┃"
 echo "$_ECHO_HEADER"
-echo "║                                                                           ║"
-echo "╠═══════════════════════════════════════════════════════════════════════════╣"
-echo "║  Host System Info:                                                        ║"
-echo "║    - Host:      $(printf '%-58s' "$(hostname)")║"
-echo "║    - User:      $(printf '%-58s' "$(whoami)")║"
-echo "║    - Kernel:    $(printf '%-58s' "$(uname -r)")║"
-echo "║    - Platform:  $(printf '%-58s' "$(uname -s) $(uname -m)")║"
-echo "║    - OS:        $(printf '%-58s' "$(lsb_release -ds 2>/dev/null || echo 'Unknown OS')")║"
-echo "║    - Timestamp: $(printf '%-58s' "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")")║"
-echo "╠═══════════════════════════════════════════════════════════════════════════╣"
-echo "║  This script will:                                                        ║"
-echo "║   - Install all required Apptainer build dependencies                     ║"
-echo "║   - Clone Apptainer from GitHub and build version $(printf '%-24s' "$APPTAINER_VERSION")║"
+echo "┃                                                                           ┃"
+echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
+echo "┃  Host System Info:                                                        ┃"
+echo "┃    - Host:      $(printf '%-58s' "$(hostname)")┃"
+echo "┃    - User:      $(printf '%-58s' "$(whoami)")┃"
+echo "┃    - Kernel:    $(printf '%-58s' "$(uname -r)")┃"
+echo "┃    - Platform:  $(printf '%-58s' "$(uname -s) $(uname -m)")┃"
+echo "┃    - OS:        $(printf '%-58s' "$(lsb_release -ds 2>/dev/null || echo 'Unknown OS')")┃"
+echo "┃    - Timestamp: $(printf '%-58s' "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")")┃"
+echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
+echo "┃  This script will:                                                        ┃"
+echo "┃   - Install all required Apptainer build dependencies                     ┃"
+echo "┃   - Clone Apptainer from GitHub and build version $(printf '%-24s' "$APPTAINER_VERSION")┃"
 if [[ "$INSTALL_SQUASHFUSE" == true ]]; then
-    echo "║   - Install squashfuse for running .sif files                             ║"
+    echo "┃   - Install squashfuse for running .sif files                             ┃"
 else
-    echo "║   - Skip squashfuse installation (use --sif to include)                   ║"
+    echo "┃   - Skip squashfuse installation (use --sif to include)                   ┃"
 fi
-echo "║   - Install AppArmor profile (Ubuntu 23.10+ only)                         ║"
-echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo "┃   - Install AppArmor profile (Ubuntu 23.10+ only)                         ┃"
+echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 echo
 
 set -x
@@ -115,15 +115,15 @@ fi
 
 set +x
 echo
-echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
 echo "$_ECHO_HEADER"
-echo "║                            Installation Done.                             ║"
-echo "╠═══════════════════════════════════════════════════════════════════════════╣"
-echo "║  Version:    $(printf '%-61s' "$(apptainer --version 2>/dev/null || echo 'installed')")║"
-echo "║  Location:   $(printf '%-61s' "$(command -v apptainer 2>/dev/null || echo '/usr/local/bin/apptainer')")║"
+echo "┃                            Installation Done.                             ┃"
+echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
+echo "┃  Version:    $(printf '%-61s' "$(apptainer --version 2>/dev/null || echo 'installed')")┃"
+echo "┃  Location:   $(printf '%-61s' "$(command -v apptainer 2>/dev/null || echo '/usr/local/bin/apptainer')")┃"
 if [[ "$INSTALL_SQUASHFUSE" == true ]]; then
-    echo "║  squashfuse: $(printf '%-61s' "installed")║"
+    echo "┃  squashfuse: $(printf '%-61s' "installed")┃"
 else
-    echo "║  squashfuse: $(printf '%-61s' "skipped (--sif not provided)")║"
+    echo "┃  squashfuse: $(printf '%-61s' "skipped (--sif not provided)")┃"
 fi
-echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
