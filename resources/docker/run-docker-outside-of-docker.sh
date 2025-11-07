@@ -101,7 +101,7 @@ set -x  # begin live trace of the docker run command
 
 docker run --rm \
     \
-    $( [[ -n "${DOOD_NETWORK:-}" ]] && echo "--network=$DOOD_NETWORK" )
+    $( [[ -n "${DOOD_NETWORK:-}" ]] && echo "--network=$DOOD_NETWORK" ) \
     \
     -v "${DOOD_SOCKET:-"/var/run/docker.sock"}:/var/run/docker.sock" \
     -e DOCKER_HOST="unix:///var/run/docker.sock" \
