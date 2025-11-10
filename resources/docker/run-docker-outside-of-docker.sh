@@ -145,7 +145,7 @@ docker run --rm \
     $( [[ -n "${DOOD_EXTRA_ARGS:-}" ]] && echo "$DOOD_EXTRA_ARGS" ) \
     \
     "$DOOD_OUTER_IMAGE" \
-    $( [[ -n "${DOOD_OUTER_CMD:-}" ]] && printf -- " /bin/bash -c %q" "${DOOD_OUTER_CMD}" )
+    $( [[ -n "${DOOD_OUTER_CMD:-}" ]] && echo "${DOOD_OUTER_CMD}" )
 
 set +x  # end live trace
 
