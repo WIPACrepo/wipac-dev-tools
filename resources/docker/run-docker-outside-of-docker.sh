@@ -15,13 +15,13 @@ echo "$_ECHO_HEADER"
 echo "┃                                                                           ┃"
 echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
 echo "┃  Purpose:     Run a container that talks to the *host* Docker daemon      ┃"
-echo "┃               via the mounted socket. No inner daemon, no tars.           ┃"
+echo "┃               via the mounted socket.                                     ┃"
 echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
 echo "┃  Details:                                                                 ┃"
 echo "┃   - Shares host daemon with: -v /var/run/docker.sock:/var/run/docker.sock ┃"
 echo "┃   - No '--privileged', no Sysbox, no '/var/lib/docker' bind               ┃"
 echo "┃   - Forwards selected env vars into the container                         ┃"
-echo "┃   - Mounts specified RO/RW host paths at same paths inside                ┃"
+echo "┃   - Mounts specified RO/RW host paths at *same paths inside*              ┃"
 echo "┃   - If no command is provided, image ENTRYPOINT/CMD is used               ┃"
 echo "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"
 echo "┃  Host System Info:                                                        ┃"
@@ -83,6 +83,14 @@ print_env_var DOOD_EXTRA_ARGS                  false "extra args appended to doc
 
 echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 echo
+
+# validate to-be-mounted directories
+for p in ${DOOD_BIND_RO_DIRS:-} ${DOOD_BIND_RW_DIRS:-}; do
+    if [[ ! -e "$p" ]]; then
+        echo "::error::Bind source does not exist on host: $p"
+        exit 2
+    fi
+done
 
 ########################################################################
 # Run container using host daemon
