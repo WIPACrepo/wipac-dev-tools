@@ -84,10 +84,14 @@ print_env_var DOOD_EXTRA_ARGS                  false "extra args appended to doc
 echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 echo
 
-# validate to-be-mounted directories
-for p in ${DOOD_BIND_RO_DIRS:-} ${DOOD_BIND_RW_DIRS:-}; do
-    if [[ ! -e "$p" ]]; then
-        echo "::error::Bind source does not exist on host: $p"
+# validate to-be-mounted directories (host side)
+for d in ${DOOD_BIND_RO_DIRS:-} ${DOOD_BIND_RW_DIRS:-}; do
+    if [[ "${d:0:1}" != "/" ]]; then
+        echo "::error::Bind source must be an absolute path on the host: $d"
+        exit 2
+    fi
+    if [[ ! -d "$d" ]]; then
+        echo "::error::Bind source directory does not exist on host: $d"
         exit 2
     fi
 done
@@ -115,13 +119,13 @@ docker run --rm \
     -e DOCKER_HOST="unix:///var/run/docker.sock" \
     \
     $( \
-        for d in ${DOOD_BIND_RO_DIRS:-}; do \
-            echo -n " -v $d:$d:ro"; \
+        for d in ${DOOD_BIND_RO_DIRS:-}; do
+            printf -- " -v %q" "${d}:${d}:ro"
         done \
     ) \
     $( \
-        for d in ${DOOD_BIND_RW_DIRS:-}; do \
-            echo -n " -v $d:$d"; \
+        for d in ${DOOD_BIND_RW_DIRS:-}; do
+            printf -- " -v %q" "${d}:${d}"
         done \
     ) \
     \
