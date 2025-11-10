@@ -8,27 +8,33 @@ set -euo pipefail
 # following the official installation guide:
 # https://github.com/apptainer/apptainer/blob/main/INSTALL.md
 #
-# Optional flag:
-#   --sif   Install squashfuse (needed for running .sif files directly)
+# Required flag:
+#   --sif yes|no   Install squashfuse (needed for running .sif files directly)
 ########################################################################
 
 APPTAINER_VERSION="v1.3.2"
-
-INSTALL_SQUASHFUSE=false # default value. see below
+INSTALL_SQUASHFUSE=false
 
 # Parse args
-for arg in "$@"; do
-    case "$arg" in
-        --sif)
-            INSTALL_SQUASHFUSE=true
-            ;;
-        *)
-            echo "::error::Unknown argument: $arg"
-            echo "Usage: $0 [--sif]"
-            exit 1
-            ;;
-    esac
-done
+if [[ $# -ne 2 || "$1" != "--sif" ]]; then
+    echo "::error::Missing or invalid arguments."
+    echo "Usage: $0 --sif yes|no"
+    exit 1
+fi
+
+case "$2" in
+    yes)
+        INSTALL_SQUASHFUSE=true
+        ;;
+    no)
+        INSTALL_SQUASHFUSE=false
+        ;;
+    *)
+        echo "::error::Invalid value for --sif: $2"
+        echo "Usage: $0 --sif yes|no"
+        exit 1
+        ;;
+esac
 
 echo
 echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
@@ -49,9 +55,9 @@ echo "┃  This script will:                                                    
 echo "┃   - Install all required Apptainer build dependencies                     ┃"
 echo "┃   - Clone Apptainer from GitHub and build version $(printf '%-24s' "$APPTAINER_VERSION")┃"
 if [[ "$INSTALL_SQUASHFUSE" == true ]]; then
-    echo "┃   - Install squashfuse for running .sif files                             ┃"
+    echo "┃   - Install squashfuse for running .sif files (--sif yes)                 ┃"
 else
-    echo "┃   - Skip squashfuse installation (use --sif to include)                   ┃"
+    echo "┃   - Skip squashfuse installation (--sif no)                               ┃"
 fi
 echo "┃   - Install AppArmor profile (Ubuntu 23.10+ only)                         ┃"
 echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
@@ -63,7 +69,6 @@ set -x
 # Install Apptainer build dependencies
 ########################################################################
 if [[ $(sudo find /var/lib/apt/lists -type f -mtime -1 | wc -l) -eq 0 ]]; then
-    # only if apt lists are older than 1 day
     sudo apt-get update
 fi
 sudo apt-get install -y \
@@ -122,8 +127,8 @@ echo "┣━━━━━━━━━━━━━━━━━━━━━━━�
 echo "┃  Version:    $(printf '%-61s' "$(apptainer --version 2>/dev/null || echo 'installed')")┃"
 echo "┃  Location:   $(printf '%-61s' "$(command -v apptainer 2>/dev/null || echo '/usr/local/bin/apptainer')")┃"
 if [[ "$INSTALL_SQUASHFUSE" == true ]]; then
-    echo "┃  squashfuse: $(printf '%-61s' "installed")┃"
+    echo "┃  squashfuse: $(printf '%-61s' "installed (--sif yes)")┃"
 else
-    echo "┃  squashfuse: $(printf '%-61s' "skipped (--sif not provided)")┃"
+    echo "┃  squashfuse: $(printf '%-61s' "skipped (--sif no)")┃"
 fi
 echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
