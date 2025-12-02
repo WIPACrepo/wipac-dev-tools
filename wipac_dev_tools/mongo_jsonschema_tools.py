@@ -259,7 +259,8 @@ class MongoJSONSchemaValidatedCollection:
             cursor = await self._collection.aggregate(pipeline, **kwargs)  # type: ignore[misc]
         else:
             raise RuntimeError(
-                "misconfigured MongoJSONSchemaValidatedCollection._collection"
+                f"misconfigured MongoJSONSchemaValidatedCollection._collection: "
+                f"{type(self._collection).__name__}"
             )
 
         # From here on, cursor is an async iterator
