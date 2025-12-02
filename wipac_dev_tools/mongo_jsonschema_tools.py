@@ -15,7 +15,7 @@ try:
         from motor.motor_asyncio import AsyncIOMotorCollection
     except:  # noqa: E722
         # if no motor, try pymongo — this is the long-term option
-        from pymongo import AsyncMongoClient
+        from pymongo.asynchronous.collection import AsyncCollection
 except (ImportError, ModuleNotFoundError) as _exc:
     raise ImportError(
         "the 'mongo' option must be installed in order to use 'mongo_jsonschema_tools'"
@@ -57,7 +57,7 @@ class MongoJSONSchemaValidatedCollection:
 
     def __init__(
         self,
-        collection: "AsyncIOMotorCollection | AsyncMongoClient",
+        collection: "AsyncIOMotorCollection | AsyncCollection",
         collection_jsonschema_spec: dict[str, Any],
         parent_logger: Union[logging.Logger, None] = None,
         validation_exception_callback: Union[
