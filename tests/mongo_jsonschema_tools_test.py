@@ -17,14 +17,16 @@ ValidationError = jsonschema.exceptions.ValidationError
 
 
 def make_coll(schema: dict) -> MongoJSONSchemaValidatedCollection:
+    """Create a MongoJSONSchemaValidatedCollection instance with a mocked backend."""
     coll_classname = "motor.motor_asyncio.AsyncIOMotorCollection"
+
     with patch(coll_classname):
         coll = MongoJSONSchemaValidatedCollection(
             collection=AsyncMock(),
             collection_jsonschema_spec=schema,
             parent_logger=logging.getLogger("test_logger"),
         )
-        coll._collection.__name__ = coll_classname.rsplit(".", maxsplit=1)[1]
+        coll._collection_backend = coll_classname.rsplit(".", maxsplit=1)[1]
         return coll
 
 

@@ -66,6 +66,9 @@ class MongoJSONSchemaValidatedCollection:
         self._collection = collection
         self._schema = collection_jsonschema_spec
 
+        # FUTURE DEV: once motor, is deprecated, we can remove this — this exists for test-patching
+        self._collection_backend = type(self._collection).__name__
+
         self.collection_name = collection.name
 
         if parent_logger is not None:
@@ -251,17 +254,17 @@ class MongoJSONSchemaValidatedCollection:
         cursor: AsyncIterator[dict]  # typehint here, instantiate below
 
         # FUTURE DEV: once motor, is deprecated, we can remove this complex logic
-        if type(self._collection).__name__ == "AsyncIOMotorCollection":
+        if self._collection_backend == "AsyncIOMotorCollection":
             # Motor's AsyncIOMotorCollection.aggregate() returns an async cursor directly.
             cursor = self._collection.aggregate(pipeline, **kwargs)  # type: ignore[assignment]
-        elif type(self._collection).__name__ == "AsyncCollection":
+        elif self._collection_backend == "AsyncCollection":
             # PyMongo async's AsyncCollection.aggregate() returns a coroutine
             # that must be awaited to obtain the async cursor.
             cursor = await self._collection.aggregate(pipeline, **kwargs)  # type: ignore[assignment]
         else:
             raise RuntimeError(
                 f"misconfigured MongoJSONSchemaValidatedCollection._collection: "
-                f"{type(self._collection).__name__}"
+                f"{self._collection_backend}"
             )
 
         # From here on, cursor is an async iterator
