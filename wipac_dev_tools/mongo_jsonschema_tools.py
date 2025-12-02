@@ -250,9 +250,10 @@ class MongoJSONSchemaValidatedCollection:
 
         cursor: AsyncIterator[dict]  # typehint here, instantiate below
 
+        # FUTURE DEV: once motor, is deprecated, we can remove this complex logic
         if type(self._collection).__name__ == "AsyncIOMotorCollection":
             # Motor's AsyncIOMotorCollection.aggregate() returns an async cursor directly.
-            cursor = self._collection.aggregate(pipeline, **kwargs)
+            cursor = self._collection.aggregate(pipeline, **kwargs)  # type: ignore[misc]
         elif type(self._collection).__name__ == "AsyncCollection":
             # PyMongo async's AsyncCollection.aggregate() returns a coroutine
             # that must be awaited to obtain the async cursor.
