@@ -13,7 +13,7 @@ try:
         # first, try motor — this will eventually be deprecated
         # https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/
         from motor.motor_asyncio import AsyncIOMotorCollection
-    except:
+    except:  # noqa: E722
         # if no motor, try pymongo — this is the long-term option
         from pymongo import AsyncMongoClient
 except (ImportError, ModuleNotFoundError) as _exc:
