@@ -2,8 +2,7 @@
 
 import copy
 import logging
-from typing import Any, AsyncIterator, Callable, Union
-
+from typing import Any, AsyncIterator, Callable, Union, cast
 
 # mongo imports
 try:
@@ -249,8 +248,13 @@ class MongoJSONSchemaValidatedCollection:
         """Find all matching the aggregate pipeline."""
         self.logger.debug(f"finding with aggregate pipeline: {pipeline}")
 
+        cursor = cast(
+            AsyncIterator[dict],
+            self._collection.aggregate(pipeline, **kwargs),
+        )
+
         i = 0
-        async for doc in self._collection.aggregate(pipeline, **kwargs):
+        async for doc in cursor:
             i += 1
             if no_id:
                 doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
