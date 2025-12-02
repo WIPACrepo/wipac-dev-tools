@@ -260,7 +260,7 @@ class MongoJSONSchemaValidatedCollection:
         elif self._collection_backend == "AsyncCollection":
             # PyMongo async's AsyncCollection.aggregate() returns a coroutine
             # that must be awaited to obtain the async cursor.
-            cursor = await self._collection.aggregate(pipeline, **kwargs)  # type: ignore[assignment]
+            cursor = await self._collection.aggregate(pipeline, **kwargs)  # type: ignore[misc]
         else:
             raise RuntimeError(
                 f"misconfigured MongoJSONSchemaValidatedCollection._collection: "
