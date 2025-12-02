@@ -43,6 +43,9 @@ semver = [
     'semantic-version',
 ]
 mongo = [
+    'pymongo',
+]
+motor = [
     'motor',
 ]
 jsonschema = [
