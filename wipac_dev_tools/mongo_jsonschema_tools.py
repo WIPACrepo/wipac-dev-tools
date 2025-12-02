@@ -253,11 +253,11 @@ class MongoJSONSchemaValidatedCollection:
         # FUTURE DEV: once motor, is deprecated, we can remove this complex logic
         if type(self._collection).__name__ == "AsyncIOMotorCollection":
             # Motor's AsyncIOMotorCollection.aggregate() returns an async cursor directly.
-            cursor = self._collection.aggregate(pipeline, **kwargs)  # type: ignore[misc]
+            cursor = self._collection.aggregate(pipeline, **kwargs)  # type: ignore[assignment]
         elif type(self._collection).__name__ == "AsyncCollection":
             # PyMongo async's AsyncCollection.aggregate() returns a coroutine
             # that must be awaited to obtain the async cursor.
-            cursor = await self._collection.aggregate(pipeline, **kwargs)  # type: ignore[misc]
+            cursor = await self._collection.aggregate(pipeline, **kwargs)  # type: ignore[assignment]
         else:
             raise RuntimeError(
                 f"misconfigured MongoJSONSchemaValidatedCollection._collection: "
