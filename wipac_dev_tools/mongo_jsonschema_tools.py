@@ -2,7 +2,7 @@
 
 import copy
 import logging
-from typing import Any, AsyncIterator, Callable, Union, cast
+from typing import Any, AsyncIterator, Callable, Union
 
 # mongo imports
 try:
@@ -248,11 +248,15 @@ class MongoJSONSchemaValidatedCollection:
         """Find all matching the aggregate pipeline."""
         self.logger.debug(f"finding with aggregate pipeline: {pipeline}")
 
-        cursor = cast(
-            AsyncIterator[dict],
-            self._collection.aggregate(pipeline, **kwargs),
-        )
+        if isinstance(self._collection, AsyncIOMotorCollection):
+            # Motor's AsyncIOMotorCollection.aggregate() returns an async cursor directly.
+            cursor = self._collection.aggregate(pipeline, **kwargs)
+        else:
+            # PyMongo async's AsyncCollection.aggregate() returns a coroutine
+            # that must be awaited to obtain the async cursor.
+            cursor = await self._collection.aggregate(pipeline, **kwargs)  # type: ignore[misc]
 
+        # From here on, cursor is an async iterator
         i = 0
         async for doc in cursor:
             i += 1
