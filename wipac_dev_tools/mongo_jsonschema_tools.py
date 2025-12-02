@@ -7,8 +7,15 @@ from typing import Any, AsyncIterator, Callable, Union
 
 # mongo imports
 try:
-    from motor.motor_asyncio import AsyncIOMotorCollection
     from pymongo import ReturnDocument
+
+    try:
+        # first, try motor — this will eventually be deprecated
+        # https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/
+        from motor.motor_asyncio import AsyncIOMotorCollection
+    except:
+        # if no motor, try pymongo — this is the long-term option
+        from pymongo import AsyncMongoClient
 except (ImportError, ModuleNotFoundError) as _exc:
     raise ImportError(
         "the 'mongo' option must be installed in order to use 'mongo_jsonschema_tools'"
@@ -50,7 +57,7 @@ class MongoJSONSchemaValidatedCollection:
 
     def __init__(
         self,
-        collection: AsyncIOMotorCollection,
+        collection: "AsyncIOMotorCollection | AsyncMongoClient",
         collection_jsonschema_spec: dict[str, Any],
         parent_logger: Union[logging.Logger, None] = None,
         validation_exception_callback: Union[
