@@ -248,6 +248,8 @@ class MongoJSONSchemaValidatedCollection:
         """Find all matching the aggregate pipeline."""
         self.logger.debug(f"finding with aggregate pipeline: {pipeline}")
 
+        cursor: AsyncIterator[dict]  # typehint here, instantiate below
+
         if type(self._collection).__name__ == "AsyncIOMotorCollection":
             # Motor's AsyncIOMotorCollection.aggregate() returns an async cursor directly.
             cursor = self._collection.aggregate(pipeline, **kwargs)
