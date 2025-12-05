@@ -624,9 +624,9 @@ async def test_1600__aggregate_removes_id(
 
     if bio_coll._collection_backend == "AsyncIOMotorCollection":
         # Motor-style: aggregate() returns an async iterator / cursor directly
-        bio_coll._collection.aggregate = (
+        bio_coll._collection.aggregate = (  # type: ignore[method-assign]
             lambda *_args, **_kwargs: async_gen()
-        )  # type: ignore[method-assign]
+        )
     elif bio_coll._collection_backend == "AsyncCollection":
         # PyMongo async-style: aggregate() is a coroutine that resolves to an async iterator
         async def aggregate_coro(*_args, **_kwargs):
