@@ -658,13 +658,25 @@ async def test_1700__aggregate_one_returns_first_doc(
         for doc in docs:
             yield doc
 
-    bio_coll._collection.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
+    # Choose a mock shape that matches the backend semantics
+    if bio_coll._collection_backend == "AsyncIOMotorCollection":
+        # Motor-style: aggregate returns an async iterator directly (no await)
+        agg_mock = MagicMock(return_value=async_gen())
+    elif bio_coll._collection_backend == "AsyncCollection":
+        # PyMongo async-style: aggregate is awaited and returns the async iterator
+        agg_mock = AsyncMock(return_value=async_gen())
+    else:
+        raise AssertionError(
+            f"Unexpected backend in test: {bio_coll._collection_backend!r}"
+        )
+
+    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]
 
     pipeline = [{"$match": {}}]  # type: ignore[var-annotated]
     result = await bio_coll.aggregate_one(pipeline.copy())
 
     # check calls & result
-    bio_coll._collection.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
+    agg_mock.assert_called_once_with(pipeline + [{"$limit": 1}])
     assert result in [{"val": "X"}, {"val": "Y"}]
 
 
@@ -678,11 +690,22 @@ async def test_1701__aggregate_one_not_found_raises(
         for _ in []:  # hack for empty async iter
             yield
 
-    bio_coll._collection.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
+    if bio_coll._collection_backend == "AsyncIOMotorCollection":
+        # Motor-style: aggregate returns an async iterator directly (no await)
+        agg_mock = MagicMock(return_value=async_gen())
+    elif bio_coll._collection_backend == "AsyncCollection":
+        # PyMongo async-style: aggregate is awaited and returns the async iterator
+        agg_mock = AsyncMock(return_value=async_gen())
+    else:
+        raise AssertionError(
+            f"Unexpected backend in test: {bio_coll._collection_backend!r}"
+        )
+
+    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]
 
     pipeline = [{"$match": {"val": "none"}}]
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.aggregate_one(pipeline.copy())
 
     # check calls
-    bio_coll._collection.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
+    agg_mock.assert_called_once_with(pipeline + [{"$limit": 1}])
