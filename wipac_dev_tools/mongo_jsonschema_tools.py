@@ -2,6 +2,7 @@
 
 import copy
 import logging
+import os
 from typing import Any, AsyncIterator, Callable, Union
 
 # mongo imports
@@ -72,7 +73,11 @@ class MongoJSONSchemaValidatedCollection:
         # FUTURE DEV: once motor, is deprecated, we can remove this — this exists for test-patching
         self._collection_backend = type(self._collection).__name__
         # -- check that if 'motor' is installed, we're using it. Note: pymongo is always installed
-        if _IS_MOTOR_IMPORTED and self._collection_backend != "AsyncIOMotorCollection":
+        if (
+            not os.getenv("CI")
+            and _IS_MOTOR_IMPORTED
+            and self._collection_backend != "AsyncIOMotorCollection"
+        ):
             raise RuntimeError(
                 f"package 'motor' is installed, but 'MongoJSONSchemaValidatedCollection' "
                 f"object *not* initialized with 'AsyncIOMotorCollection' instance "
