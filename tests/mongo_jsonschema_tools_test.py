@@ -622,7 +622,10 @@ async def test_1600__aggregate_removes_id(
         for doc in docs:
             yield doc
 
-    bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
+    if _IS_MOTOR_IMPORTED:
+        bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
+    else:
+        bio_coll._collection.aggregate = async_gen
 
     # check calls & result
     results = [doc async for doc in bio_coll.aggregate([{"$match": {}}])]
