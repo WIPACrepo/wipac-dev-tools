@@ -45,7 +45,7 @@ semver = [
 mongo = [
     'pymongo',
 ]
-motor = [
+_motor = [
     'motor',
 ]
 jsonschema = [
