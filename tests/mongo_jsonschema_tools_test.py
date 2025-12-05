@@ -618,7 +618,7 @@ async def test_1600__aggregate_removes_id(
     """Test aggregate yields documents without _id field."""
     docs = [{"_id": 1, "val": "X"}, {"_id": 2, "val": "Y"}]
 
-    async def async_gen():
+    async def async_gen(*_, **__):
         for doc in docs:
             yield doc
 
