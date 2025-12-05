@@ -5,6 +5,7 @@ import logging
 from typing import Any, AsyncIterator, Callable, Union
 
 # mongo imports
+_IS_MOTOR_IMPORTED = False
 try:
     from pymongo import ReturnDocument
 
@@ -12,6 +13,8 @@ try:
         # first, try motor — this will eventually be deprecated
         # https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/
         from motor.motor_asyncio import AsyncIOMotorCollection
+
+        _IS_MOTOR_IMPORTED = True
     except:  # noqa: E722
         # if no motor, try pymongo — this is the long-term option
         from pymongo.asynchronous.collection import AsyncCollection
@@ -68,6 +71,13 @@ class MongoJSONSchemaValidatedCollection:
 
         # FUTURE DEV: once motor, is deprecated, we can remove this — this exists for test-patching
         self._collection_backend = type(self._collection).__name__
+        # -- check that if 'motor' is installed, we're using it. Note: pymongo is always installed
+        if _IS_MOTOR_IMPORTED and self._collection_backend != "AsyncIOMotorCollection":
+            raise RuntimeError(
+                f"package 'motor' is installed, but 'MongoJSONSchemaValidatedCollection' "
+                f"object *not* initialized with 'AsyncIOMotorCollection' instance "
+                f"(attempted to use '{self._collection_backend}')"
+            )
 
         self.collection_name = collection.name
 
