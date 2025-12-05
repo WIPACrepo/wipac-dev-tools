@@ -622,10 +622,21 @@ async def test_1600__aggregate_removes_id(
         for doc in docs:
             yield doc
 
-    if _IS_MOTOR_IMPORTED:
-        bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
+    if bio_coll._collection_backend == "AsyncIOMotorCollection":
+        # Motor-style: aggregate() returns an async iterator / cursor directly
+        bio_coll._collection.aggregate = (
+            lambda *_args, **_kwargs: async_gen()
+        )  # type: ignore[method-assign]
+    elif bio_coll._collection_backend == "AsyncCollection":
+        # PyMongo async-style: aggregate() is a coroutine that resolves to an async iterator
+        async def aggregate_coro(*_args, **_kwargs):
+            return async_gen()
+
+        bio_coll._collection.aggregate = aggregate_coro  # type: ignore[method-assign]
     else:
-        bio_coll._collection.aggregate = async_gen
+        raise AssertionError(
+            f"Unexpected backend in test: {bio_coll._collection_backend!r}"
+        )
 
     # check calls & result
     results = [doc async for doc in bio_coll.aggregate([{"$match": {}}])]
