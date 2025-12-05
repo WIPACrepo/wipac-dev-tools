@@ -10,6 +10,7 @@ from wipac_dev_tools.mongo_jsonschema_tools import (
     DocumentNotFoundException,
     IllegalDotsNotationActionException,
     MongoJSONSchemaValidatedCollection,
+    _IS_MOTOR_IMPORTED,
     _convert_mongo_to_jsonschema,
 )
 
@@ -18,7 +19,12 @@ ValidationError = jsonschema.exceptions.ValidationError
 
 def make_coll(schema: dict) -> MongoJSONSchemaValidatedCollection:
     """Create a MongoJSONSchemaValidatedCollection instance with a mocked backend."""
-    coll_classname = "motor.motor_asyncio.AsyncIOMotorCollection"
+
+    # FUTURE DEV: once motor, is deprecated, we can remove this
+    if _IS_MOTOR_IMPORTED:
+        coll_classname = "motor.motor_asyncio.AsyncIOMotorCollection"
+    else:
+        coll_classname = "pymongo.asynchronous.collection.AsyncCollection"
 
     with patch(coll_classname):
         coll = MongoJSONSchemaValidatedCollection(
