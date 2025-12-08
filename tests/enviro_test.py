@@ -556,12 +556,12 @@ def test_051__final_dict_str_int() -> None:
 
 if sys.version_info >= (3, 10):
     # this trips up the py <3.9 interpreter
-    extra_params = [
+    extra_params_060 = [
         bool | None,
         None | bool,
     ]
 else:
-    extra_params = []  # type: ignore[var-annotated]
+    extra_params_060 = []  # type: ignore[var-annotated]
 
 
 @pytest.mark.parametrize(
@@ -571,7 +571,7 @@ else:
         Union[bool, None],
         Union[None, bool],
     ]
-    + extra_params,  # type: ignore
+    + extra_params_060,  # type: ignore
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_060__optional_bool(typo) -> None:
@@ -588,12 +588,12 @@ def test_060__optional_bool(typo) -> None:
 
 if sys.version_info >= (3, 10):
     # this trips up the py <3.9 interpreter
-    extra_params = [
+    extra_params_061 = [
         Dict[str, int] | None,
         None | Dict[str, int],
     ]
 else:
-    extra_params = []
+    extra_params_061 = []
 
 
 @pytest.mark.parametrize(
@@ -603,7 +603,7 @@ else:
         Union[Dict[str, int], None],
         Union[None, Dict[str, int]],
     ]
-    + extra_params,  # type: ignore
+    + extra_params_061,  # type: ignore
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_061__optional_dict_str_int(typo) -> None:
@@ -620,12 +620,12 @@ def test_061__optional_dict_str_int(typo) -> None:
 
 if sys.version_info >= (3, 10):
     # this trips up the py <3.9 interpreter
-    extra_params = [
+    extra_params_062 = [
         dict | None,
         None | dict,
     ]
 else:
-    extra_params = []
+    extra_params_062 = []
 
 
 @pytest.mark.parametrize(
@@ -635,7 +635,7 @@ else:
         Union[dict, None],
         Union[None, dict],
     ]
-    + extra_params,  # type: ignore
+    + extra_params_062,  # type: ignore
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_062__optional_dict(typo) -> None:

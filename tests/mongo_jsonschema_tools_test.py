@@ -10,6 +10,7 @@ from wipac_dev_tools.mongo_jsonschema_tools import (
     DocumentNotFoundException,
     IllegalDotsNotationActionException,
     MongoJSONSchemaValidatedCollection,
+    _IS_MOTOR_IMPORTED,
     _convert_mongo_to_jsonschema,
 )
 
@@ -17,12 +18,22 @@ ValidationError = jsonschema.exceptions.ValidationError
 
 
 def make_coll(schema: dict) -> MongoJSONSchemaValidatedCollection:
-    with patch("motor.motor_asyncio.AsyncIOMotorCollection"):
-        return MongoJSONSchemaValidatedCollection(
+    """Create a MongoJSONSchemaValidatedCollection instance with a mocked backend."""
+
+    # FUTURE DEV: once motor, is deprecated, we can remove this
+    if _IS_MOTOR_IMPORTED:
+        coll_classname = "motor.motor_asyncio.AsyncIOMotorCollection"
+    else:
+        coll_classname = "pymongo.asynchronous.collection.AsyncCollection"
+
+    with patch(coll_classname):
+        coll = MongoJSONSchemaValidatedCollection(
             collection=AsyncMock(),
             collection_jsonschema_spec=schema,
             parent_logger=logging.getLogger("test_logger"),
         )
+        coll._collection_backend = coll_classname.rsplit(".", maxsplit=1)[1]
+        return coll
 
 
 @pytest.fixture
@@ -607,11 +618,25 @@ async def test_1600__aggregate_removes_id(
     """Test aggregate yields documents without _id field."""
     docs = [{"_id": 1, "val": "X"}, {"_id": 2, "val": "Y"}]
 
-    async def async_gen():
+    async def async_gen(*_, **__):
         for doc in docs:
             yield doc
 
-    bio_coll._collection.aggregate = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
+    if bio_coll._collection_backend == "AsyncIOMotorCollection":
+        # Motor-style: aggregate() returns an async iterator / cursor directly
+        bio_coll._collection.aggregate = (  # type: ignore[method-assign]
+            lambda *_args, **_kwargs: async_gen()
+        )
+    elif bio_coll._collection_backend == "AsyncCollection":
+        # PyMongo async-style: aggregate() is a coroutine that resolves to an async iterator
+        async def aggregate_coro(*_args, **_kwargs):
+            return async_gen()
+
+        bio_coll._collection.aggregate = aggregate_coro  # type: ignore[method-assign]
+    else:
+        raise AssertionError(
+            f"Unexpected backend in test: {bio_coll._collection_backend!r}"
+        )
 
     # check calls & result
     results = [doc async for doc in bio_coll.aggregate([{"$match": {}}])]
@@ -633,13 +658,25 @@ async def test_1700__aggregate_one_returns_first_doc(
         for doc in docs:
             yield doc
 
-    bio_coll._collection.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
+    # Choose a mock shape that matches the backend semantics
+    if bio_coll._collection_backend == "AsyncIOMotorCollection":
+        # Motor-style: aggregate returns an async iterator directly (no await)
+        agg_mock = MagicMock(return_value=async_gen())
+    elif bio_coll._collection_backend == "AsyncCollection":
+        # PyMongo async-style: aggregate is awaited and returns the async iterator
+        agg_mock = AsyncMock(return_value=async_gen())
+    else:
+        raise AssertionError(
+            f"Unexpected backend in test: {bio_coll._collection_backend!r}"
+        )
+
+    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]
 
     pipeline = [{"$match": {}}]  # type: ignore[var-annotated]
     result = await bio_coll.aggregate_one(pipeline.copy())
 
     # check calls & result
-    bio_coll._collection.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
+    agg_mock.assert_called_once_with(pipeline + [{"$limit": 1}])
     assert result in [{"val": "X"}, {"val": "Y"}]
 
 
@@ -653,11 +690,22 @@ async def test_1701__aggregate_one_not_found_raises(
         for _ in []:  # hack for empty async iter
             yield
 
-    bio_coll._collection.aggregate = MagicMock(return_value=async_gen())  # type: ignore[method-assign]
+    if bio_coll._collection_backend == "AsyncIOMotorCollection":
+        # Motor-style: aggregate returns an async iterator directly (no await)
+        agg_mock = MagicMock(return_value=async_gen())
+    elif bio_coll._collection_backend == "AsyncCollection":
+        # PyMongo async-style: aggregate is awaited and returns the async iterator
+        agg_mock = AsyncMock(return_value=async_gen())
+    else:
+        raise AssertionError(
+            f"Unexpected backend in test: {bio_coll._collection_backend!r}"
+        )
+
+    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]
 
     pipeline = [{"$match": {"val": "none"}}]
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.aggregate_one(pipeline.copy())
 
     # check calls
-    bio_coll._collection.aggregate.assert_called_once_with(pipeline + [{"$limit": 1}])
+    agg_mock.assert_called_once_with(pipeline + [{"$limit": 1}])

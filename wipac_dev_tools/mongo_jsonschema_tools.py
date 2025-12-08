@@ -2,13 +2,29 @@
 
 import copy
 import logging
+import os
+import sys
 from typing import Any, AsyncIterator, Callable, Union
 
-
 # mongo imports
+_IS_MOTOR_IMPORTED = False
 try:
-    from motor.motor_asyncio import AsyncIOMotorCollection
     from pymongo import ReturnDocument
+
+    try:
+        # first, try motor — this will eventually be deprecated
+        # https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/
+        from motor.motor_asyncio import AsyncIOMotorCollection
+
+        _IS_MOTOR_IMPORTED = True
+        print(
+            "**DEPRECATION WARNING** 'motor' dependency will be deprecated May 14th, 2026",
+            file=sys.stderr,
+            flush=True,
+        )
+    except:  # noqa: E722
+        # if no motor, try pymongo — this is the long-term option
+        from pymongo.asynchronous.collection import AsyncCollection
 except (ImportError, ModuleNotFoundError) as _exc:
     raise ImportError(
         "the 'mongo' option must be installed in order to use 'mongo_jsonschema_tools'"
@@ -50,7 +66,7 @@ class MongoJSONSchemaValidatedCollection:
 
     def __init__(
         self,
-        collection: AsyncIOMotorCollection,
+        collection: "AsyncIOMotorCollection | AsyncCollection",
         collection_jsonschema_spec: dict[str, Any],
         parent_logger: Union[logging.Logger, None] = None,
         validation_exception_callback: Union[
@@ -59,6 +75,20 @@ class MongoJSONSchemaValidatedCollection:
     ) -> None:
         self._collection = collection
         self._schema = collection_jsonschema_spec
+
+        # FUTURE DEV: once motor, is deprecated, we can remove this — this exists for test-patching
+        self._collection_backend = type(self._collection).__name__
+        # -- check that if 'motor' is installed, we're using it. Note: pymongo is always installed
+        if (
+            not os.getenv("CI")
+            and _IS_MOTOR_IMPORTED
+            and self._collection_backend != "AsyncIOMotorCollection"
+        ):
+            raise RuntimeError(
+                f"package 'motor' is installed, but 'MongoJSONSchemaValidatedCollection' "
+                f"object *not* initialized with 'AsyncIOMotorCollection' instance "
+                f"(attempted to use '{self._collection_backend}')"
+            )
 
         self.collection_name = collection.name
 
@@ -242,8 +272,25 @@ class MongoJSONSchemaValidatedCollection:
         """Find all matching the aggregate pipeline."""
         self.logger.debug(f"finding with aggregate pipeline: {pipeline}")
 
+        cursor: AsyncIterator[dict]  # typehint here, instantiate below
+
+        # FUTURE DEV: once motor, is deprecated, we can remove this complex logic
+        if self._collection_backend == "AsyncIOMotorCollection":
+            # Motor's AsyncIOMotorCollection.aggregate() returns an async cursor directly.
+            cursor = self._collection.aggregate(pipeline, **kwargs)  # type: ignore[assignment]
+        elif self._collection_backend == "AsyncCollection":
+            # PyMongo async's AsyncCollection.aggregate() returns a coroutine
+            # that must be awaited to obtain the async cursor.
+            cursor = await self._collection.aggregate(pipeline, **kwargs)  # type: ignore[misc]
+        else:
+            raise RuntimeError(
+                f"misconfigured MongoJSONSchemaValidatedCollection._collection: "
+                f"{self._collection_backend}"
+            )
+
+        # From here on, cursor is an async iterator
         i = 0
-        async for doc in self._collection.aggregate(pipeline, **kwargs):
+        async for doc in cursor:
             i += 1
             if no_id:
                 doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
