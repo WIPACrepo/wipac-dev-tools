@@ -3,6 +3,7 @@
 import copy
 import logging
 import os
+import sys
 from typing import Any, AsyncIterator, Callable, Union
 
 # mongo imports
@@ -16,6 +17,11 @@ try:
         from motor.motor_asyncio import AsyncIOMotorCollection
 
         _IS_MOTOR_IMPORTED = True
+        print(
+            "**DEPRECATION WARNING** 'motor' dependency will be deprecated May 14th, 2026",
+            file=sys.stderr,
+            flush=True,
+        )
     except:  # noqa: E722
         # if no motor, try pymongo — this is the long-term option
         from pymongo.asynchronous.collection import AsyncCollection
