@@ -1,6 +1,12 @@
 """Init."""
 
-from . import argparse_tools, data_safety_tools, logging_tools, timing_tools
+from . import (
+    argparse_tools,
+    data_safety_tools,
+    decorator_tools,
+    logging_tools,
+    timing_tools,
+)
 from .enviro_tools import from_environment, from_environment_as_dataclass  # noqa
 from .setup_tools import SetupShop  # noqa
 from .strtobool import strtobool
@@ -17,6 +23,7 @@ __all__ = [
     "timing_tools",
     "prometheus_tools",  # not imported above b/c module has optional dependencies
     "mongo_jsonschema_tools",  # not imported above b/c module has optional dependencies
+    "decorator_tools",
 ]
 
 # NOTE: `__version__` is not defined because this package is built using 'setuptools-scm' --
