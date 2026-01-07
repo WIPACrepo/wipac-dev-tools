@@ -15,17 +15,17 @@ R = TypeVar("R")
 
 
 @overload
-def success_or_exception(
+def success_or_exception(  # noqa: E704 # ignore black-flake8 disagreement
     on_success: Callable[[R], None],
     on_exception: Callable[[BaseException], None],
-) -> Callable[[Callable[P, R]], Callable[P, R]]: ...  # noqa: E704
+) -> Callable[[Callable[P, R]], Callable[P, R]]: ...
 
 
 @overload
-def success_or_exception(
+def success_or_exception(  # noqa: E704 # ignore black-flake8 disagreement
     on_success: Callable[[R], None],
     on_exception: Callable[[BaseException], None],
-) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]: ...  # noqa: E704
+) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]: ...
 
 
 def success_or_exception(
