@@ -71,7 +71,7 @@ def success_or_exception(
         if inspect.iscoroutinefunction(fn):
 
             @functools.wraps(fn)
-            async def _a_impl(*args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore[misc]
+            async def _a_impl(*args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore[valid-type]
                 try:
                     out = await fn(*args, **kwargs)
                 except BaseException as e:
@@ -86,7 +86,7 @@ def success_or_exception(
         else:
 
             @functools.wraps(fn)
-            def _impl(*args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore[misc]
+            def _impl(*args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore[valid-type]
                 try:
                     out = fn(*args, **kwargs)
                 except BaseException as e:
