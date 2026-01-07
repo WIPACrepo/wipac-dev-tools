@@ -18,14 +18,14 @@ R = TypeVar("R")
 def success_or_exception(
     on_success: Callable[[R], None],
     on_exception: Callable[[BaseException], None],
-) -> Callable[[Callable[P, R]], Callable[P, R]]: ...
+) -> Callable[[Callable[P, R]], Callable[P, R]]: ...  # noqa: E704
 
 
 @overload
 def success_or_exception(
     on_success: Callable[[R], None],
     on_exception: Callable[[BaseException], None],
-) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]: ...
+) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]: ...  # noqa: E704
 
 
 def success_or_exception(
