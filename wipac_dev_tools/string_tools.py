@@ -11,7 +11,7 @@ def regex_named_groups_to_template(rstring: str, rstrip_dollar: bool = True) -> 
         Out = "/TransferRequests/{request_id}"
         ---
         *with 'rstrip_dollar=True'*
-        In  = r"USER=(?P<user>[A-Za-z0-9_]+)\s+IP=(?P<ip>\d+\.\d+\.\d+\.\d+)$"
+        In  = r"USER=(?P<user>[A-Za-z0-9_]+) IP=(?P<ip>\d+\.\d+\.\d+\.\d+)$"
         Out = "USER={user} IP={ip}"
     """
     out = re.sub(
