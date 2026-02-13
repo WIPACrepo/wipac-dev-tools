@@ -4,7 +4,7 @@ import re
 
 
 def regex_named_groups_to_template(rstring: str, rstrip_dollar: bool = True) -> str:
-    """Transform a regex string with named capture groups into a template string.
+    r"""Transform a regex string with named capture groups into a template string.
 
     Examples:
         In  = r"/TransferRequests/(?P<request_id>...+)"
