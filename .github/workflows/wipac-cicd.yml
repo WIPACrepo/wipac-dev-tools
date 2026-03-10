@@ -58,8 +58,6 @@ jobs:
         with:
           python-version: ${{ matrix.py3 }}
       - uses: WIPACrepo/wipac-dev-mypy-action@final-chapter
-        with:
-          _no_deprecation: true
 
 
   ############################################################################
