@@ -38,7 +38,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.py3 }}
-      - uses: WIPACrepo/wipac-dev-flake8-action@v1.3
+      - uses: WIPACrepo/wipac-dev-flake8-action@all-good-things
         with:
           max-complexity: 10  # ideal is ~10-15
 
@@ -110,7 +110,7 @@ jobs:
       - name: Define outputs
         id: set
         run: |
-          set -euo pipefail; echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          set -euo pipefail
 
 
           #
@@ -165,7 +165,7 @@ jobs:
       - name: Parse file and extras from pytest_info
         id: parse
         run: |
-          set -euo pipefail; echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          set -euo pipefail
           PYTEST_INFO="${{ matrix.pytest_info }}"
           # "file:[extras]"
           FILE="${PYTEST_INFO%%:*}"     # before `:`
@@ -174,12 +174,12 @@ jobs:
           echo "extras=$EXTRAS" >> "$GITHUB_OUTPUT"
       - name: Install dependencies
         run: |
-          set -euo pipefail; echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          set -euo pipefail
           pip install --upgrade pip wheel setuptools
           pip install ".${{ steps.parse.outputs.extras }}"
       - name: Run tests
         run: |
-          set -euo pipefail; echo "now: $(date -u +"%Y-%m-%dT%H:%M:%S.%3N")"
+          set -euo pipefail
           if [[ "${{ steps.parse.outputs.file }}" == "vanilla" ]]; then
             pytest -vvvv ${{ needs.prep-pytest.outputs.pytest_ignore_args }}
           else
