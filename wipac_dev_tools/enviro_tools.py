@@ -52,11 +52,11 @@ sdict = Dict[str, Any]
 
 
 def _typecast(source: str, type_: type) -> RetVal:
-    if type_ == bool:
+    if type_ is bool:
         return bool(strtobool(source.lower()))
-    elif type_ == int:
+    elif type_ is int:
         return int(source)
-    elif type_ == float:
+    elif type_ is float:
         return float(source)
     else:
         return source
@@ -183,13 +183,13 @@ class TypeCaster:
     ) -> Any:
         """Collect the typecast value."""
 
-        if typ == list:
+        if typ is list:
             _list = val.split(self.collection_sep)
             if typ_args:
                 return [typ_args[0](x) for x in _list]
             return _list
 
-        elif typ == dict:
+        elif typ is dict:
             _dict = {
                 x.split(self.dict_kv_joiner)[0]: x.split(self.dict_kv_joiner)[1]
                 for x in val.split(self.collection_sep)
@@ -198,19 +198,19 @@ class TypeCaster:
                 return {typ_args[0](k): typ_args[1](v) for k, v in _dict.items()}
             return _dict
 
-        elif typ == set:
+        elif typ is set:
             _set = set(val.split(self.collection_sep))
             if typ_args:
                 return {typ_args[0](x) for x in _set}
             return _set
 
-        elif typ == frozenset:
+        elif typ is frozenset:
             _frozenset = frozenset(val.split(self.collection_sep))
             if typ_args:
                 return {typ_args[0](x) for x in _frozenset}
             return _frozenset
 
-        elif typ == bool:
+        elif typ is bool:
             return strtobool(val)
 
         else:
