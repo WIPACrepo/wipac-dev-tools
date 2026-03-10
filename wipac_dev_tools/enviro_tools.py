@@ -63,7 +63,7 @@ def _typecast(source: str, type_: type) -> RetVal:
 
 
 @no_type_check  # ty is pretty strict with flexible types, and this is legacy code
-def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
+def from_environment(keys: KeySpec) -> dict[str, RetVal]:
     """Obtain configuration values from the OS environment.
 
     Parsing Details:
