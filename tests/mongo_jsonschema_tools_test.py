@@ -525,9 +525,9 @@ async def test_1300__find_one_and_update_calls_validate_and_motor(
     result = await bio_coll.find_one_and_update({"name": "Alice"}, update)
 
     # check calls & result
-    bio_coll._validate_mongo_update.assert_called_once_with(
+    bio_coll._validate_mongo_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
         update
-    )  # ty:ignore[unresolved-attribute]
+    )
     bio_coll._collection.find_one_and_update.assert_called_once_with(
         {"name": "Alice"},
         update,
