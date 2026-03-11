@@ -329,7 +329,36 @@ def _convert_mongo_to_jsonschema(
     full_jsonschema: dict,
     allow_partial_update: bool,
 ) -> tuple[dict, dict]:
-    """Converts a mongo-style dotted dict to a nested dict with an augmented schema.
+    """Prepare a Mongo-style mapping and schema for JSON Schema validation.
+
+    For partial updates, dotted keys are expanded into nested objects and the schema is
+    adapted so touched object levels no longer require unspecified sibling fields. For
+    non-partial validation, dotted keys raise `IllegalDotsNotationActionException`.
+
+    Returns a tuple of `(normalized_object, schema_for_validation)`.
+
+    NOTE: Does not support array/list dot-indexing
+    """
+    if allow_partial_update:
+        return _adapt_schema_for_partial_updating(mongo_dict, full_jsonschema)
+    else:
+        # no partial & yes dots -> error
+        if _has_dotted_keys(mongo_dict):
+            raise IllegalDotsNotationActionException()
+        # no partial & no dots -> immediate exit
+        else:
+            return mongo_dict, full_jsonschema
+
+
+def _adapt_schema_for_partial_updating(
+    mongo_dict: dict,
+    full_jsonschema: dict,
+) -> tuple[dict, dict]:
+    """Expand dotted update keys and relax `required` constraints for partial validation.
+
+    Returns a nested object built from `mongo_dict` and a deep-copied schema whose root
+    `required` list is cleared. For dotted paths, traversed nested object schemas under
+    `properties` also have `required` cleared.
 
     NOTE: Does not support array/list dot-indexing
 
@@ -363,33 +392,18 @@ def _convert_mongo_to_jsonschema(
                     "book": {
                         "type": "object",
                         "properties": { "content": { "type": "string" } },
-                        "required": []  # NONE!
+                        "required": []  # cleared for partial validation
                     },
                     "copyright": {
                         "type": "object",
                         "properties": { ... },
-                        "required": [<some>]  # not changed b/c key was not seen in dot notation
+                        "required": [<some>]  # unchanged because this branch was not traversed
                     },
                     ...
                 },
-                "required": []  # NONE!
+                "required": []  # cleared for partial validation
             }
     """
-    if allow_partial_update:
-        return _adapt_schema_for_partial_updating(mongo_dict, full_jsonschema)
-    else:
-        # no partial & yes dots -> error
-        if _has_dotted_keys(mongo_dict):
-            raise IllegalDotsNotationActionException()
-        # no partial & no dots -> immediate exit
-        else:
-            return mongo_dict, full_jsonschema
-
-
-def _adapt_schema_for_partial_updating(
-    mongo_dict: dict,
-    full_jsonschema: dict,
-) -> tuple[dict, dict]:
     adapted_schema = copy.deepcopy(full_jsonschema)
     adapted_schema["required"] = []
 
