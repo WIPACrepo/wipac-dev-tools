@@ -448,7 +448,7 @@ async def test_1000__insert_one_calls_validate_and_motor(
     result = await bio_coll.insert_one(doc.copy())
 
     # check calls & result
-    bio_coll._validate.assert_called_once_with(doc)
+    bio_coll._validate.assert_called_once_with(doc)  # ty:ignore[unresolved-attribute]
     bio_coll._collection.insert_one.assert_called_once_with(doc)
     assert result == doc
 
@@ -473,7 +473,7 @@ async def test_1100__insert_many_calls_validate_and_motor(
 
     # check calls & result
     assert result == docs
-    assert bio_coll._validate.call_count == 2
+    assert bio_coll._validate.call_count == 2  # ty:ignore[unresolved-attribute]
     bio_coll._collection.insert_many.assert_called_once_with(docs)
 
 
@@ -525,7 +525,9 @@ async def test_1300__find_one_and_update_calls_validate_and_motor(
     result = await bio_coll.find_one_and_update({"name": "Alice"}, update)
 
     # check calls & result
-    bio_coll._validate_mongo_update.assert_called_once_with(update)
+    bio_coll._validate_mongo_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+        update
+    )
     bio_coll._collection.find_one_and_update.assert_called_once_with(
         {"name": "Alice"},
         update,
@@ -564,7 +566,9 @@ async def test_1400__update_many_calls_validate_and_motor(
     count = await bio_coll.update_many({"active": True}, {"$set": {"age": 40}})
 
     # check calls & result
-    bio_coll._validate_mongo_update.assert_called_once_with({"$set": {"age": 40}})
+    bio_coll._validate_mongo_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+        {"$set": {"age": 40}}
+    )
     bio_coll._collection.update_many.assert_called_once_with(
         {"active": True}, {"$set": {"age": 40}}
     )

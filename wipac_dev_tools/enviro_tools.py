@@ -20,6 +20,7 @@ from typing import (
     Union,
     _SpecialForm,
     cast,
+    no_type_check,
 )
 
 from typing_extensions import Final
@@ -51,17 +52,18 @@ sdict = Dict[str, Any]
 
 
 def _typecast(source: str, type_: type) -> RetVal:
-    if type_ == bool:
+    if type_ is bool:
         return bool(strtobool(source.lower()))
-    elif type_ == int:
+    elif type_ is int:
         return int(source)
-    elif type_ == float:
+    elif type_ is float:
         return float(source)
     else:
         return source
 
 
-def from_environment(keys: KeySpec) -> Dict[str, RetVal]:
+@no_type_check  # ty is pretty strict with flexible types, and this is legacy code
+def from_environment(keys: KeySpec) -> dict[str, RetVal]:
     """Obtain configuration values from the OS environment.
 
     Parsing Details:
@@ -181,13 +183,13 @@ class TypeCaster:
     ) -> Any:
         """Collect the typecast value."""
 
-        if typ == list:
+        if typ is list:
             _list = val.split(self.collection_sep)
             if typ_args:
                 return [typ_args[0](x) for x in _list]
             return _list
 
-        elif typ == dict:
+        elif typ is dict:
             _dict = {
                 x.split(self.dict_kv_joiner)[0]: x.split(self.dict_kv_joiner)[1]
                 for x in val.split(self.collection_sep)
@@ -196,19 +198,19 @@ class TypeCaster:
                 return {typ_args[0](k): typ_args[1](v) for k, v in _dict.items()}
             return _dict
 
-        elif typ == set:
+        elif typ is set:
             _set = set(val.split(self.collection_sep))
             if typ_args:
                 return {typ_args[0](x) for x in _set}
             return _set
 
-        elif typ == frozenset:
+        elif typ is frozenset:
             _frozenset = frozenset(val.split(self.collection_sep))
             if typ_args:
                 return {typ_args[0](x) for x in _frozenset}
             return _frozenset
 
-        elif typ == bool:
+        elif typ is bool:
             return strtobool(val)
 
         else:
@@ -328,7 +330,7 @@ def from_environment_as_dataclass(
 class LiteralTypeException(Exception):
     """Raised when the type is the 'Literal' type, which is handled very differently."""
 
-    def __init__(self, typ_args: tuple):
+    def __init__(self, typ_args: tuple | None):
         self.typ_args = typ_args
 
 
@@ -369,7 +371,7 @@ class TypeHintDeconstructor:
     @staticmethod
     def _check_invalid_typehints(
         typ_origin: Any,  # at this point, types kind of break down since there is no common base-type among the many variations
-        typ_args: tuple,
+        typ_args: tuple | None,
         field: dataclasses.Field,
     ):
         if isinstance(typ_origin, _SpecialForm) and not typ_args:
@@ -386,7 +388,9 @@ class TypeHintDeconstructor:
                 f"field='{field.name}' (the 'Any' type and subclasses are not "
                 f"valid environment variable types)"
             )
-        elif typ_origin == Union and (len(typ_args) != 2 or type(None) not in typ_args):
+        elif typ_origin == Union and (
+            (typ_args is None) or (len(typ_args) != 2) or (type(None) not in typ_args)
+        ):
             # ERROR: disallowed Union usage (only single w/ None ok)
             raise ValueError(
                 f"'{field.type}' is not a supported type: "
@@ -406,6 +410,9 @@ class TypeHintDeconstructor:
     ) -> Tuple[type, Optional[Tuple[type, ...]]]:
         """Take a type hint and return its type and its arguments' types."""
         TypeHintDeconstructor._check_invalid_typehints(field.type, tuple(), field)
+
+        typ_origin: Any  # at this point, types kind of break down since there is no common base-type among the many variations
+        typ_args: tuple | None
 
         if isinstance(field.type, (GenericAlias, types.GenericAlias)):
             # Ex:
@@ -507,7 +514,7 @@ def _from_environment_as_dataclass(
             typ, typ_args = TypeHintDeconstructor.deconstruct_from_dc_field(field)
         except LiteralTypeException as e:
             # test if value is in literal-type's list of choices
-            if env_val in e.typ_args:
+            if e.typ_args and (env_val in e.typ_args):
                 env_var_attrs[field.name] = env_val
                 continue
             else:
