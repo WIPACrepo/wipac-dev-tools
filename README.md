@@ -5,6 +5,21 @@
 # wipac-dev-tools
 
 Common, basic, and reusable development tools
+<!--- Top of README Metadata Section (automated) --->
+
+<!--- note: this information is pulled from the pyproject.toml --->
+
+<dl>
+    <dt><sub>Authors</sub></dt>
+    <dd><sub>WIPAC Developers / <a href='mailto:developers@icecube.wisc.edu'>developers@icecube.wisc.edu</a></sub></dd>
+    <dt><sub>Keywords</sub></dt>
+    <dd><sub>WIPAC&nbsp;&nbsp;·&nbsp;&nbsp;python tools&nbsp;&nbsp;·&nbsp;&nbsp;utilities</sub></dd>
+    <dt><sub>URLs</sub></dt>
+    <dd><sub><a href='https://pypi.org/project/wipac-dev-tools/'>Homepage</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href='https://github.com/WIPACrepo/wipac-dev-tools/issues'>Tracker</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href='https://github.com/WIPACrepo/wipac-dev-tools'>Source</a></sub></dd>
+</dl>
+
+<br>
+<!--- End of README Metadata Section (automated) --->
 
 ## Utilities
 
