@@ -1,24 +1,10 @@
 <!--- Top of README Badges (automated) --->
 [![PyPI](https://img.shields.io/pypi/v/wipac-dev-tools)](https://pypi.org/project/wipac-dev-tools/) [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/WIPACrepo/wipac-dev-tools?include_prereleases)](https://github.com/WIPACrepo/wipac-dev-tools) [![Versions](https://img.shields.io/pypi/pyversions/wipac-dev-tools.svg)](https://pypi.org/project/wipac-dev-tools/) [![PyPI - License](https://img.shields.io/pypi/l/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/blob/main/LICENSE) [![GitHub issues](https://img.shields.io/github/issues/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aopen) [![GitHub pull requests](https://img.shields.io/github/issues-pr/WIPACrepo/wipac-dev-tools)](https://github.com/WIPACrepo/wipac-dev-tools/pulls?q=is%3Apr+sort%3Aupdated-desc+is%3Aopen)
 <!--- End of README Badges (automated) --->
+
 # wipac-dev-tools
 
 Common, basic, and reusable development tools
-<!--- Top of README Metadata Section (automated) --->
-
-<!--- note: this information is pulled from the pyproject.toml --->
-
-<dl>
-    <dt><sub>Authors</sub></dt>
-    <dd><sub>WIPAC Developers / <a href='mailto:developers@icecube.wisc.edu'>developers@icecube.wisc.edu</a></sub></dd>
-    <dt><sub>Keywords</sub></dt>
-    <dd><sub>WIPAC&nbsp;&nbsp;·&nbsp;&nbsp;python tools&nbsp;&nbsp;·&nbsp;&nbsp;utilities</sub></dd>
-    <dt><sub>URLs</sub></dt>
-    <dd><sub><a href='https://pypi.org/project/wipac-dev-tools/'>Homepage</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href='https://github.com/WIPACrepo/wipac-dev-tools/issues'>Tracker</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href='https://github.com/WIPACrepo/wipac-dev-tools'>Source</a></sub></dd>
-</dl>
-
-<br>
-<!--- End of README Metadata Section (automated) --->
 
 ## Utilities
 
