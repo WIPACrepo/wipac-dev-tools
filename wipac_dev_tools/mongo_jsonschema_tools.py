@@ -4,7 +4,7 @@ import copy
 import logging
 import os
 import sys
-from typing import Any, AsyncIterator, Callable, Union
+from typing import Any, AsyncIterator, Callable, TypeAlias, Union
 
 # mongo imports
 _IS_MOTOR_IMPORTED = False
@@ -38,10 +38,7 @@ except (ImportError, ModuleNotFoundError) as _exc:
         "the 'jsonschema' option must be installed in order to use 'mongo_jsonschema_tools'"
     ) from _exc
 
-if sys.version_info < (3, 12):
-    JSON = dict[str, Any] | list | str | int | float | bool | None
-else:
-    type JSON = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 
 
 class DocumentNotFoundException(Exception):
