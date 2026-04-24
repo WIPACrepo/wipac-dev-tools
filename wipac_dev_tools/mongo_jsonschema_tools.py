@@ -39,6 +39,7 @@ except (ImportError, ModuleNotFoundError) as _exc:
     ) from _exc
 
 JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+MongoDoc: TypeAlias = dict[str, JSON]
 
 
 class DocumentNotFoundException(Exception):
