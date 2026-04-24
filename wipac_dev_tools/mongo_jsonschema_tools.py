@@ -38,8 +38,10 @@ except (ImportError, ModuleNotFoundError) as _exc:
         "the 'jsonschema' option must be installed in order to use 'mongo_jsonschema_tools'"
     ) from _exc
 
-
-type JSON = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+if sys.version_info < (3, 12):
+    JSONType = dict[str, Any] | list | str | int | float | bool | None
+else:
+    type JSONType = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 
 
 class DocumentNotFoundException(Exception):
