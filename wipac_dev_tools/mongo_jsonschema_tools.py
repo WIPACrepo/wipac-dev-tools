@@ -1,30 +1,15 @@
 """Tools for interfacing with mongodb using jsonschema validation."""
 
 import copy
+import functools
 import logging
-import os
-import sys
-from typing import Any, AsyncIterator, Callable, TypeAlias, Union
+from collections.abc import AsyncIterator, Callable
+from typing import Any, TypeAlias
 
 # mongo imports
-_IS_MOTOR_IMPORTED = False
 try:
     from pymongo import ReturnDocument
-
-    try:
-        # first, try motor — this will eventually be deprecated
-        # https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/
-        from motor.motor_asyncio import AsyncIOMotorCollection
-
-        _IS_MOTOR_IMPORTED = True
-        print(
-            "**DEPRECATION WARNING** 'motor' dependency will be deprecated May 14th, 2026",
-            file=sys.stderr,
-            flush=True,
-        )
-    except:  # noqa: E722
-        # if no motor, try pymongo — this is the long-term option
-        from pymongo.asynchronous.collection import AsyncCollection
+    from pymongo.asynchronous.collection import AsyncCollection
 except (ImportError, ModuleNotFoundError) as _exc:
     raise ImportError(
         "the 'mongo' option must be installed in order to use 'mongo_jsonschema_tools'"
@@ -69,29 +54,13 @@ class MongoJSONSchemaValidatedCollection:
 
     def __init__(
         self,
-        collection: "AsyncIOMotorCollection | AsyncCollection",
-        collection_jsonschema_spec: dict[str, Any],
-        parent_logger: Union[logging.Logger, None] = None,
-        validation_exception_callback: Union[
-            Callable[[Exception], Exception], None
-        ] = None,
+        collection: AsyncCollection,
+        collection_jsonschema_spec: JSON,
+        parent_logger: logging.Logger | None = None,
+        validation_exception_callback: Callable[[Exception], Exception] | None = None,
     ) -> None:
         self._collection = collection
         self._schema = collection_jsonschema_spec
-
-        # FUTURE DEV: once motor, is deprecated, we can remove this — this exists for test-patching
-        self._collection_backend = type(self._collection).__name__
-        # -- check that if 'motor' is installed, we're using it. Note: pymongo is always installed
-        if (
-            not os.getenv("CI")
-            and _IS_MOTOR_IMPORTED
-            and self._collection_backend != "AsyncIOMotorCollection"
-        ):
-            raise RuntimeError(
-                f"package 'motor' is installed, but 'MongoJSONSchemaValidatedCollection' "
-                f"object *not* initialized with 'AsyncIOMotorCollection' instance "
-                f"(attempted to use '{self._collection_backend}')"
-            )
 
         self.collection_name = collection.name
 
@@ -106,15 +75,32 @@ class MongoJSONSchemaValidatedCollection:
 
         self.validation_exception_callback = validation_exception_callback
 
+    @functools.cached_property
+    def _schema_cleared_root(self) -> JSON:
+        """Schema deep-copy with root `required` cleared; reused for the partial-update no-dots fast path.
+
+        Treat as immutable: callers must not mutate this value, or the cache will be
+        corrupted for the instance's lifetime. `jsonschema.validate` does not mutate
+        the schema it's given, so pass-through is safe.
+        """
+        cleared = copy.deepcopy(self._schema)
+        cleared["required"] = []  # type: ignore[index]
+        return cleared
+
     def _validate(
         self,
-        obj: dict,
+        obj: MongoDoc,
         allow_partial_update: bool = False,
     ) -> None:
         """Wrap `jsonschema.validate` with logic for mongo syntax."""
         try:
             jsonschema.validate(
-                *_convert_mongo_to_jsonschema(obj, self._schema, allow_partial_update)
+                *_convert_mongo_to_jsonschema(
+                    obj,
+                    self._schema,
+                    self._schema_cleared_root,
+                    allow_partial_update,
+                )
             )
         except Exception as e:
             self.logger.exception(e)
@@ -127,18 +113,18 @@ class MongoJSONSchemaValidatedCollection:
     # WRITES
     ####################################################################
 
-    def _validate_mongo_update(self, update: dict[str, Any]) -> None:
+    def _validate_mongo_update(self, update: MongoDoc) -> None:
         """Validate the data for each given mongo-syntax update operator."""
         for operator in update:
             if operator == "$set":
                 self._validate(
-                    update[operator],
+                    update[operator],  # type: ignore[arg-type]
                     allow_partial_update=True,
                 )
             elif operator == "$push":
                 self._validate(
                     # validate each value as if it was the whole field's list -- other wise `str != [str]`
-                    {k: [v] for k, v in update[operator].items()},
+                    {k: [v] for k, v in update[operator].items()},  # type: ignore[union-attr]
                     allow_partial_update=True,
                 )
             # FUTURE: insert more operators here
@@ -147,10 +133,10 @@ class MongoJSONSchemaValidatedCollection:
 
     async def insert_one(
         self,
-        doc: dict,
+        doc: MongoDoc,
         no_id: bool = True,
         **kwargs: Any,
-    ) -> dict:
+    ) -> MongoDoc:
         """Insert the doc (dict)."""
         self.logger.debug(f"inserting one: {doc}")
 
@@ -164,11 +150,11 @@ class MongoJSONSchemaValidatedCollection:
 
     async def find_one_and_update(
         self,
-        query: dict,
-        update: dict,
+        query: MongoDoc,
+        update: MongoDoc,
         no_id: bool = True,
         **kwargs: Any,
-    ) -> dict:
+    ) -> MongoDoc:
         """Update the doc and return updated doc."""
         self.logger.debug(f"update one with query: {query}")
 
@@ -189,10 +175,10 @@ class MongoJSONSchemaValidatedCollection:
 
     async def insert_many(
         self,
-        docs: list[dict],
+        docs: list[MongoDoc],
         no_id: bool = True,
         **kwargs: Any,
-    ) -> list[dict]:
+    ) -> list[MongoDoc]:
         """Insert multiple docs."""
         self.logger.debug(f"inserting many: {docs}")
 
@@ -209,8 +195,8 @@ class MongoJSONSchemaValidatedCollection:
 
     async def update_many(
         self,
-        query: dict,
-        update: dict,
+        query: MongoDoc,
+        update: MongoDoc,
         **kwargs: Any,
     ) -> int:
         """Update all matching docs."""
@@ -230,10 +216,10 @@ class MongoJSONSchemaValidatedCollection:
 
     async def find_one(
         self,
-        query: dict,
+        query: MongoDoc,
         no_id: bool = True,
         **kwargs: Any,
-    ) -> dict:
+    ) -> MongoDoc:
         """Find one matching the query."""
         self.logger.debug(f"finding one with query: {query}")
 
@@ -248,11 +234,11 @@ class MongoJSONSchemaValidatedCollection:
 
     async def find_all(
         self,
-        query: dict,
-        projection: list,
+        query: MongoDoc,
+        projection: list[str],
         no_id: bool = True,
         **kwargs: Any,
-    ) -> AsyncIterator[dict]:
+    ) -> AsyncIterator[MongoDoc]:
         """Find all matching the query."""
         self.logger.debug(f"finding with query: {query}")
 
@@ -268,30 +254,17 @@ class MongoJSONSchemaValidatedCollection:
 
     async def aggregate(
         self,
-        pipeline: list[dict],
+        pipeline: list[MongoDoc],
         no_id: bool = True,
         **kwargs: Any,
-    ) -> AsyncIterator[dict]:
+    ) -> AsyncIterator[MongoDoc]:
         """Find all matching the aggregate pipeline."""
         self.logger.debug(f"finding with aggregate pipeline: {pipeline}")
 
-        cursor: AsyncIterator[dict]  # typehint here, instantiate below
+        # PyMongo async's AsyncCollection.aggregate() returns a coroutine
+        # that must be awaited to obtain the async cursor.
+        cursor = await self._collection.aggregate(pipeline, **kwargs)
 
-        # FUTURE DEV: once motor, is deprecated, we can remove this complex logic
-        if self._collection_backend == "AsyncIOMotorCollection":
-            # Motor's AsyncIOMotorCollection.aggregate() returns an async cursor directly.
-            cursor = self._collection.aggregate(pipeline, **kwargs)  # type: ignore[assignment]
-        elif self._collection_backend == "AsyncCollection":
-            # PyMongo async's AsyncCollection.aggregate() returns a coroutine
-            # that must be awaited to obtain the async cursor.
-            cursor = await self._collection.aggregate(pipeline, **kwargs)  # type: ignore[misc]
-        else:
-            raise RuntimeError(
-                f"misconfigured MongoJSONSchemaValidatedCollection._collection: "
-                f"{self._collection_backend}"
-            )
-
-        # From here on, cursor is an async iterator
         i = 0
         async for doc in cursor:
             i += 1
@@ -304,9 +277,9 @@ class MongoJSONSchemaValidatedCollection:
 
     async def aggregate_one(
         self,
-        pipeline: list[dict],
+        pipeline: list[MongoDoc],
         **kwargs: Any,
-    ) -> dict:
+    ) -> MongoDoc:
         """Find one matching the aggregate pipeline.
 
         Appends `{"$limit": 1}` to pipeline.
@@ -323,27 +296,34 @@ class MongoJSONSchemaValidatedCollection:
 ########################################################################################
 
 
-def _has_dotted_keys(dicto: dict[str, Any]) -> bool:
+def _has_dotted_keys(dicto: MongoDoc) -> bool:
+    """Return True iff any top-level key in `dicto` contains a dot."""
     return any("." in k for k in dicto.keys())
 
 
 def _convert_mongo_to_jsonschema(
-    mongo_dict: dict,
-    full_jsonschema: dict,
+    mongo_dict: MongoDoc,
+    full_jsonschema: JSON,
+    schema_cleared_root: JSON,
     allow_partial_update: bool,
-) -> tuple[dict, dict]:
+) -> tuple[MongoDoc, JSON]:
     """Prepare a Mongo-style mapping and schema for JSON Schema validation.
 
     For partial updates, dotted keys are expanded into nested objects and the schema is
     adapted so touched object levels no longer require unspecified sibling fields. For
     non-partial validation, dotted keys raise `IllegalDotsNotationActionException`.
 
+    `schema_cleared_root` is the cached deep-copy of `full_jsonschema` with the root
+    `required` cleared, used for the partial-update no-dots fast path.
+
     Returns a tuple of `(normalized_object, schema_for_validation)`.
 
     NOTE: Does not support array/list dot-indexing
     """
     if allow_partial_update:
-        return _adapt_schema_for_partial_updating(mongo_dict, full_jsonschema)
+        return _adapt_schema_for_partial_updating(
+            mongo_dict, full_jsonschema, schema_cleared_root
+        )
     else:
         # no partial & yes dots -> error
         if _has_dotted_keys(mongo_dict):
@@ -354,14 +334,19 @@ def _convert_mongo_to_jsonschema(
 
 
 def _adapt_schema_for_partial_updating(
-    mongo_dict: dict,
-    full_jsonschema: dict,
-) -> tuple[dict, dict]:
+    mongo_dict: MongoDoc,
+    full_jsonschema: JSON,
+    schema_cleared_root: JSON,
+) -> tuple[MongoDoc, JSON]:
     """Expand dotted update keys and relax `required` constraints for partial validation.
 
-    Returns a nested object built from `mongo_dict` and a deep-copied schema whose root
-    `required` list is cleared. For dotted paths, traversed nested object schemas under
+    Returns a nested object built from `mongo_dict` and a schema whose root `required`
+    list is cleared. For dotted paths, traversed nested object schemas under
     `properties` also have `required` cleared.
+
+    Fast path: if `mongo_dict` has no dotted keys, returns the pre-computed
+    `schema_cleared_root` directly — no deep-copy. For dotted-keys, a fresh deep-copy
+    of `full_jsonschema` is made so nested mutations don't leak into the cache.
 
     NOTE: Does not support array/list dot-indexing
 
@@ -407,15 +392,16 @@ def _adapt_schema_for_partial_updating(
                 "required": []  # cleared for partial validation
             }
     """
-    adapted_schema = copy.deepcopy(full_jsonschema)
-    adapted_schema["required"] = []
-
-    # yes partial but no dots -> quick exit
+    # yes partial but no dots -> fast path; reuse the cached cleared-root schema
     if not _has_dotted_keys(mongo_dict):
-        return mongo_dict, adapted_schema
+        return mongo_dict, schema_cleared_root
+
+    # yes partial & yes dots -> fresh deep-copy (we will mutate nested `required` below)
+    adapted_schema = copy.deepcopy(full_jsonschema)
+    adapted_schema["required"] = []  # type: ignore[index]
 
     # https://stackoverflow.com/a/75734554/13156561 (looping logic)
-    out_dict = {}  # type: ignore
+    out_dict: MongoDoc = {}
     for og_key, value in mongo_dict.items():
         if "." not in og_key:
             out_dict[og_key] = value
@@ -423,11 +409,11 @@ def _adapt_schema_for_partial_updating(
         else:
             # (re)set cursors to root
             cursor = out_dict
-            schema_props_cursor = adapted_schema["properties"]
+            schema_props_cursor = adapted_schema["properties"]  # type: ignore[index]
             # iterate & attach keys
             *parent_keys, leaf_key = og_key.split(".")
             for k in parent_keys:
-                cursor = cursor.setdefault(k, {})
+                cursor = cursor.setdefault(k, {})  # type: ignore[assignment]
                 # mark nested object 'required' as none
                 if schema_props_cursor:
                     # ^^^ falsy when not "in" a properties obj, ex: parent only has 'additionalProperties'
