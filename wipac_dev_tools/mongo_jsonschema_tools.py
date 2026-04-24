@@ -323,7 +323,8 @@ class _JSONSchemaTransformer:
     """Holds a jsonschema spec plus a cached builder for partial-update variants."""
 
     def __init__(self, full_schema: JSON) -> None:
-        self.full_schema: Final[JSON] = full_schema
+        # deep-copy so external mutation can't corrupt cached schemas
+        self.full_schema: Final[JSON] = copy.deepcopy(full_schema)
 
     def unrequire_key_ancestors(self, mongo_dict: MongoDoc) -> JSON:
         """Return a deep-copy of `self.full_schema` with `required` cleared at the root
@@ -390,11 +391,14 @@ class _JSONSchemaTransformer:
             # leaf is the value slot, not a nested container to descend into
             *parent_keys, _leaf_key = dkey.split(".")
             for k in parent_keys:
+                # stop descending if we can't:
+                # - cursor falsy -> parent has no 'properties' (ex: only 'additionalProperties')
+                # - k not declared -> free-form region, jsonschema won't enforce `required` here anyway
+                if not schema_props_cursor or k not in schema_props_cursor:
+                    break
                 # mark nested object 'required' as none
-                if schema_props_cursor:
-                    # ^^^ falsy when not "in" a properties obj, ex: parent only has 'additionalProperties'
-                    schema_props_cursor[k]["required"] = []
-                    schema_props_cursor = schema_props_cursor[k].get("properties")
+                schema_props_cursor[k]["required"] = []
+                schema_props_cursor = schema_props_cursor[k].get("properties")
         return schema
 
 
@@ -411,13 +415,12 @@ def _mongo_expand_dotted_keys(mongo_dict: MongoDoc) -> MongoDoc:
         out:
             {"book": {"title": "abc", "content": "def"}, "author": "ghi"}
     """
-
     # yes partial but no dots -> quick exit
     if not _has_dotted_keys(mongo_dict):
         return mongo_dict
 
     # https://stackoverflow.com/a/75734554/13156561 (looping logic)
-    out_dict = {}  # type: ignore
+    out_dict: MongoDoc = {}
     for og_key, value in mongo_dict.items():
         if "." not in og_key:
             out_dict[og_key] = value
