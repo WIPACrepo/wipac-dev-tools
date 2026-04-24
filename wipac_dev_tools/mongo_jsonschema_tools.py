@@ -39,9 +39,9 @@ except (ImportError, ModuleNotFoundError) as _exc:
     ) from _exc
 
 if sys.version_info < (3, 12):
-    JSONType = dict[str, Any] | list | str | int | float | bool | None
+    JSON = dict[str, Any] | list | str | int | float | bool | None
 else:
-    type JSONType = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+    type JSON = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 
 
 class DocumentNotFoundException(Exception):
