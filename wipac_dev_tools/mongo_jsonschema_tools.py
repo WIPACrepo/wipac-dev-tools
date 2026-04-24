@@ -4,7 +4,7 @@ import copy
 import functools
 import logging
 from collections.abc import AsyncIterator, Callable
-from typing import Any, TypeAlias
+from typing import Any, Final, TypeAlias
 
 # mongo imports
 try:
@@ -60,7 +60,9 @@ class MongoJSONSchemaValidatedCollection:
         validation_exception_callback: Callable[[Exception], Exception] | None = None,
     ) -> None:
         self._collection = collection
-        self._schema = collection_jsonschema_spec
+        self._jsonschema_transformer = _JSONSchemaTransformer(
+            collection_jsonschema_spec
+        )
 
         self.collection_name = collection.name
 
@@ -75,18 +77,6 @@ class MongoJSONSchemaValidatedCollection:
 
         self.validation_exception_callback = validation_exception_callback
 
-    @functools.cached_property
-    def _schema_cleared_root(self) -> JSON:
-        """Schema deep-copy with root `required` cleared; reused for the partial-update no-dots fast path.
-
-        Treat as immutable: callers must not mutate this value, or the cache will be
-        corrupted for the instance's lifetime. `jsonschema.validate` does not mutate
-        the schema it's given, so pass-through is safe.
-        """
-        cleared = copy.deepcopy(self._schema)
-        cleared["required"] = []  # type: ignore[index]
-        return cleared
-
     def _validate(
         self,
         obj: MongoDoc,
@@ -97,8 +87,7 @@ class MongoJSONSchemaValidatedCollection:
             jsonschema.validate(
                 *_convert_mongo_to_jsonschema(
                     obj,
-                    self._schema,
-                    self._schema_cleared_root,
+                    self._jsonschema_transformer,
                     allow_partial_update,
                 )
             )
@@ -303,8 +292,7 @@ def _has_dotted_keys(dicto: MongoDoc) -> bool:
 
 def _convert_mongo_to_jsonschema(
     mongo_dict: MongoDoc,
-    full_jsonschema: JSON,
-    schema_cleared_root: JSON,
+    jsonschema_transformer: "_JSONSchemaTransformer",
     allow_partial_update: bool,
 ) -> tuple[MongoDoc, JSON]:
     """Prepare a Mongo-style mapping and schema for JSON Schema validation.
@@ -313,113 +301,135 @@ def _convert_mongo_to_jsonschema(
     adapted so touched object levels no longer require unspecified sibling fields. For
     non-partial validation, dotted keys raise `IllegalDotsNotationActionException`.
 
-    `schema_cleared_root` is the cached deep-copy of `full_jsonschema` with the root
-    `required` cleared, used for the partial-update no-dots fast path.
-
     Returns a tuple of `(normalized_object, schema_for_validation)`.
 
     NOTE: Does not support array/list dot-indexing
     """
     if allow_partial_update:
-        return _adapt_schema_for_partial_updating(
-            mongo_dict, full_jsonschema, schema_cleared_root
+        return (
+            _mongo_expand_dotted_keys(mongo_dict),
+            jsonschema_transformer.unrequire_key_ancestors(mongo_dict),
         )
     else:
         # no partial & yes dots -> error
         if _has_dotted_keys(mongo_dict):
             raise IllegalDotsNotationActionException()
-        # no partial & no dots -> immediate exit
+        # no partial & no dots ->  no adaptations needed
         else:
-            return mongo_dict, full_jsonschema
+            return mongo_dict, jsonschema_transformer.full_schema
 
 
-def _adapt_schema_for_partial_updating(
-    mongo_dict: MongoDoc,
-    full_jsonschema: JSON,
-    schema_cleared_root: JSON,
-) -> tuple[MongoDoc, JSON]:
-    """Expand dotted update keys and relax `required` constraints for partial validation.
+class _JSONSchemaTransformer:
+    """Holds a jsonschema spec plus a cached builder for partial-update variants."""
 
-    Returns a nested object built from `mongo_dict` and a schema whose root `required`
-    list is cleared. For dotted paths, traversed nested object schemas under
-    `properties` also have `required` cleared.
+    def __init__(self, full_schema: JSON) -> None:
+        self.full_schema: Final[JSON] = full_schema
 
-    Fast path: if `mongo_dict` has no dotted keys, returns the pre-computed
-    `schema_cleared_root` directly — no deep-copy. For dotted-keys, a fresh deep-copy
-    of `full_jsonschema` is made so nested mutations don't leak into the cache.
+    def unrequire_key_ancestors(self, mongo_dict: MongoDoc) -> JSON:
+        """Return a deep-copy of `self.full_schema` with `required` cleared at the root
+        and along each dotted key's parent chain. Treat as immutable.
+
+        Example:
+            in:
+                {"book.title": "abc", "book.content": "def", "author": "ghi"}
+            self.full_schema:
+                {
+                    "type": "object",
+                    "properties": {
+                        "author": { "type": "string" },
+                        "book": {
+                            "type": "object",
+                            "properties": { "content": { "type": "string" } },
+                            "required": [<some>]
+                        },
+                        "copyright": {
+                            "type": "object",
+                            "properties": { ... },
+                            "required": [<some>]
+                        },
+                        ...
+                    },
+                    "required": [<some>]
+                }
+            out:
+                {
+                    "type": "object",
+                    "properties": {
+                        "author": { "type": "string" },
+                        "book": {
+                            "type": "object",
+                            "properties": { "content": { "type": "string" } },
+                            "required": []  # cleared for partial validation
+                        },
+                        "copyright": {
+                            "type": "object",
+                            "properties": { ... },
+                            "required": [<some>]  # unchanged because this branch was not traversed
+                        },
+                        ...
+                    },
+                    "required": []  # cleared for partial validation
+                }
+        """
+        return self._unrequire_key_ancestors(
+            frozenset(k for k in mongo_dict if "." in k)
+        )
+
+    @functools.lru_cache(maxsize=64)
+    def _unrequire_key_ancestors(self, dotted_keys: frozenset[str]) -> JSON:
+        """Cached builder for `unrequire_key_ancestors()`.
+
+        `frozenset` key makes cache hits order- and value-independent; `frozenset()`
+        is the no-dotted-keys case.
+        """
+        schema = copy.deepcopy(self.full_schema)  # expensive
+        schema["required"] = []  # type: ignore[index]
+        for dkey in dotted_keys:
+            # (re)set schema cursor to root for each key
+            schema_props_cursor = schema["properties"]  # type: ignore[index]
+            # leaf is the value slot, not a nested container to descend into
+            *parent_keys, _leaf_key = dkey.split(".")
+            for k in parent_keys:
+                # mark nested object 'required' as none
+                if schema_props_cursor:
+                    # ^^^ falsy when not "in" a properties obj, ex: parent only has 'additionalProperties'
+                    schema_props_cursor[k]["required"] = []
+                    schema_props_cursor = schema_props_cursor[k].get("properties")
+        return schema
+
+
+def _mongo_expand_dotted_keys(mongo_dict: MongoDoc) -> MongoDoc:
+    """Expand dotted update keys into a nested object for partial validation.
+
+    Non-dotted keys pass through unchanged.
 
     NOTE: Does not support array/list dot-indexing
 
     Example:
         in:
             {"book.title": "abc", "book.content": "def", "author": "ghi"}
-            {
-                "type": "object",
-                "properties": {
-                    "author": { "type": "string" },
-                    "book": {
-                        "type": "object",
-                        "properties": { "content": { "type": "string" } },
-                        "required": [<some>]
-                    },
-                    "copyright": {
-                        "type": "object",
-                        "properties": { ... },
-                        "required": [<some>]
-                    },
-                    ...
-                },
-                "required": [<some>]
-            }
         out:
             {"book": {"title": "abc", "content": "def"}, "author": "ghi"}
-            {
-                "type": "object",
-                "properties": {
-                    "author": { "type": "string" },
-                    "book": {
-                        "type": "object",
-                        "properties": { "content": { "type": "string" } },
-                        "required": []  # cleared for partial validation
-                    },
-                    "copyright": {
-                        "type": "object",
-                        "properties": { ... },
-                        "required": [<some>]  # unchanged because this branch was not traversed
-                    },
-                    ...
-                },
-                "required": []  # cleared for partial validation
-            }
     """
-    # yes partial but no dots -> fast path; reuse the cached cleared-root schema
-    if not _has_dotted_keys(mongo_dict):
-        return mongo_dict, schema_cleared_root
 
-    # yes partial & yes dots -> fresh deep-copy (we will mutate nested `required` below)
-    adapted_schema = copy.deepcopy(full_jsonschema)
-    adapted_schema["required"] = []  # type: ignore[index]
+    # yes partial but no dots -> quick exit
+    if not _has_dotted_keys(mongo_dict):
+        return mongo_dict
 
     # https://stackoverflow.com/a/75734554/13156561 (looping logic)
-    out_dict: MongoDoc = {}
+    out_dict = {}  # type: ignore
     for og_key, value in mongo_dict.items():
         if "." not in og_key:
             out_dict[og_key] = value
             continue
         else:
-            # (re)set cursors to root
+            # (re)set cursor to root
             cursor = out_dict
-            schema_props_cursor = adapted_schema["properties"]  # type: ignore[index]
             # iterate & attach keys
             *parent_keys, leaf_key = og_key.split(".")
             for k in parent_keys:
-                cursor = cursor.setdefault(k, {})  # type: ignore[assignment]
-                # mark nested object 'required' as none
-                if schema_props_cursor:
-                    # ^^^ falsy when not "in" a properties obj, ex: parent only has 'additionalProperties'
-                    schema_props_cursor[k]["required"] = []
-                    schema_props_cursor = schema_props_cursor[k].get("properties")
+                cursor = cursor.setdefault(k, {})
             # place value
             cursor[leaf_key] = value
 
-    return out_dict, adapted_schema
+    return out_dict
