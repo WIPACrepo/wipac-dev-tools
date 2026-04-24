@@ -39,6 +39,9 @@ except (ImportError, ModuleNotFoundError) as _exc:
     ) from _exc
 
 
+type JSON = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+
+
 class DocumentNotFoundException(Exception):
     """Raised when document is not found for a particular query."""
 
