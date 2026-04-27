@@ -131,7 +131,7 @@ class MongoJSONSchemaValidatedCollection:
         self._validate(doc)
         await self._collection.insert_one(doc, **kwargs)
         if no_id:
-            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+            doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
 
         self.logger.debug(f"inserted one: {doc}")
         return doc
@@ -156,7 +156,7 @@ class MongoJSONSchemaValidatedCollection:
         if not doc:
             raise DocumentNotFoundException()
         elif no_id:
-            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+            doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
 
         self.logger.debug(f"updated one ({query}): {doc}")
         return doc  # type: ignore[no-any-return]
@@ -176,7 +176,7 @@ class MongoJSONSchemaValidatedCollection:
         await self._collection.insert_many(docs, **kwargs)
         if no_id:
             for doc in docs:
-                doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+                doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
 
         self.logger.debug(f"inserted many: {docs}")
         return docs
@@ -215,7 +215,7 @@ class MongoJSONSchemaValidatedCollection:
         if not doc:
             raise DocumentNotFoundException()
         if no_id:
-            doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+            doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
 
         self.logger.debug(f"found one: {doc}")
         return doc  # type: ignore[no-any-return]
@@ -237,7 +237,7 @@ class MongoJSONSchemaValidatedCollection:
         async for doc in self._collection.find(query, projection, **kwargs):
             i += 1
             if no_id:
-                doc.pop("_id", None)  # mongo puts "_id"; could instead use projection
+                doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
             self.logger.debug(f"found {doc}")
             yield doc
 
@@ -260,7 +260,7 @@ class MongoJSONSchemaValidatedCollection:
         async for doc in cursor:
             i += 1
             if no_id:
-                doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+                doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
             self.logger.debug(f"found {doc}")
             yield doc
 
