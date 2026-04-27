@@ -227,7 +227,10 @@ class MongoJSONSchemaValidatedCollection:
         no_id: bool = True,
         **kwargs: Any,
     ) -> AsyncIterator[MongoDoc]:
-        """Find all matching the query."""
+        """Find all matching the query.
+
+        Argument `projection` is required to emphasize this could return A LOT of data.
+        """
         self.logger.debug(f"finding with query: {query}")
 
         i = 0
