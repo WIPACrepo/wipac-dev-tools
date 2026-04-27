@@ -472,7 +472,9 @@ async def test_1000__insert_one_calls_validate_and_collection(
 
     # check calls & result
     bio_coll._validate.assert_called_once_with(doc)  # ty:ignore[unresolved-attribute]
-    bio_coll._collection.insert_one.assert_called_once_with(doc)
+    bio_coll._collection.insert_one.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+        doc
+    )
     assert result == doc
 
 
@@ -497,7 +499,9 @@ async def test_1100__insert_many_calls_validate_and_collection(
     # check calls & result
     assert result == docs
     assert bio_coll._validate.call_count == 2  # ty:ignore[unresolved-attribute]
-    bio_coll._collection.insert_many.assert_called_once_with(docs)
+    bio_coll._collection.insert_many.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+        docs
+    )
 
 
 ########################################################################################
@@ -516,7 +520,9 @@ async def test_1200__find_one_removes_id_and_returns(
     result = await bio_coll.find_one({"name": "Alice"})
 
     # check calls & result
-    bio_coll._collection.find_one.assert_called_once_with({"name": "Alice"})
+    bio_coll._collection.find_one.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+        {"name": "Alice"}
+    )
     assert result == {"name": "Alice", "age": 30}
 
 
@@ -551,10 +557,10 @@ async def test_1300__find_one_and_update_calls_validate_and_collection(
     bio_coll._validate_mongo_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
         update
     )
-    bio_coll._collection.find_one_and_update.assert_called_once_with(
+    bio_coll._collection.find_one_and_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
         {"name": "Alice"},
         update,
-        return_document=bio_coll._collection.find_one_and_update.call_args.kwargs[
+        return_document=bio_coll._collection.find_one_and_update.call_args.kwargs[  # ty:ignore[unresolved-attribute]
             "return_document"
         ],
     )
@@ -592,7 +598,7 @@ async def test_1400__update_many_calls_validate_and_collection(
     bio_coll._validate_mongo_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
         {"$set": {"age": 40}}
     )
-    bio_coll._collection.update_many.assert_called_once_with(
+    bio_coll._collection.update_many.assert_called_once_with(  # ty:ignore[unresolved-attribute]
         {"active": True}, {"$set": {"age": 40}}
     )
     assert count == 3

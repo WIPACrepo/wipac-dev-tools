@@ -29,9 +29,9 @@ from . import logging_tools
 from .strtobool import strtobool
 
 try:
-    from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]
+    from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]
 except ImportError:
-    from typing import GenericAlias  # type: ignore[attr-defined]
+    from typing import GenericAlias  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]
 
 # fmt: off
 if TYPE_CHECKING:  # _typeshed only exists at runtime
