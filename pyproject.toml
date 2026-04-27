@@ -61,7 +61,6 @@ tests = [
 ]
 mypy = [
     'jsonschema',
-    'motor',
     'prometheus-client',
     'pymongo',
     'pytest',
