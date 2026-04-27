@@ -237,7 +237,7 @@ class MongoJSONSchemaValidatedCollection:
         async for doc in self._collection.find(query, projection, **kwargs):
             i += 1
             if no_id:
-                doc.pop("_id", None)  # mongo will put "_id" -- but for testing use None
+                doc.pop("_id", None)  # mongo puts "_id"; could instead use projection
             self.logger.debug(f"found {doc}")
             yield doc
 
