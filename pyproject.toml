@@ -45,9 +45,6 @@ semver = [
 mongo = [
     'pymongo',
 ]
-motor_soon_deprecated = [
-    'motor',
-]
 jsonschema = [
     'jsonschema',
 ]
@@ -64,7 +61,6 @@ tests = [
 ]
 mypy = [
     'jsonschema',
-    'motor',
     'prometheus-client',
     'pymongo',
     'pytest',

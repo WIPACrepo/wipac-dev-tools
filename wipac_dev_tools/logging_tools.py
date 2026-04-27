@@ -50,8 +50,6 @@ def get_logger_fn(
     logger: Union[None, str, logging.Logger], level: LoggerLevel
 ) -> Callable[[str], None]:
     """Get the logger function from `logger` and `level`."""
-    level = level.upper()  # type: ignore[assignment]
-
     if not logger:
         _logger = logging.getLogger()
     elif isinstance(logger, logging.Logger):
@@ -59,7 +57,7 @@ def get_logger_fn(
     else:
         _logger = logging.getLogger(logger)
 
-    if level not in ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]:
+    if level.upper() not in ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]:
         raise ValueError(f"Invalid logging level: {level}")
 
     return getattr(_logger, level.lower())  # ..., info, warning, critical, ...

@@ -10,7 +10,7 @@ from wipac_dev_tools.mongo_jsonschema_tools import (
     DocumentNotFoundException,
     IllegalDotsNotationActionException,
     MongoJSONSchemaValidatedCollection,
-    _IS_MOTOR_IMPORTED,
+    _JSONSchemaTransformer,
     _convert_mongo_to_jsonschema,
 )
 
@@ -19,21 +19,12 @@ ValidationError = jsonschema.exceptions.ValidationError
 
 def make_coll(schema: dict) -> MongoJSONSchemaValidatedCollection:
     """Create a MongoJSONSchemaValidatedCollection instance with a mocked backend."""
-
-    # FUTURE DEV: once motor, is deprecated, we can remove this
-    if _IS_MOTOR_IMPORTED:
-        coll_classname = "motor.motor_asyncio.AsyncIOMotorCollection"
-    else:
-        coll_classname = "pymongo.asynchronous.collection.AsyncCollection"
-
-    with patch(coll_classname):
-        coll = MongoJSONSchemaValidatedCollection(
+    with patch("pymongo.asynchronous.collection.AsyncCollection"):
+        return MongoJSONSchemaValidatedCollection(
             collection=AsyncMock(),
             collection_jsonschema_spec=schema,
             parent_logger=logging.getLogger("test_logger"),
         )
-        coll._collection_backend = coll_classname.rsplit(".", maxsplit=1)[1]
-        return coll
 
 
 @pytest.fixture
@@ -90,8 +81,9 @@ def team_schema():
 def test_0000__convert_no_dots_no_partial_returns_as_is(bio_schema):
     """Test conversion passes through doc and schema as-is if no dotted keys."""
     doc = {"name": "Charlie", "age": 28}
+    transformer = _JSONSchemaTransformer(bio_schema)
     out_doc, out_schema = _convert_mongo_to_jsonschema(
-        doc, bio_schema, allow_partial_update=False
+        doc, transformer, allow_partial_update=False
     )
     assert out_doc == doc
     assert out_schema == bio_schema
@@ -100,15 +92,17 @@ def test_0000__convert_no_dots_no_partial_returns_as_is(bio_schema):
 def test_0001__convert_with_dots_no_partial_raises(bio_schema):
     """Test conversion with dotted keys and no partial update raises error."""
     doc = {"address.city": "Springfield"}
+    transformer = _JSONSchemaTransformer(bio_schema)
     with pytest.raises(IllegalDotsNotationActionException):
-        _convert_mongo_to_jsonschema(doc, bio_schema, allow_partial_update=False)
+        _convert_mongo_to_jsonschema(doc, transformer, allow_partial_update=False)
 
 
 def test_0002__convert_with_dots_and_partial_succeeds(bio_schema):
     """Test conversion with dotted keys and partial update flattens and validates."""
     doc = {"address.city": "Metropolis"}
+    transformer = _JSONSchemaTransformer(bio_schema)
     out_doc, out_schema = _convert_mongo_to_jsonschema(
-        doc, bio_schema, allow_partial_update=True
+        doc, transformer, allow_partial_update=True
     )
     assert out_doc == {"address": {"city": "Metropolis"}}
     assert out_schema["required"] == []
@@ -127,8 +121,9 @@ def test_0003__convert_with_additional_properties_and_partial():
         "additionalProperties": True,
     }
     doc = {"custom.field": "yes"}
+    transformer = _JSONSchemaTransformer(schema)
     out_doc, out_schema = _convert_mongo_to_jsonschema(
-        doc, schema, allow_partial_update=True
+        doc, transformer, allow_partial_update=True
     )
     assert out_doc == {"custom": {"field": "yes"}}
     assert out_schema["required"] == []
@@ -148,8 +143,9 @@ def test_0004__convert_with_nested_additional_properties_blocked__but_ok():
         "required": ["meta"],
     }
     doc = {"meta.extra": "boom"}
+    transformer = _JSONSchemaTransformer(schema)
     out_doc, out_schema = _convert_mongo_to_jsonschema(
-        doc, schema, allow_partial_update=True
+        doc, transformer, allow_partial_update=True
     )
     assert out_doc == {"meta": {"extra": "boom"}}
     assert out_schema["properties"]["meta"]["additionalProperties"] is False
@@ -160,6 +156,33 @@ def test_0004__convert_with_nested_additional_properties_blocked__but_ok():
     # see...
     with pytest.raises(jsonschema.exceptions.ValidationError):
         jsonschema.validate(out_doc, out_schema)
+
+
+########################################################################################
+# _JSONSchemaTransformer caching & defensive copy
+
+
+def test_0050__transformer_caches_partial_schemas(bio_schema):
+    """Test that repeated unrequire calls with same dotted-key set hit the cache."""
+    transformer = _JSONSchemaTransformer(bio_schema)
+    transformer._unrequire_key_ancestors.cache_clear()
+
+    # different values, same dotted-key set -> 1 miss, 1 hit
+    transformer.unrequire_key_ancestors({"address.city": "A"})
+    transformer.unrequire_key_ancestors({"address.city": "B"})
+
+    info = transformer._unrequire_key_ancestors.cache_info()
+    assert info.misses == 1
+    assert info.hits == 1
+
+
+def test_0051__transformer_deep_copies_input_schema(bio_schema):
+    """Test that mutating the input schema after construction doesn't poison the transformer."""
+    transformer = _JSONSchemaTransformer(bio_schema)
+    bio_schema["required"] = ["mutated"]  # external mutation
+
+    # transformer's copy is unaffected
+    assert transformer.full_schema["required"] == ["name", "age"]
 
 
 ########################################################################################
@@ -437,19 +460,21 @@ def test_0204__validate_mongo_update__push_baseball_invalid(team_schema):
 
 
 @pytest.mark.asyncio
-async def test_1000__insert_one_calls_validate_and_motor(
+async def test_1000__insert_one_calls_validate_and_collection(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test insert_one calls validation and insert_one."""
     doc = {"name": "Alice", "age": 30}
-    bio_coll._validate = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.insert_one = AsyncMock()  # type: ignore[method-assign]
+    bio_coll._validate = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.insert_one = AsyncMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     result = await bio_coll.insert_one(doc.copy())
 
     # check calls & result
     bio_coll._validate.assert_called_once_with(doc)  # ty:ignore[unresolved-attribute]
-    bio_coll._collection.insert_one.assert_called_once_with(doc)
+    bio_coll._collection.insert_one.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+        doc
+    )
     assert result == doc
 
 
@@ -458,7 +483,7 @@ async def test_1000__insert_one_calls_validate_and_motor(
 
 
 @pytest.mark.asyncio
-async def test_1100__insert_many_calls_validate_and_motor(
+async def test_1100__insert_many_calls_validate_and_collection(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test insert_many calls validation on each doc."""
@@ -466,15 +491,17 @@ async def test_1100__insert_many_calls_validate_and_motor(
         {"name": "Alice", "age": 30},
         {"name": "Bob", "age": 25},
     ]
-    bio_coll._validate = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.insert_many = AsyncMock()  # type: ignore[method-assign]
+    bio_coll._validate = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.insert_many = AsyncMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     result = await bio_coll.insert_many([doc.copy() for doc in docs])
 
     # check calls & result
     assert result == docs
     assert bio_coll._validate.call_count == 2  # ty:ignore[unresolved-attribute]
-    bio_coll._collection.insert_many.assert_called_once_with(docs)
+    bio_coll._collection.insert_many.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+        docs
+    )
 
 
 ########################################################################################
@@ -486,14 +513,16 @@ async def test_1200__find_one_removes_id_and_returns(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one removes _id and returns result."""
-    bio_coll._collection.find_one = AsyncMock(  # type: ignore[method-assign]
+    bio_coll._collection.find_one = AsyncMock(  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
         return_value={"_id": "id", "name": "Alice", "age": 30}
     )
 
     result = await bio_coll.find_one({"name": "Alice"})
 
     # check calls & result
-    bio_coll._collection.find_one.assert_called_once_with({"name": "Alice"})
+    bio_coll._collection.find_one.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+        {"name": "Alice"}
+    )
     assert result == {"name": "Alice", "age": 30}
 
 
@@ -502,7 +531,7 @@ async def test_1201__find_one_not_found_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one raises DocumentNotFoundException when no document found."""
-    bio_coll._collection.find_one = AsyncMock(return_value=None)  # type: ignore[method-assign]
+    bio_coll._collection.find_one = AsyncMock(return_value=None)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.find_one({"name": "Missing"})
@@ -513,14 +542,14 @@ async def test_1201__find_one_not_found_raises(
 
 
 @pytest.mark.asyncio
-async def test_1300__find_one_and_update_calls_validate_and_motor(
+async def test_1300__find_one_and_update_calls_validate_and_collection(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one_and_update calls validation and returns updated doc."""
     update = {"$set": {"age": 35}}
     result_doc = {"_id": "x", "name": "Updated", "age": 35}
-    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.find_one_and_update = AsyncMock(return_value=result_doc)  # type: ignore[method-assign]
+    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.find_one_and_update = AsyncMock(return_value=result_doc)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     result = await bio_coll.find_one_and_update({"name": "Alice"}, update)
 
@@ -528,10 +557,10 @@ async def test_1300__find_one_and_update_calls_validate_and_motor(
     bio_coll._validate_mongo_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
         update
     )
-    bio_coll._collection.find_one_and_update.assert_called_once_with(
+    bio_coll._collection.find_one_and_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
         {"name": "Alice"},
         update,
-        return_document=bio_coll._collection.find_one_and_update.call_args.kwargs[
+        return_document=bio_coll._collection.find_one_and_update.call_args.kwargs[  # ty:ignore[unresolved-attribute]
             "return_document"
         ],
     )
@@ -543,8 +572,8 @@ async def test_1301__find_one_and_update_not_found_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one_and_update raises DocumentNotFoundException if not found."""
-    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.find_one_and_update = AsyncMock(return_value=None)  # type: ignore[method-assign]
+    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.find_one_and_update = AsyncMock(return_value=None)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.find_one_and_update({"name": "Missing"}, {"$set": {"age": 35}})
@@ -555,13 +584,13 @@ async def test_1301__find_one_and_update_not_found_raises(
 
 
 @pytest.mark.asyncio
-async def test_1400__update_many_calls_validate_and_motor(
+async def test_1400__update_many_calls_validate_and_collection(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test update_many calls validation and returns modified count."""
     mock_res = MagicMock(matched_count=1, modified_count=3)
-    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.update_many = AsyncMock(return_value=mock_res)  # type: ignore[method-assign]
+    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.update_many = AsyncMock(return_value=mock_res)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     count = await bio_coll.update_many({"active": True}, {"$set": {"age": 40}})
 
@@ -569,7 +598,7 @@ async def test_1400__update_many_calls_validate_and_motor(
     bio_coll._validate_mongo_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
         {"$set": {"age": 40}}
     )
-    bio_coll._collection.update_many.assert_called_once_with(
+    bio_coll._collection.update_many.assert_called_once_with(  # ty:ignore[unresolved-attribute]
         {"active": True}, {"$set": {"age": 40}}
     )
     assert count == 3
@@ -580,8 +609,8 @@ async def test_1401__update_many_not_found_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test update_many raises DocumentNotFoundException if no documents matched."""
-    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
-    bio_coll._collection.update_many = AsyncMock(  # type: ignore[method-assign]
+    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.update_many = AsyncMock(  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
         return_value=MagicMock(matched_count=0)
     )
 
@@ -604,7 +633,7 @@ async def test_1500__find_all_removes_id(
         for doc in docs:
             yield doc
 
-    bio_coll._collection.find = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]
+    bio_coll._collection.find = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     # check calls & result
     results = [doc async for doc in bio_coll.find_all({}, ["name"])]
@@ -626,21 +655,11 @@ async def test_1600__aggregate_removes_id(
         for doc in docs:
             yield doc
 
-    if bio_coll._collection_backend == "AsyncIOMotorCollection":
-        # Motor-style: aggregate() returns an async iterator / cursor directly
-        bio_coll._collection.aggregate = (  # type: ignore[method-assign]
-            lambda *_args, **_kwargs: async_gen()
-        )
-    elif bio_coll._collection_backend == "AsyncCollection":
-        # PyMongo async-style: aggregate() is a coroutine that resolves to an async iterator
-        async def aggregate_coro(*_args, **_kwargs):
-            return async_gen()
+    # PyMongo async-style: aggregate() is a coroutine that resolves to an async iterator
+    async def aggregate_coro(*_args, **_kwargs):
+        return async_gen()
 
-        bio_coll._collection.aggregate = aggregate_coro  # type: ignore[method-assign]
-    else:
-        raise AssertionError(
-            f"Unexpected backend in test: {bio_coll._collection_backend!r}"
-        )
+    bio_coll._collection.aggregate = aggregate_coro  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     # check calls & result
     results = [doc async for doc in bio_coll.aggregate([{"$match": {}}])]
@@ -662,19 +681,9 @@ async def test_1700__aggregate_one_returns_first_doc(
         for doc in docs:
             yield doc
 
-    # Choose a mock shape that matches the backend semantics
-    if bio_coll._collection_backend == "AsyncIOMotorCollection":
-        # Motor-style: aggregate returns an async iterator directly (no await)
-        agg_mock = MagicMock(return_value=async_gen())
-    elif bio_coll._collection_backend == "AsyncCollection":
-        # PyMongo async-style: aggregate is awaited and returns the async iterator
-        agg_mock = AsyncMock(return_value=async_gen())
-    else:
-        raise AssertionError(
-            f"Unexpected backend in test: {bio_coll._collection_backend!r}"
-        )
-
-    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]
+    # PyMongo async-style: aggregate is awaited and returns the async iterator
+    agg_mock = AsyncMock(return_value=async_gen())
+    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     pipeline = [{"$match": {}}]  # type: ignore[var-annotated]
     result = await bio_coll.aggregate_one(pipeline.copy())
@@ -694,18 +703,9 @@ async def test_1701__aggregate_one_not_found_raises(
         for _ in []:  # hack for empty async iter
             yield
 
-    if bio_coll._collection_backend == "AsyncIOMotorCollection":
-        # Motor-style: aggregate returns an async iterator directly (no await)
-        agg_mock = MagicMock(return_value=async_gen())
-    elif bio_coll._collection_backend == "AsyncCollection":
-        # PyMongo async-style: aggregate is awaited and returns the async iterator
-        agg_mock = AsyncMock(return_value=async_gen())
-    else:
-        raise AssertionError(
-            f"Unexpected backend in test: {bio_coll._collection_backend!r}"
-        )
-
-    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]
+    # PyMongo async-style: aggregate is awaited and returns the async iterator
+    agg_mock = AsyncMock(return_value=async_gen())
+    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
     pipeline = [{"$match": {"val": "none"}}]
     with pytest.raises(DocumentNotFoundException):
