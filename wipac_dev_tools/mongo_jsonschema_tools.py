@@ -4,7 +4,7 @@ import copy
 import functools
 import logging
 from collections.abc import AsyncIterator, Callable
-from typing import Any, Final, TypeAlias
+from typing import Any, Final, TypeAlias, cast
 
 # mongo imports
 try:
@@ -24,7 +24,7 @@ except (ImportError, ModuleNotFoundError) as _exc:
     ) from _exc
 
 JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
-MongoDoc: TypeAlias = dict[str, JSON]
+MongoDoc: TypeAlias = dict[str, Any]  # mongo can carry ObjectId, datetime, Binary, etc
 
 
 class DocumentNotFoundException(Exception):
@@ -106,13 +106,13 @@ class MongoJSONSchemaValidatedCollection:
         for operator in update:
             if operator == "$set":
                 self._validate(
-                    update[operator],  # type: ignore[arg-type]
+                    update[operator],
                     allow_partial_update=True,
                 )
             elif operator == "$push":
                 self._validate(
                     # validate each value as if it was the whole field's list -- other wise `str != [str]`
-                    {k: [v] for k, v in update[operator].items()},  # type: ignore[union-attr]
+                    {k: [v] for k, v in update[operator].items()},
                     allow_partial_update=True,
                 )
             # FUTURE: insert more operators here
@@ -293,7 +293,7 @@ def _convert_mongo_to_jsonschema(
     mongo_dict: MongoDoc,
     jsonschema_transformer: "_JSONSchemaTransformer",
     allow_partial_update: bool,
-) -> tuple[MongoDoc, JSON]:
+) -> tuple[MongoDoc, dict[str, Any]]:
     """Prepare a Mongo-style mapping and schema for JSON Schema validation.
 
     For partial updates, dotted keys are expanded into nested objects and the schema is
@@ -322,10 +322,13 @@ class _JSONSchemaTransformer:
     """Holds a jsonschema spec plus a cached builder for partial-update variants."""
 
     def __init__(self, full_schema: JSON) -> None:
-        # deep-copy so external mutation can't corrupt cached schemas
-        self.full_schema: Final[JSON] = copy.deepcopy(full_schema)
+        # deep-copy so external mutation can't corrupt cached schemas;
+        # narrow JSON->dict since jsonschema specs are always objects at the root
+        self.full_schema: Final[dict[str, Any]] = cast(
+            dict[str, Any], copy.deepcopy(full_schema)
+        )
 
-    def unrequire_key_ancestors(self, mongo_dict: MongoDoc) -> JSON:
+    def unrequire_key_ancestors(self, mongo_dict: MongoDoc) -> dict[str, Any]:
         """Return a deep-copy of `self.full_schema` with `required` cleared at the root
         and along each dotted key's parent chain. Treat as immutable.
 
@@ -376,17 +379,17 @@ class _JSONSchemaTransformer:
         )
 
     @functools.lru_cache(maxsize=64)
-    def _unrequire_key_ancestors(self, dotted_keys: frozenset[str]) -> JSON:
+    def _unrequire_key_ancestors(self, dotted_keys: frozenset[str]) -> dict[str, Any]:
         """Cached builder for `unrequire_key_ancestors()`.
 
         `frozenset` key makes cache hits order- and value-independent; `frozenset()`
         is the no-dotted-keys case.
         """
-        schema = copy.deepcopy(self.full_schema)  # expensive
-        schema["required"] = []  # type: ignore[index]
+        schema: dict[str, Any] = copy.deepcopy(self.full_schema)  # expensive
+        schema["required"] = []
         for dkey in dotted_keys:
             # (re)set schema cursor to root for each key
-            schema_props_cursor = schema["properties"]  # type: ignore[index]
+            schema_props_cursor: dict[str, Any] | None = schema["properties"]
             # leaf is the value slot, not a nested container to descend into
             *parent_keys, _leaf_key = dkey.split(".")
             for k in parent_keys:
