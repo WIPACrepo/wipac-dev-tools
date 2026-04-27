@@ -223,7 +223,7 @@ class MongoJSONSchemaValidatedCollection:
     async def find_all(
         self,
         query: MongoDoc,
-        projection: list[str],
+        projection: list[str] | dict[str, int],
         no_id: bool = True,
         **kwargs: Any,
     ) -> AsyncIterator[MongoDoc]:
