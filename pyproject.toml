@@ -45,9 +45,6 @@ semver = [
 mongo = [
     'pymongo',
 ]
-motor_soon_deprecated = [
-    'motor',
-]
 jsonschema = [
     'jsonschema',
 ]
