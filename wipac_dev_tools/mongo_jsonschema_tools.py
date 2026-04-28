@@ -220,6 +220,22 @@ class MongoJSONSchemaValidatedCollection:
         self.logger.debug(f"found one: {doc}")
         return doc  # type: ignore[no-any-return]
 
+    async def find_one_field(
+        self,
+        query: MongoDoc,
+        field: str,
+        **kwargs: Any,
+    ) -> Any:
+        """Find one doc matching the query, then return the *value* of `field`.
+
+        Do not provide `projection` -- this method will override it with `{field: 1}`.
+
+        Raises `DocumentNotFoundException` if no doc is found.
+        """
+        kwargs["projection"] = {field: 1}
+        doc = await self.find_one(query, **kwargs)  # ~> DocumentNotFoundException
+        return doc[field]
+
     async def find_all(
         self,
         query: MongoDoc,
