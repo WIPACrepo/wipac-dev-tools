@@ -237,10 +237,17 @@ class MongoJSONSchemaValidatedCollection:
     ) -> Any:
         """Find one doc matching the query, then return the *value* of `field`.
 
+        **WARNING**: Do not pass in dotted keys, this will raise a `ValueError`.
+        The logic to support this is very complex and would need to account for various
+        shapes of nested objects, including arrays and mixed types.
+
         Do not provide `projection` -- this method will override it with `{field: 1}`.
 
         Raises `DocumentNotFoundException` if no doc is found.
         """
+        if "." in field:
+            raise ValueError("Dotted keys are not supported for this method.")
+
         kwargs["projection"] = {field: 1}
         doc = await self.find_one(query, **kwargs)  # ~> DocumentNotFoundException
         return doc[field]
