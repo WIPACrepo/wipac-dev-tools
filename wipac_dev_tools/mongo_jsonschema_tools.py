@@ -30,6 +30,14 @@ MongoDoc: TypeAlias = dict[str, Any]  # mongo can carry ObjectId, datetime, Bina
 class DocumentNotFoundException(Exception):
     """Raised when document is not found for a particular query."""
 
+    def __init__(self, collection_name: str = "") -> None:
+        # NOTE: `collection_name` is optional for backwards compatibility
+        super().__init__(
+            f"Document not found in collection={collection_name}."
+            if collection_name
+            else "Document not found."
+        )
+
 
 class IllegalDotsNotationActionException(Exception):
     """The object contains dotted keys which the mongo action disallows."""
@@ -170,7 +178,7 @@ class MongoJSONSchemaValidatedCollection:
             **kwargs,
         )
         if not doc:
-            raise DocumentNotFoundException()
+            raise DocumentNotFoundException(self.collection_name)
         elif do_pop_id(no_id, kwargs.get("projection")):
             doc.pop("_id", None)
 
@@ -212,7 +220,7 @@ class MongoJSONSchemaValidatedCollection:
         self._validate_mongo_update(update)
         res = await self._collection.update_many(query, update, **kwargs)
         if not res.matched_count:
-            raise DocumentNotFoundException()
+            raise DocumentNotFoundException(self.collection_name)
 
         self.logger.debug(f"updated many: {query}")
         return res.modified_count
@@ -235,7 +243,7 @@ class MongoJSONSchemaValidatedCollection:
 
         doc = await self._collection.find_one(query, **kwargs)
         if not doc:
-            raise DocumentNotFoundException()
+            raise DocumentNotFoundException(self.collection_name)
         if do_pop_id(no_id, kwargs.get("projection")):
             doc.pop("_id", None)
 
@@ -334,7 +342,7 @@ class MongoJSONSchemaValidatedCollection:
         async for doc in self.aggregate(pipeline, **kwargs):
             return doc
 
-        raise DocumentNotFoundException()
+        raise DocumentNotFoundException(self.collection_name)
 
 
 ########################################################################################
