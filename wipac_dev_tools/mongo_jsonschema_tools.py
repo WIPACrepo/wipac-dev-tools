@@ -40,6 +40,7 @@ class DocumentNotFoundException(Exception):
             if collection_name
             else "MongoDB document not found."
         )
+        self.collection_name = collection_name
 
 
 class IllegalDotsNotationActionException(Exception):
