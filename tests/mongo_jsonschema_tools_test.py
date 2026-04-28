@@ -687,6 +687,30 @@ async def test_1500__find_all_removes_id(
     assert results == [{"name": "A"}, {"name": "B"}]
 
 
+@pytest.mark.asyncio
+async def test_1501__find_all_keeps_id_when_projection_includes_it(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """Test find_all keeps _id when caller's projection explicitly includes it."""
+    docs = [{"_id": 1, "name": "A"}, {"_id": 2, "name": "B"}]
+
+    async def async_gen():
+        for doc in docs:
+            yield doc
+
+    bio_coll._collection.find = lambda *_args, **_kwargs: async_gen()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+
+    # explicit _id in projection -- should be preserved despite no_id default
+    results = [
+        doc
+        async for doc in bio_coll.find_all(
+            {},
+            ["_id", "name"],
+        )
+    ]
+    assert results == docs  # _id retained
+
+
 ########################################################################################
 # aggregate()
 
