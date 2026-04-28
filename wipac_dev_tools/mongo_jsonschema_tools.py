@@ -40,6 +40,19 @@ class IllegalDotsNotationActionException(Exception):
         )
 
 
+def do_pop_id(no_id: bool, projection: dict[str, int] | list[str] | None) -> bool:
+    """Return whether to pop the `_id` field from the given doc.
+
+    If "_id" is included by the projection, it is not popped. Else, look at `no_id`.
+    """
+    if isinstance(projection, dict) and projection.get("_id"):  # {_id: 1} vs. {_id: 0}
+        return False
+    elif isinstance(projection, list) and "_id" in projection:  # ["_id"]
+        return False
+    else:
+        return no_id
+
+
 class MongoJSONSchemaValidatedCollection:
     """For interacting with a mongo collection using jsonschema validation for writes.
 
@@ -130,8 +143,8 @@ class MongoJSONSchemaValidatedCollection:
 
         self._validate(doc)
         await self._collection.insert_one(doc, **kwargs)
-        if no_id:
-            doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+        if do_pop_id(no_id, kwargs.get("projection")):
+            doc.pop("_id", None)
 
         self.logger.debug(f"inserted one: {doc}")
         return doc
@@ -158,8 +171,8 @@ class MongoJSONSchemaValidatedCollection:
         )
         if not doc:
             raise DocumentNotFoundException()
-        elif no_id:
-            doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+        elif do_pop_id(no_id, kwargs.get("projection")):
+            doc.pop("_id", None)
 
         self.logger.debug(f"updated one ({query}): {doc}")
         return doc  # type: ignore[no-any-return]
@@ -177,9 +190,9 @@ class MongoJSONSchemaValidatedCollection:
             self._validate(doc)
 
         await self._collection.insert_many(docs, **kwargs)
-        if no_id:
+        if do_pop_id(no_id, kwargs.get("projection")):
             for doc in docs:
-                doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+                doc.pop("_id", None)
 
         self.logger.debug(f"inserted many: {docs}")
         return docs
@@ -223,8 +236,8 @@ class MongoJSONSchemaValidatedCollection:
         doc = await self._collection.find_one(query, **kwargs)
         if not doc:
             raise DocumentNotFoundException()
-        if no_id:
-            doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+        if do_pop_id(no_id, kwargs.get("projection")):
+            doc.pop("_id", None)
 
         self.logger.debug(f"found one: {doc}")
         return doc  # type: ignore[no-any-return]
@@ -270,8 +283,8 @@ class MongoJSONSchemaValidatedCollection:
         i = 0
         async for doc in self._collection.find(query, projection, **kwargs):
             i += 1
-            if no_id:
-                doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+            if do_pop_id(no_id, kwargs.get("projection")):
+                doc.pop("_id", None)
             self.logger.debug(f"found {doc}")
             yield doc
 
@@ -296,8 +309,8 @@ class MongoJSONSchemaValidatedCollection:
         i = 0
         async for doc in cursor:
             i += 1
-            if no_id:
-                doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+            if do_pop_id(no_id, kwargs.get("projection")):
+                doc.pop("_id", None)
             self.logger.debug(f"found {doc}")
             yield doc
 
