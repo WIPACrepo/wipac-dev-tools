@@ -143,7 +143,10 @@ class MongoJSONSchemaValidatedCollection:
         no_id: bool = True,
         **kwargs: Any,
     ) -> MongoDoc:
-        """Update the doc and return updated doc."""
+        """Update the doc and return updated doc.
+
+        Raises `DocumentNotFoundException` if no doc is found.
+        """
         self.logger.debug(f"update one with query: {query}")
 
         self._validate_mongo_update(update)
@@ -187,7 +190,10 @@ class MongoJSONSchemaValidatedCollection:
         update: MongoDoc,
         **kwargs: Any,
     ) -> int:
-        """Update all matching docs."""
+        """Update all matching docs.
+
+        Raises `DocumentNotFoundException` if no doc is found.
+        """
         self.logger.debug(f"update many with query: {query}")
 
         self._validate_mongo_update(update)
@@ -208,7 +214,10 @@ class MongoJSONSchemaValidatedCollection:
         no_id: bool = True,
         **kwargs: Any,
     ) -> MongoDoc:
-        """Find one matching the query."""
+        """Find one matching the query.
+
+        Raises `DocumentNotFoundException` if no doc is found.
+        """
         self.logger.debug(f"finding one with query: {query}")
 
         doc = await self._collection.find_one(query, **kwargs)
@@ -246,6 +255,8 @@ class MongoJSONSchemaValidatedCollection:
         """Find all matching the query.
 
         Argument `projection` is required to emphasize this could return A LOT of data.
+
+        Yields nothing if no docs are found.
         """
         self.logger.debug(f"finding with query: {query}")
 
@@ -265,7 +276,10 @@ class MongoJSONSchemaValidatedCollection:
         no_id: bool = True,
         **kwargs: Any,
     ) -> AsyncIterator[MongoDoc]:
-        """Find all matching the aggregate pipeline."""
+        """Find all matching the aggregate pipeline.
+
+        Yields nothing if no docs are found.
+        """
         self.logger.debug(f"finding with aggregate pipeline: {pipeline}")
 
         # PyMongo async's AsyncCollection.aggregate() returns a coroutine
@@ -290,6 +304,8 @@ class MongoJSONSchemaValidatedCollection:
         """Find one matching the aggregate pipeline.
 
         Appends `{"$limit": 1}` to pipeline.
+
+        Raises `DocumentNotFoundException` if no doc is found.
         """
         self.logger.debug(f"finding one with aggregate pipeline: {pipeline}")
 
