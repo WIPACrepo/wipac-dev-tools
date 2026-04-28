@@ -31,11 +31,14 @@ class DocumentNotFoundException(Exception):
     """Raised when document is not found for a particular query."""
 
     def __init__(self, collection_name: str = "") -> None:
-        # NOTE: `collection_name` is optional for backwards compatibility
+        # NOTES:
+        #   - `collection_name` is optional for backwards compatibility
+        #   - don't include sensitive info in exception message
+        #       > this may be logged and/or sent to a user
         super().__init__(
-            f"Document not found in collection={collection_name}."
+            f"MongoDB document not found in collection={collection_name}."
             if collection_name
-            else "Document not found."
+            else "MongoDB document not found."
         )
 
 
