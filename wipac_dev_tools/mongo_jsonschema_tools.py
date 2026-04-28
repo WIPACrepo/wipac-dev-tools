@@ -280,10 +280,11 @@ class MongoJSONSchemaValidatedCollection:
         """
         self.logger.debug(f"finding with query: {query}")
 
+        pop_id = do_pop_id(no_id, projection)  # invariant per-call; compute once
         i = 0
         async for doc in self._collection.find(query, projection, **kwargs):
             i += 1
-            if do_pop_id(no_id, kwargs.get("projection")):
+            if pop_id:
                 doc.pop("_id", None)
             self.logger.debug(f"found {doc}")
             yield doc
