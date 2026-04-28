@@ -538,6 +538,53 @@ async def test_1201__find_one_not_found_raises(
 
 
 ########################################################################################
+# find_one_field()
+
+
+@pytest.mark.asyncio
+async def test_1250__find_one_field_returns_value(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """Test find_one_field returns the value of the requested field."""
+    bio_coll.find_one = AsyncMock(  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+        return_value={"name": "Alice", "age": 30}
+    )
+
+    result = await bio_coll.find_one_field({"name": "Alice"}, "age")
+
+    # check calls & result -- projection should be set to {field: 1}
+    bio_coll.find_one.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+        {"name": "Alice"}, projection={"age": 1}
+    )
+    assert result == 30
+
+
+@pytest.mark.asyncio
+async def test_1251__find_one_field_dotted_key_raises(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """Test find_one_field raises ValueError for dotted (nested) field paths."""
+    bio_coll.find_one = AsyncMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+
+    with pytest.raises(ValueError):
+        await bio_coll.find_one_field({"name": "Alice"}, "address.city")
+
+    # the wrapper should not be invoked at all when the input is malformed
+    bio_coll.find_one.assert_not_called()  # ty:ignore[unresolved-attribute]
+
+
+@pytest.mark.asyncio
+async def test_1252__find_one_field_not_found_raises(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """Test find_one_field propagates DocumentNotFoundException from find_one."""
+    bio_coll.find_one = AsyncMock(side_effect=DocumentNotFoundException)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+
+    with pytest.raises(DocumentNotFoundException):
+        await bio_coll.find_one_field({"name": "Missing"}, "age")
+
+
+########################################################################################
 # find_one_and_update()
 
 

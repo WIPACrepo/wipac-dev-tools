@@ -40,6 +40,19 @@ class IllegalDotsNotationActionException(Exception):
         )
 
 
+def do_pop_id(no_id: bool, projection: dict[str, int] | list[str] | None) -> bool:
+    """Return whether to pop the `_id` field from the given doc.
+
+    If "_id" is included by the projection, it is not popped. Else, look at `no_id`.
+    """
+    if isinstance(projection, dict) and projection.get("_id"):  # {_id: 1} vs. {_id: 0}
+        return False
+    elif isinstance(projection, list) and "_id" in projection:  # ["_id"]
+        return False
+    else:
+        return no_id
+
+
 class MongoJSONSchemaValidatedCollection:
     """For interacting with a mongo collection using jsonschema validation for writes.
 
@@ -130,8 +143,8 @@ class MongoJSONSchemaValidatedCollection:
 
         self._validate(doc)
         await self._collection.insert_one(doc, **kwargs)
-        if no_id:
-            doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+        if do_pop_id(no_id, kwargs.get("projection")):
+            doc.pop("_id", None)
 
         self.logger.debug(f"inserted one: {doc}")
         return doc
@@ -143,7 +156,10 @@ class MongoJSONSchemaValidatedCollection:
         no_id: bool = True,
         **kwargs: Any,
     ) -> MongoDoc:
-        """Update the doc and return updated doc."""
+        """Update the doc and return updated doc.
+
+        Raises `DocumentNotFoundException` if no doc is found.
+        """
         self.logger.debug(f"update one with query: {query}")
 
         self._validate_mongo_update(update)
@@ -155,8 +171,8 @@ class MongoJSONSchemaValidatedCollection:
         )
         if not doc:
             raise DocumentNotFoundException()
-        elif no_id:
-            doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+        elif do_pop_id(no_id, kwargs.get("projection")):
+            doc.pop("_id", None)
 
         self.logger.debug(f"updated one ({query}): {doc}")
         return doc  # type: ignore[no-any-return]
@@ -174,9 +190,9 @@ class MongoJSONSchemaValidatedCollection:
             self._validate(doc)
 
         await self._collection.insert_many(docs, **kwargs)
-        if no_id:
+        if do_pop_id(no_id, kwargs.get("projection")):
             for doc in docs:
-                doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+                doc.pop("_id", None)
 
         self.logger.debug(f"inserted many: {docs}")
         return docs
@@ -187,7 +203,10 @@ class MongoJSONSchemaValidatedCollection:
         update: MongoDoc,
         **kwargs: Any,
     ) -> int:
-        """Update all matching docs."""
+        """Update all matching docs.
+
+        Raises `DocumentNotFoundException` if no doc is found.
+        """
         self.logger.debug(f"update many with query: {query}")
 
         self._validate_mongo_update(update)
@@ -208,17 +227,43 @@ class MongoJSONSchemaValidatedCollection:
         no_id: bool = True,
         **kwargs: Any,
     ) -> MongoDoc:
-        """Find one matching the query."""
+        """Find one matching the query.
+
+        Raises `DocumentNotFoundException` if no doc is found.
+        """
         self.logger.debug(f"finding one with query: {query}")
 
         doc = await self._collection.find_one(query, **kwargs)
         if not doc:
             raise DocumentNotFoundException()
-        if no_id:
-            doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+        if do_pop_id(no_id, kwargs.get("projection")):
+            doc.pop("_id", None)
 
         self.logger.debug(f"found one: {doc}")
         return doc  # type: ignore[no-any-return]
+
+    async def find_one_field(
+        self,
+        query: MongoDoc,
+        field: str,
+        **kwargs: Any,
+    ) -> Any:
+        """Find one doc matching the query, then return the *value* of `field`.
+
+        **WARNING**: Do not pass in dotted keys, this will raise a `ValueError`.
+        The logic to support this is very complex and would need to account for various
+        shapes of nested objects, including arrays and mixed types.
+
+        Do not provide `projection` -- this method will override it with `{field: 1}`.
+
+        Raises `DocumentNotFoundException` if no doc is found.
+        """
+        if "." in field:
+            raise ValueError("Dotted keys are not supported for this method.")
+
+        kwargs["projection"] = {field: 1}
+        doc = await self.find_one(query, **kwargs)  # ~> DocumentNotFoundException
+        return doc[field]
 
     async def find_all(
         self,
@@ -230,14 +275,16 @@ class MongoJSONSchemaValidatedCollection:
         """Find all matching the query.
 
         Argument `projection` is required to emphasize this could return A LOT of data.
+
+        Yields nothing if no docs are found.
         """
         self.logger.debug(f"finding with query: {query}")
 
         i = 0
         async for doc in self._collection.find(query, projection, **kwargs):
             i += 1
-            if no_id:
-                doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+            if do_pop_id(no_id, kwargs.get("projection")):
+                doc.pop("_id", None)
             self.logger.debug(f"found {doc}")
             yield doc
 
@@ -249,7 +296,10 @@ class MongoJSONSchemaValidatedCollection:
         no_id: bool = True,
         **kwargs: Any,
     ) -> AsyncIterator[MongoDoc]:
-        """Find all matching the aggregate pipeline."""
+        """Find all matching the aggregate pipeline.
+
+        Yields nothing if no docs are found.
+        """
         self.logger.debug(f"finding with aggregate pipeline: {pipeline}")
 
         # PyMongo async's AsyncCollection.aggregate() returns a coroutine
@@ -259,8 +309,8 @@ class MongoJSONSchemaValidatedCollection:
         i = 0
         async for doc in cursor:
             i += 1
-            if no_id:
-                doc.pop("_id", None)  # mongo puts "_id"; could use projection instead
+            if do_pop_id(no_id, kwargs.get("projection")):
+                doc.pop("_id", None)
             self.logger.debug(f"found {doc}")
             yield doc
 
@@ -274,6 +324,8 @@ class MongoJSONSchemaValidatedCollection:
         """Find one matching the aggregate pipeline.
 
         Appends `{"$limit": 1}` to pipeline.
+
+        Raises `DocumentNotFoundException` if no doc is found.
         """
         self.logger.debug(f"finding one with aggregate pipeline: {pipeline}")
 
