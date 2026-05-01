@@ -138,8 +138,8 @@ class MongoJSONSchemaValidatedCollection:
         for operator in update:
             # VANILLA / SCALAR OPERATORS
             if operator in [
-                "$set",  # Example: "$set": {"foo": "bar", "bat": 123} -- most common
-                "$inc",  # Example: "$inc": {"next_attempt": 5, "i": 1}
+                "$set",  # Example: $set: {foo: bar, bat: 123} -- most common
+                "$inc",  # Example: $inc: {next_attempt: 5, i: 1}
             ]:
                 self._validate(
                     update[operator],
@@ -148,13 +148,13 @@ class MongoJSONSchemaValidatedCollection:
             # ARRAY OPERATORS
             elif operator in [
                 # Assume: the "names" field in the collection schema is an array -- "sports" too
-                "$push",  # Example: "$push": {"names": "hank", "sports": "baseball"}
+                "$push",  # Example: $push: {names: hank, sports: baseball}
             ]:
                 self._validate(
                     {
                         k: [v]
                         for k, v in update[operator].items()
-                        # Example: {"names": ["hank"], "sports": ["baseball"]}
+                        # Example: {names: [hank], sports: [baseball]}
                     },
                     allow_partial_update=True,
                 )
