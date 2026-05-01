@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import jsonschema
 import pytest
-
 from wipac_dev_tools.mongo_jsonschema_tools import (
     DocumentNotFoundException,
     IllegalDotsNotationActionException,
     MongoJSONSchemaValidatedCollection,
-    _JSONSchemaTransformer,
+    UnsupportedMongoActionError,
     _convert_mongo_to_jsonschema,
+    _JSONSchemaTransformer,
 )
 
 ValidationError = jsonschema.exceptions.ValidationError
@@ -419,7 +419,7 @@ def test_0200__validate_mongo_update__unsupported_operator(
 ):
     """Test _validate_mongo_update with unsupported operator raises error."""
     update = {"$rename": {"name": "full_name"}}
-    with pytest.raises(KeyError):
+    with pytest.raises(UnsupportedMongoActionError):
         bio_coll._validate_mongo_update(update)
 
 
@@ -566,7 +566,7 @@ async def test_1251__find_one_field_dotted_key_raises(
     """Test find_one_field raises ValueError for dotted (nested) field paths."""
     bio_coll.find_one = AsyncMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(UnsupportedMongoActionError):
         await bio_coll.find_one_field({"name": "Alice"}, "address.city")
 
     # the wrapper should not be invoked at all when the input is malformed
