@@ -136,7 +136,10 @@ class MongoJSONSchemaValidatedCollection:
     def _validate_mongo_update(self, update: MongoDoc) -> None:
         """Validate the data for each given mongo-syntax update operator."""
         for operator in update:
+            # VANILLA / SCALAR OPERATORS
             if operator == "$set":
+                # this is the "vanilla" mongo update operator -- most common
+                # Example: "$set": {"foo": "bar", "bat": 123}
                 self._validate(
                     update[operator],
                     allow_partial_update=True,
@@ -149,9 +152,12 @@ class MongoJSONSchemaValidatedCollection:
                 )
             # ARRAY OPERATORS
             elif operator == "$push":
+                # Example: "$push": {"names": "hank"} -- where "names" in db doc is an array
                 self._validate(
-                    # validate each value as if it was the whole field's list -- other wise `str != [str]`
-                    {k: [v] for k, v in update[operator].items()},
+                    {
+                        k: [v]  # each goes in its own 1-array: "hank" -> ["hank"]
+                        for k, v in update[operator].items()
+                    },
                     allow_partial_update=True,
                 )
             # FUTURE: insert more operators here
@@ -278,9 +284,12 @@ class MongoJSONSchemaValidatedCollection:
     ) -> Any:
         """Find one doc matching the query, then return the *value* of `field`.
 
-        **WARNING**: Do not pass in dotted keys, this will raise a `ValueError`.
-        The logic to support this is very complex and would need to account for various
-        shapes of nested objects, including arrays and mixed types.
+        **WARNING**: Do not pass in dotted keys, this will raise a
+        `CurrentlyUnsupportedActionError`. The logic to support this is very
+        complex and would need to account for various shapes of nested objects,
+        including arrays and mixed types. In the case of array traversing, this
+        would need to settle whether to return the first element or the entire
+        list of elements -- plus whether to flatten that or not.
 
         Do not provide `projection` -- this method will override it with `{field: 1}`.
 
