@@ -377,8 +377,19 @@ class MongoJSONSchemaValidatedCollection:
         """Find all matching the aggregate pipeline.
 
         Yields nothing if no docs are found.
+
+        NOTE: Only read actions are supported in the aggregate pipeline --
+        "$out" and "$merge" are not allowed, as the data cannot be validated.
         """
         self.logger.debug(f"finding with aggregate pipeline: {pipeline}")
+
+        # check that no write stage is present in the pipeline
+        for stage in pipeline:
+            for k in stage:
+                if k in ["$out", "$merge"]:
+                    raise UnsupportedMongoActionError(
+                        f"Aggregate pipeline cannot write to a collection ('{k}')."
+                    )
 
         # PyMongo async's AsyncCollection.aggregate() returns a coroutine
         # that must be awaited to obtain the async cursor.
@@ -402,6 +413,8 @@ class MongoJSONSchemaValidatedCollection:
         """Find one matching the aggregate pipeline.
 
         Appends `{"$limit": 1}` to pipeline.
+
+        The same notes and caveats in `aggregate()` apply here.
 
         Raises `DocumentNotFoundException` if no doc is found.
         """
