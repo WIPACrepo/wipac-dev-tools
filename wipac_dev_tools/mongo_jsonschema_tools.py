@@ -152,8 +152,9 @@ class MongoJSONSchemaValidatedCollection:
             ]:
                 self._validate(
                     {
-                        k: [v]  # each goes in its own 1-array: "hank" -> ["hank"]
+                        k: [v]
                         for k, v in update[operator].items()
+                        # Example: {"names": ["hank"], "sports": ["baseball"]}
                     },
                     allow_partial_update=True,
                 )
