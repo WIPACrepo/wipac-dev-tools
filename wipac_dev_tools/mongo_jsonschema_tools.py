@@ -134,6 +134,13 @@ class MongoJSONSchemaValidatedCollection:
                     update[operator],
                     allow_partial_update=True,
                 )
+            elif operator == "$inc":
+                # Example: "$inc": {"next_attempt": 5, "i": 1}
+                self._validate(
+                    update[operator],
+                    allow_partial_update=True,
+                )
+            # ARRAY OPERATORS
             elif operator == "$push":
                 self._validate(
                     # validate each value as if it was the whole field's list -- other wise `str != [str]`
