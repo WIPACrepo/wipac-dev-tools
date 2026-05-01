@@ -27,6 +27,13 @@ JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | 
 MongoDoc: TypeAlias = dict[str, Any]  # mongo can carry ObjectId, datetime, Binary, etc
 
 
+class CurrentlyUnsupportedActionError(Exception):
+    """Raised when an action is not yet supported, but otherwise could be.
+
+    If you see this in the wild... think about implementing it :)
+    """
+
+
 class DocumentNotFoundException(Exception):
     """Raised when document is not found for a particular query."""
 
@@ -149,7 +156,9 @@ class MongoJSONSchemaValidatedCollection:
                 )
             # FUTURE: insert more operators here
             else:
-                raise KeyError(f"Unsupported mongo-syntax update operator: {operator}")
+                raise CurrentlyUnsupportedActionError(
+                    f"Unsupported mongo-update operator: {operator}"
+                )
 
     async def insert_one(
         self,
@@ -278,7 +287,9 @@ class MongoJSONSchemaValidatedCollection:
         Raises `DocumentNotFoundException` if no doc is found.
         """
         if "." in field:
-            raise ValueError("Dotted keys are not supported for this method.")
+            raise CurrentlyUnsupportedActionError(
+                "Dotted keys are not supported for find_one_field(), use find_one() instead."
+            )
 
         kwargs["projection"] = {field: 1}
         doc = await self.find_one(query, **kwargs)  # ~> DocumentNotFoundException
