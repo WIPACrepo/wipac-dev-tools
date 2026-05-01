@@ -111,7 +111,10 @@ class MongoJSONSchemaValidatedCollection:
         mongo_obj: MongoDoc,
         allow_partial_update: bool = False,
     ) -> None:
-        """Wrap `jsonschema.validate` with logic for mongo syntax."""
+        """Wrap `jsonschema.validate` with logic for mongo syntax.
+
+        Raises `jsonschema.exceptions.ValidationError` if data is invalid.
+        """
         try:
             json_obj, out_schema = _convert_mongo_to_jsonschema(
                 mongo_obj,
@@ -166,6 +169,7 @@ class MongoJSONSchemaValidatedCollection:
                 "$push",  # Ex -- $push: {names: hank, sports: baseball}
                 "$addToSet",  # Ex -- same as $push, but only if value is unique
                 # $pullAll -- see vanilla operators above
+                # $pop -- see special case below
             ]:
                 self._validate(
                     {
@@ -175,6 +179,12 @@ class MongoJSONSchemaValidatedCollection:
                     },
                     allow_partial_update=True,
                 )
+            #
+            # LET MONGO DO ITS OWN VALIDATION -- raise 'pymongo.errors.WriteError' if invalid
+            elif operator in [
+                "$pop",  #  operator value is -1 or 1 -- not an array element
+            ]:
+                pass
             # EXPLICITLY UNSUPPORTED OPERATORS
             elif operator in [
                 "$rename",  # renaming a field could require a schema change
@@ -188,8 +198,6 @@ class MongoJSONSchemaValidatedCollection:
             else:
                 # $currentDate
                 #   - operator value is true or false -- not a field value
-                # $pop
-                #   - operator value is -1 or 1 -- not an array element
                 # $
                 #   - validating would require changing the 'update' field name -- tricky
                 # $[]
