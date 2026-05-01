@@ -218,7 +218,7 @@ class MongoJSONSchemaValidatedCollection:
                 #   - just look this one up in the docs... it's wild
                 # $bit
                 #   - operator value is a bitmask -- not a field value
-                #   - if we wan this, validate against a placeholder value of 1 (?)
+                #   - if we want this, validate against a placeholder value of 1 (?)
                 raise UnsupportedMongoActionError(
                     f"Mongo-update operator '{operator}' is not supported."
                 )
