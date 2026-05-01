@@ -27,11 +27,8 @@ JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | 
 MongoDoc: TypeAlias = dict[str, Any]  # mongo can carry ObjectId, datetime, Binary, etc
 
 
-class CurrentlyUnsupportedActionError(Exception):
-    """Raised when an action is not yet supported, but otherwise could be.
-
-    If you see this in the wild... think about implementing it :)
-    """
+class UnsupportedMongoActionError(Exception):
+    """Raised when an action is not supported."""
 
 
 class DocumentNotFoundException(Exception):
@@ -135,20 +132,40 @@ class MongoJSONSchemaValidatedCollection:
 
     def _validate_mongo_update(self, update: MongoDoc) -> None:
         """Validate the data for each given mongo-syntax update operator."""
+        # See Documentation: https://www.mongodb.com/docs/manual/reference/mql/update/
         for operator in update:
-            # VANILLA / SCALAR OPERATORS
+            #
+            # VANILLA OPERATORS -- most common
             if operator in [
-                "$set",  # Example: $set: {foo: bar, bat: 123} -- most common
-                "$inc",  # Example: $inc: {next_attempt: 5, i: 1}
+                "$set",  # Ex -- $set: {foo: bar, bat: 123}
+                "$setOnInsert",  # Ex -- same as $set, but only if doc is new (upsert)
+                "$pullAll",  # Ex -- $pullAll: {scores: [0,5]} -- pulls all from array
             ]:
-                self._validate(
-                    update[operator],
-                    allow_partial_update=True,
-                )
+                self._validate(update[operator], allow_partial_update=True)
+            #
+            # SCALAR OPERATORS
+            #   *** A WARNING ON THE LIMITATIONS OF JSONSCHEMA INTEGRATION ***
+            #     If your schema uses minimum and/or maximum constraints, the
+            #     validator may deem your scalar operator value invalid.
+            #     For example: minimum=5 maximum=100 currentvalue=10 operatorvalue=2
+            elif operator in [
+                "$min",  # Ex -- $min: {lowScore: 112} (mongo updates if 112 < db value)
+                "$max",  # Ex -- $max: {highScore: 881} (mongo updates if 881 > db value)
+                "$inc",  # Ex -- $inc: {next_attempt: 5, i: 1}
+                "$mul",  # Ex -- $mul: {price: 2}
+            ]:
+                self._validate(update[operator], allow_partial_update=True)
+            #
             # ARRAY OPERATORS
+            #   *** A WARNING ON THE LIMITATIONS OF JSONSCHEMA INTEGRATION ***
+            #     If your schema uses minItems and/or maxItems constraints, the
+            #     validator may deem your operator value invalid.
+            #     For example: minItems=6 minItems=22 current_len=10 -- operator_len=1
             elif operator in [
                 # Assume: the "names" field in the collection schema is an array -- "sports" too
-                "$push",  # Example: $push: {names: hank, sports: baseball}
+                "$push",  # Ex -- $push: {names: hank, sports: baseball}
+                "$addToSet",  # Ex -- same as $push, but only if value is unique
+                # $pullAll -- see vanilla operators above
             ]:
                 self._validate(
                     {
@@ -158,10 +175,33 @@ class MongoJSONSchemaValidatedCollection:
                     },
                     allow_partial_update=True,
                 )
-            # FUTURE: insert more operators here
+            # EXPLICITLY UNSUPPORTED OPERATORS
+            elif operator in [
+                "$rename",  # renaming a field could require a schema change
+                "$unset",  # deleting a field could require a schema change
+            ]:
+                raise UnsupportedMongoActionError(
+                    f"Mongo-update operator '{operator}' is unsupported by design."
+                )
+            #
+            # FUTURE DEV
             else:
-                raise CurrentlyUnsupportedActionError(
-                    f"Unsupported mongo-update operator: {operator}"
+                # $currentDate
+                #   - operator value is true or false -- not a field value
+                # $pop
+                #   - operator value is -1 or 1 -- not an array element
+                # $
+                #   - validating would require changing the 'update' field name -- tricky
+                # $[]
+                #   - same as $
+                # $[<identifier>]
+                #   - just look this one up in the docs... it's wild
+                # $pull
+                #   - operator value is a query -- not a field value
+                # $bit
+                #   - operator value is a bitmask -- not a field value
+                raise UnsupportedMongoActionError(
+                    f"Mongo-update operator '{operator}' is not (yet) supported."
                 )
 
     async def insert_one(
@@ -294,7 +334,7 @@ class MongoJSONSchemaValidatedCollection:
         Raises `DocumentNotFoundException` if no doc is found.
         """
         if "." in field:
-            raise CurrentlyUnsupportedActionError(
+            raise UnsupportedMongoActionError(
                 "Dotted keys are not supported for find_one_field(), use find_one() instead."
             )
 
