@@ -142,15 +142,18 @@ class MongoJSONSchemaValidatedCollection:
             if operator in [
                 "$set",  # Ex -- $set: {foo: bar, bat: 123}
                 "$setOnInsert",  # Ex -- same as $set, but only if doc is new (upsert)
-                "$pullAll",  # Ex -- $pullAll: {scores: [0,5]} -- pulls all from array
             ]:
                 self._validate(update[operator], allow_partial_update=True)
             #
             # SCALAR OPERATORS
             #   *** A WARNING ON THE LIMITATIONS OF JSONSCHEMA INTEGRATION ***
-            #     If your schema uses minimum and/or maximum constraints, the
-            #     validator may deem your scalar operator value invalid.
-            #     For example: minimum=5 maximum=100 currentvalue=10 operatorvalue=2
+            #       If your schema uses minimum and/or maximum constraints:
+            #         - the update-operator is validated, this may be
+            #             out-of-range (false negative)
+            #         - the new resulting DB value may be out-of-range,
+            #             and will go unvalidated (written data not checked)
+            #       Recommendation: Do not use minimum/maximum for any
+            #         mutable document fields.
             elif operator in [
                 "$min",  # Ex -- $min: {lowScore: 112} (mongo updates if 112 < db value)
                 "$max",  # Ex -- $max: {highScore: 881} (mongo updates if 881 > db value)
@@ -159,17 +162,20 @@ class MongoJSONSchemaValidatedCollection:
             ]:
                 self._validate(update[operator], allow_partial_update=True)
             #
-            # ARRAY OPERATORS
+            # ADDITIVE ARRAY OPERATORS -- write new array entry to a doc
             #   *** A WARNING ON THE LIMITATIONS OF JSONSCHEMA INTEGRATION ***
-            #     If your schema uses minItems and/or maxItems constraints, the
-            #     validator may deem your operator value invalid.
-            #     For example: minItems=6 minItems=22 current_len=10 -- operator_len=1
+            #       If your schema uses minItems and/or maxItems array
+            #       constraints:
+            #         - the update-operator is validated (aka len=1),
+            #             this may be out-of-range (false negative)
+            #         - the new resulting DB value may be out-of-range,
+            #             and will go unvalidated (written data not checked)
+            #       Recommendation: Do not use minItems/maxItems for any
+            #         mutable document fields.
             elif operator in [
                 # Assume: the "names" field in the collection schema is an array -- "sports" too
                 "$push",  # Ex -- $push: {names: hank, sports: baseball}
                 "$addToSet",  # Ex -- same as $push, but only if value is unique
-                # $pullAll -- see vanilla operators above
-                # $pop -- see special case below
             ]:
                 self._validate(
                     {
@@ -180,11 +186,16 @@ class MongoJSONSchemaValidatedCollection:
                     allow_partial_update=True,
                 )
             #
-            # LET MONGO DO ITS OWN VALIDATION -- raise 'pymongo.errors.WriteError' if invalid
+            # SUBTRACTIVE ARRAY OPERATORS -- remove existing array entry(ies) from a doc
+            #   *** A WARNING ON THE LIMITATIONS OF JSONSCHEMA INTEGRATION ***
+            #       See the warning above for "ADDITIVE ARRAY OPERATORS"
             elif operator in [
-                "$pop",  #  operator value is -1 or 1 -- not an array element
+                "$pop",  # mongo will validate the update shape (-1 or 1)
+                "$pull",
+                "$pullAll",
             ]:
-                pass
+                pass  # let mongo raise 'pymongo.errors.WriteError' if invalid
+            #
             # EXPLICITLY UNSUPPORTED OPERATORS
             elif operator in [
                 "$rename",  # renaming a field could require a schema change
@@ -204,8 +215,6 @@ class MongoJSONSchemaValidatedCollection:
                 #   - same as $
                 # $[<identifier>]
                 #   - just look this one up in the docs... it's wild
-                # $pull
-                #   - operator value is a query -- not a field value
                 # $bit
                 #   - operator value is a bitmask -- not a field value
                 raise UnsupportedMongoActionError(
