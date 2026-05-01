@@ -200,6 +200,9 @@ class MongoJSONSchemaValidatedCollection:
             elif operator in [
                 "$rename",  # renaming a field could require a schema change
                 "$unset",  # deleting a field could require a schema change
+                "$currentDate",
+                # ^^^^^^^^^^^ operator value is true or false -- not a field value, AND
+                #   this stores a BSON timestamp, which is not a JSON primitive
             ]:
                 raise UnsupportedMongoActionError(
                     f"Mongo-update operator '{operator}' is unsupported by design."
@@ -207,8 +210,6 @@ class MongoJSONSchemaValidatedCollection:
             #
             # FUTURE DEV
             else:
-                # $currentDate
-                #   - operator value is true or false -- not a field value
                 # $
                 #   - validating would require changing the 'update' field name -- tricky
                 # $[]
@@ -217,8 +218,9 @@ class MongoJSONSchemaValidatedCollection:
                 #   - just look this one up in the docs... it's wild
                 # $bit
                 #   - operator value is a bitmask -- not a field value
+                #   - if we wan this, validate against a placeholder value of 1 (?)
                 raise UnsupportedMongoActionError(
-                    f"Mongo-update operator '{operator}' is not (yet) supported."
+                    f"Mongo-update operator '{operator}' is not supported."
                 )
 
     async def insert_one(
