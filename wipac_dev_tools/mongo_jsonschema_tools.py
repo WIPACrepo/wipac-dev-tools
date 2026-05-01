@@ -137,22 +137,19 @@ class MongoJSONSchemaValidatedCollection:
         """Validate the data for each given mongo-syntax update operator."""
         for operator in update:
             # VANILLA / SCALAR OPERATORS
-            if operator == "$set":
-                # this is the "vanilla" mongo update operator -- most common
-                # Example: "$set": {"foo": "bar", "bat": 123}
-                self._validate(
-                    update[operator],
-                    allow_partial_update=True,
-                )
-            elif operator == "$inc":
-                # Example: "$inc": {"next_attempt": 5, "i": 1}
+            if operator in [
+                "$set",  # Example: "$set": {"foo": "bar", "bat": 123} -- most common
+                "$inc",  # Example: "$inc": {"next_attempt": 5, "i": 1}
+            ]:
                 self._validate(
                     update[operator],
                     allow_partial_update=True,
                 )
             # ARRAY OPERATORS
-            elif operator == "$push":
-                # Example: "$push": {"names": "hank"} -- where "names" in db doc is an array
+            elif operator in [
+                # Assume: the "names" field in the collection schema is an array -- "sports" too
+                "$push",  # Example: "$push": {"names": "hank", "sports": "baseball"}
+            ]:
                 self._validate(
                     {
                         k: [v]  # each goes in its own 1-array: "hank" -> ["hank"]
