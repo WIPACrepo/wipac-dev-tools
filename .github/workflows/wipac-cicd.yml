@@ -207,7 +207,7 @@ jobs:
         run: |
           set -euo pipefail
           pip install --upgrade pip
-          pip install -e .[jsonschema,mongo,test]
+          pip install -e .[jsonschema,mongo,tests]
       - name: Run integration tests
         env:
           MONGO_URL: mongodb://localhost:27017
