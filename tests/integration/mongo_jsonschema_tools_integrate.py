@@ -224,12 +224,12 @@ async def test_2105__mul(stadium_coll: MongoJSONSchemaValidatedCollection):
 async def test_2106__push(stadium_coll: MongoJSONSchemaValidatedCollection):
     """$push appends to the array."""
     await stadium_coll.insert_one(
-        {"name": "Miller Park", "capacity": 10000, "concessions": ["hot_dog"]}
+        {"name": "Miller Park", "capacity": 10000, "concessions": ["brat"]}
     )
     out = await stadium_coll.find_one_and_update(
-        {"name": "Miller Park"}, {"$push": {"concessions": "peanuts"}}
+        {"name": "Miller Park"}, {"$push": {"concessions": "pretzels"}}
     )
-    assert out["concessions"] == ["hot_dog", "peanuts"]
+    assert out["concessions"] == ["brat", "pretzels"]
 
 
 async def test_2107__add_to_set_dedups(
@@ -237,20 +237,20 @@ async def test_2107__add_to_set_dedups(
 ):
     """$addToSet appends only if the value isn't already present."""
     await stadium_coll.insert_one(
-        {"name": "Miller Park", "capacity": 10000, "concessions": ["hot_dog"]}
+        {"name": "Miller Park", "capacity": 10000, "concessions": ["brat"]}
     )
 
     # new value -> appended
     out = await stadium_coll.find_one_and_update(
-        {"name": "Miller Park"}, {"$addToSet": {"concessions": "peanuts"}}
+        {"name": "Miller Park"}, {"$addToSet": {"concessions": "pretzels"}}
     )
-    assert out["concessions"] == ["hot_dog", "peanuts"]
+    assert out["concessions"] == ["brat", "pretzels"]
 
     # duplicate -> ignored
     out = await stadium_coll.find_one_and_update(
-        {"name": "Miller Park"}, {"$addToSet": {"concessions": "peanuts"}}
+        {"name": "Miller Park"}, {"$addToSet": {"concessions": "pretzels"}}
     )
-    assert out["concessions"] == ["hot_dog", "peanuts"]
+    assert out["concessions"] == ["brat", "pretzels"]
 
 
 async def test_2108__pop_last(stadium_coll: MongoJSONSchemaValidatedCollection):
@@ -259,13 +259,13 @@ async def test_2108__pop_last(stadium_coll: MongoJSONSchemaValidatedCollection):
         {
             "name": "Miller Park",
             "capacity": 10000,
-            "concessions": ["hot_dog", "peanuts", "beer"],
+            "concessions": ["brat", "pretzels", "beer"],
         }
     )
     out = await stadium_coll.find_one_and_update(
         {"name": "Miller Park"}, {"$pop": {"concessions": 1}}
     )
-    assert out["concessions"] == ["hot_dog", "peanuts"]
+    assert out["concessions"] == ["brat", "pretzels"]
 
 
 async def test_2109__pop_first(stadium_coll: MongoJSONSchemaValidatedCollection):
@@ -274,13 +274,13 @@ async def test_2109__pop_first(stadium_coll: MongoJSONSchemaValidatedCollection)
         {
             "name": "Miller Park",
             "capacity": 10000,
-            "concessions": ["hot_dog", "peanuts", "beer"],
+            "concessions": ["brat", "pretzels", "beer"],
         }
     )
     out = await stadium_coll.find_one_and_update(
         {"name": "Miller Park"}, {"$pop": {"concessions": -1}}
     )
-    assert out["concessions"] == ["peanuts", "beer"]
+    assert out["concessions"] == ["pretzels", "beer"]
 
 
 async def test_2110__pull(stadium_coll: MongoJSONSchemaValidatedCollection):
@@ -289,14 +289,14 @@ async def test_2110__pull(stadium_coll: MongoJSONSchemaValidatedCollection):
         {
             "name": "Miller Park",
             "capacity": 10000,
-            # duplicate hot_dog entries to verify $pull removes every match
-            "concessions": ["hot_dog", "peanuts", "hot_dog", "beer"],
+            # duplicate brat entries to verify $pull removes every match
+            "concessions": ["brat", "pretzels", "brat", "beer"],
         }
     )
     out = await stadium_coll.find_one_and_update(
-        {"name": "Miller Park"}, {"$pull": {"concessions": "hot_dog"}}
+        {"name": "Miller Park"}, {"$pull": {"concessions": "brat"}}
     )
-    assert out["concessions"] == ["peanuts", "beer"]
+    assert out["concessions"] == ["pretzels", "beer"]
 
 
 async def test_2111__pull_all(stadium_coll: MongoJSONSchemaValidatedCollection):
@@ -305,14 +305,14 @@ async def test_2111__pull_all(stadium_coll: MongoJSONSchemaValidatedCollection):
         {
             "name": "Miller Park",
             "capacity": 10000,
-            "concessions": ["hot_dog", "peanuts", "beer", "popcorn"],
+            "concessions": ["brat", "pretzels", "beer", "popcorn"],
         }
     )
     out = await stadium_coll.find_one_and_update(
         {"name": "Miller Park"},
-        {"$pullAll": {"concessions": ["hot_dog", "popcorn"]}},
+        {"$pullAll": {"concessions": ["brat", "popcorn"]}},
     )
-    assert out["concessions"] == ["peanuts", "beer"]
+    assert out["concessions"] == ["pretzels", "beer"]
 
 
 async def test_2120__find_one_and_update_missing_raises(
@@ -396,7 +396,7 @@ async def test_2300__find_all_with_projection(
         key=lambda d: d["name"],
     )
     # _id stripped, capacity not projected
-    assert out == [{"name": "Wrigley Field"}, {"name": "Miller Park"}]
+    assert out == [{"name": "Miller Park"}, {"name": "Wrigley Field"}]
 
 
 async def test_2301__aggregate_match_and_project(
@@ -432,7 +432,7 @@ async def test_2302__aggregate_one_returns_first(
         ]
     )
     out = await stadium_coll.aggregate_one([{"$match": {}}, {"$sort": {"capacity": 1}}])
-    # smallest-capacity-first sort -> Wrigley
+    # smallest-capacity-first sort -> Miller (10000 < 20000)
     assert out["name"] == "Miller Park"
 
 
