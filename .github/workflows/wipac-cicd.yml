@@ -211,7 +211,9 @@ jobs:
       - name: Run integration tests
         env:
           MONGO_URL: mongodb://localhost:27017
-        run: pytest -vvv tests/integration
+        run: |
+          set -euo pipefail
+          pytest -vvvv tests/integration
 
 
   ############################################################################
