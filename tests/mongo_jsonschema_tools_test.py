@@ -455,6 +455,146 @@ def test_0204__validate_mongo_update__push_baseball_invalid(team_schema):
         coll._validate_mongo_update(update)
 
 
+def test_0205__validate_mongo_update__set_on_insert(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$setOnInsert validates like $set (partial allowed)."""
+    bio_coll._validate_mongo_update({"$setOnInsert": {"name": "Alice"}})
+
+
+def test_0206__validate_mongo_update__set_on_insert_invalid(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$setOnInsert with wrong type raises ValidationError."""
+    with pytest.raises(ValidationError):
+        bio_coll._validate_mongo_update({"$setOnInsert": {"age": "not-int"}})
+
+
+def test_0210__validate_mongo_update__min(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$min validates value type per schema."""
+    bio_coll._validate_mongo_update({"$min": {"age": 10}})
+
+
+def test_0211__validate_mongo_update__min_invalid(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$min with wrong type fails validation."""
+    with pytest.raises(ValidationError):
+        bio_coll._validate_mongo_update({"$min": {"age": "ten"}})
+
+
+def test_0212__validate_mongo_update__max(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$max validates value type per schema."""
+    bio_coll._validate_mongo_update({"$max": {"age": 99}})
+
+
+def test_0213__validate_mongo_update__max_invalid(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$max with wrong type fails validation."""
+    with pytest.raises(ValidationError):
+        bio_coll._validate_mongo_update({"$max": {"age": "ninety"}})
+
+
+def test_0214__validate_mongo_update__inc(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$inc validates value type per schema."""
+    bio_coll._validate_mongo_update({"$inc": {"age": 1}})
+
+
+def test_0215__validate_mongo_update__inc_invalid(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$inc with wrong type fails validation."""
+    with pytest.raises(ValidationError):
+        bio_coll._validate_mongo_update({"$inc": {"age": "1"}})
+
+
+def test_0216__validate_mongo_update__mul(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$mul validates value type per schema."""
+    bio_coll._validate_mongo_update({"$mul": {"age": 2}})
+
+
+def test_0217__validate_mongo_update__mul_invalid(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$mul with wrong type fails validation."""
+    with pytest.raises(ValidationError):
+        bio_coll._validate_mongo_update({"$mul": {"age": "x2"}})
+
+
+def test_0220__validate_mongo_update__add_to_set(team_schema):
+    """$addToSet validates as a one-item array push."""
+    coll = make_coll(team_schema)
+    coll._validate_mongo_update(
+        {"$addToSet": {"team": {"name": "Mia", "position": "P", "number": 7}}}
+    )
+
+
+def test_0221__validate_mongo_update__add_to_set_invalid(team_schema):
+    """$addToSet with bad item shape fails validation."""
+    coll = make_coll(team_schema)
+    update = {"$addToSet": {"team": {"name": "Mia"}}}  # missing position+number
+    with pytest.raises(ValidationError):
+        coll._validate_mongo_update(update)
+
+
+def test_0230__validate_mongo_update__pop_skipped(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$pop is intentionally not locally validated -- mongo handles shape."""
+    # 1 = pop last, -1 = pop first; we deliberately pass through to mongo
+    bio_coll._validate_mongo_update({"$pop": {"tags": 1}})
+    bio_coll._validate_mongo_update({"$pop": {"tags": -1}})
+    # even garbage passes our wrapper; mongo would reject at write time
+    bio_coll._validate_mongo_update({"$pop": {"tags": "garbage"}})
+
+
+def test_0231__validate_mongo_update__pull_skipped(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$pull is not locally validated -- mongo handles it."""
+    bio_coll._validate_mongo_update({"$pull": {"tags": "red"}})
+
+
+def test_0232__validate_mongo_update__pull_all_skipped(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$pullAll is not locally validated -- mongo handles it."""
+    bio_coll._validate_mongo_update({"$pullAll": {"tags": ["red", "blue"]}})
+
+
+def test_0240__validate_mongo_update__unset_unsupported(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$unset is unsupported by design."""
+    with pytest.raises(UnsupportedMongoActionError):
+        bio_coll._validate_mongo_update({"$unset": {"age": ""}})
+
+
+def test_0241__validate_mongo_update__current_date_unsupported(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """$currentDate is unsupported by design."""
+    with pytest.raises(UnsupportedMongoActionError):
+        bio_coll._validate_mongo_update({"$currentDate": {"updated": True}})
+
+
+def test_0242__validate_mongo_update__unknown_operator_unsupported(
+    bio_coll: MongoJSONSchemaValidatedCollection,
+):
+    """Unknown operators (e.g. $bit) raise UnsupportedMongoActionError."""
+    with pytest.raises(UnsupportedMongoActionError):
+        bio_coll._validate_mongo_update({"$bit": {"flags": {"and": 5}}})
+
+
 ########################################################################################
 # insert_one()
 
