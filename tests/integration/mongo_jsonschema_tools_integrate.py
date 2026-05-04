@@ -123,7 +123,7 @@ async def test_2002__insert_many_round_trip(
         [doc async for doc in stadium_coll.find_all({}, ["name", "capacity"])],
         key=lambda d: d["name"],
     )  # type: ignore[arg-type,return-value]
-    assert out == sorted(docs, key=lambda d: d["name"])
+    assert out == sorted(docs, key=lambda d: d["name"])  # type: ignore[arg-type,return-value]
 
 
 ########################################################################################
