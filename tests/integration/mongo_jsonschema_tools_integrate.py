@@ -21,7 +21,6 @@ import uuid
 import pytest
 import pytest_asyncio
 from pymongo import AsyncMongoClient
-
 from wipac_dev_tools.mongo_jsonschema_tools import (
     DocumentNotFoundException,
     MongoJSONSchemaValidatedCollection,
@@ -122,7 +121,7 @@ async def test_2002__insert_many_round_trip(
     out = sorted(
         [doc async for doc in stadium_coll.find_all({}, ["name", "capacity"])],
         key=lambda d: d["name"],
-    )
+    )  # type: ignore[arg-type,return-value]
     assert out == sorted(docs, key=lambda d: d["name"])
 
 
