@@ -28,10 +28,6 @@ from wipac_dev_tools.mongo_jsonschema_tools import (
 
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 
-# all tests in this file are integration tests
-pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
-
-
 ########################################################################################
 # fixtures
 
