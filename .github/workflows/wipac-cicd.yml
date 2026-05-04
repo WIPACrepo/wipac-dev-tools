@@ -179,7 +179,6 @@ jobs:
     needs: [
       mongo-versions,
       py-versions,
-      lint,
     ]
     strategy:
       fail-fast: true
