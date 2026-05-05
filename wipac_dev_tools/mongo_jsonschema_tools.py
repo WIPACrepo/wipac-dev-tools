@@ -27,6 +27,10 @@ JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | 
 MongoDoc: TypeAlias = dict[str, Any]  # mongo can carry ObjectId, datetime, Binary, etc
 
 
+class UnsupportedMongoActionError(Exception):
+    """Raised when an action is not supported."""
+
+
 class DocumentNotFoundException(Exception):
     """Raised when document is not found for a particular query."""
 
@@ -107,7 +111,10 @@ class MongoJSONSchemaValidatedCollection:
         mongo_obj: MongoDoc,
         allow_partial_update: bool = False,
     ) -> None:
-        """Wrap `jsonschema.validate` with logic for mongo syntax."""
+        """Wrap `jsonschema.validate` with logic for mongo syntax.
+
+        Raises `jsonschema.exceptions.ValidationError` if data is invalid.
+        """
         try:
             json_obj, out_schema = _convert_mongo_to_jsonschema(
                 mongo_obj,
@@ -128,21 +135,93 @@ class MongoJSONSchemaValidatedCollection:
 
     def _validate_mongo_update(self, update: MongoDoc) -> None:
         """Validate the data for each given mongo-syntax update operator."""
+        # See Documentation: https://www.mongodb.com/docs/manual/reference/mql/update/
         for operator in update:
-            if operator == "$set":
+            #
+            # VANILLA OPERATORS -- most common
+            if operator in [
+                "$set",  # Ex -- $set: {foo: bar, bat: 123}
+                "$setOnInsert",  # Ex -- same as $set, but only if doc is new (upsert)
+            ]:
+                self._validate(update[operator], allow_partial_update=True)
+            #
+            # SCALAR OPERATORS
+            #   *** A WARNING ON THE LIMITATIONS OF JSONSCHEMA INTEGRATION ***
+            #       If your schema uses minimum and/or maximum constraints:
+            #         - the update-operator is validated, this may be
+            #             out-of-range (false negative)
+            #         - the new resulting DB value may be out-of-range,
+            #             and will go unvalidated (written data not checked)
+            #       Recommendation: Do not use minimum/maximum for any
+            #         mutable document fields.
+            elif operator in [
+                "$min",  # Ex -- $min: {lowScore: 112} (mongo updates if 112 < db value)
+                "$max",  # Ex -- $max: {highScore: 881} (mongo updates if 881 > db value)
+                "$inc",  # Ex -- $inc: {next_attempt: 5, i: 1}
+                "$mul",  # Ex -- $mul: {price: 2}
+            ]:
+                self._validate(update[operator], allow_partial_update=True)
+            #
+            # ADDITIVE ARRAY OPERATORS -- write new array entry to a doc
+            #   *** A WARNING ON THE LIMITATIONS OF JSONSCHEMA INTEGRATION ***
+            #       If your schema uses minItems and/or maxItems array
+            #       constraints:
+            #         - the update-operator is validated (aka len=1),
+            #             this may be out-of-range (false negative)
+            #         - the new resulting DB value may be out-of-range,
+            #             and will go unvalidated (written data not checked)
+            #       Recommendation: Do not use minItems/maxItems for any
+            #         mutable document fields.
+            elif operator in [
+                # Assume: the "names" field in the collection schema is an array -- "sports" too
+                "$push",  # Ex -- $push: {names: hank, sports: baseball}
+                "$addToSet",  # Ex -- same as $push, but only if value is unique
+            ]:
                 self._validate(
-                    update[operator],
+                    {
+                        k: [v]
+                        for k, v in update[operator].items()
+                        # Example: {names: [hank], sports: [baseball]}
+                    },
                     allow_partial_update=True,
                 )
-            elif operator == "$push":
-                self._validate(
-                    # validate each value as if it was the whole field's list -- other wise `str != [str]`
-                    {k: [v] for k, v in update[operator].items()},
-                    allow_partial_update=True,
+            #
+            # SUBTRACTIVE ARRAY OPERATORS -- remove existing array entry(ies) from a doc
+            #   *** A WARNING ON THE LIMITATIONS OF JSONSCHEMA INTEGRATION ***
+            #       See the warning above for "ADDITIVE ARRAY OPERATORS"
+            elif operator in [
+                "$pop",  # mongo will validate the update shape (-1 or 1)
+                "$pull",
+                "$pullAll",
+            ]:
+                pass  # let mongo raise 'pymongo.errors.WriteError' if invalid
+            #
+            # EXPLICITLY UNSUPPORTED OPERATORS
+            elif operator in [
+                "$rename",  # renaming a field could require a schema change
+                "$unset",  # deleting a field could require a schema change
+                "$currentDate",
+                # ^^^^^^^^^^^ operator value is true or false -- not a field value, AND
+                #   this stores a BSON timestamp, which is not a JSON primitive
+            ]:
+                raise UnsupportedMongoActionError(
+                    f"Mongo-update operator '{operator}' is unsupported by design."
                 )
-            # FUTURE: insert more operators here
+            #
+            # FUTURE DEV
             else:
-                raise KeyError(f"Unsupported mongo-syntax update operator: {operator}")
+                # $
+                #   - validating would require changing the 'update' field name -- tricky
+                # $[]
+                #   - same as $
+                # $[<identifier>]
+                #   - just look this one up in the docs... it's wild
+                # $bit
+                #   - operator value is a bitmask -- not a field value
+                #   - if we want this, validate against a placeholder value of 1 (?)
+                raise UnsupportedMongoActionError(
+                    f"Mongo-update operator '{operator}' is not supported."
+                )
 
     async def insert_one(
         self,
@@ -262,16 +341,21 @@ class MongoJSONSchemaValidatedCollection:
     ) -> Any:
         """Find one doc matching the query, then return the *value* of `field`.
 
-        **WARNING**: Do not pass in dotted keys, this will raise a `ValueError`.
-        The logic to support this is very complex and would need to account for various
-        shapes of nested objects, including arrays and mixed types.
+        **WARNING**: Do not pass in dotted keys, this will raise a
+        `CurrentlyUnsupportedActionError`. The logic to support this is very
+        complex and would need to account for various shapes of nested objects,
+        including arrays and mixed types. In the case of array traversing, this
+        would need to settle whether to return the first element or the entire
+        list of elements -- plus whether to flatten that or not.
 
         Do not provide `projection` -- this method will override it with `{field: 1}`.
 
         Raises `DocumentNotFoundException` if no doc is found.
         """
         if "." in field:
-            raise ValueError("Dotted keys are not supported for this method.")
+            raise UnsupportedMongoActionError(
+                "Dotted keys are not supported for find_one_field(), use find_one() instead."
+            )
 
         kwargs["projection"] = {field: 1}
         doc = await self.find_one(query, **kwargs)  # ~> DocumentNotFoundException
@@ -312,8 +396,19 @@ class MongoJSONSchemaValidatedCollection:
         """Find all matching the aggregate pipeline.
 
         Yields nothing if no docs are found.
+
+        NOTE: Only read actions are supported in the aggregate pipeline --
+        "$out" and "$merge" are not allowed, as the data cannot be validated.
         """
         self.logger.debug(f"finding with aggregate pipeline: {pipeline}")
+
+        # check that no write stage is present in the pipeline
+        for stage in pipeline:
+            for k in stage:
+                if k in ["$out", "$merge"]:
+                    raise UnsupportedMongoActionError(
+                        f"Aggregate pipeline cannot write to a collection ('{k}')."
+                    )
 
         # PyMongo async's AsyncCollection.aggregate() returns a coroutine
         # that must be awaited to obtain the async cursor.
@@ -337,6 +432,8 @@ class MongoJSONSchemaValidatedCollection:
         """Find one matching the aggregate pipeline.
 
         Appends `{"$limit": 1}` to pipeline.
+
+        The same notes and caveats in `aggregate()` apply here.
 
         Raises `DocumentNotFoundException` if no doc is found.
         """
