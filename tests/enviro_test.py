@@ -363,7 +363,7 @@ def test_021__list_int(typo) -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: typo  # type: ignore
+        FOO: typo  # pyright: ignore[reportInvalidTypeForm]
 
     os.environ["FOO"] = "123 456 789"
     config = from_environment_as_dataclass(Config)
@@ -396,7 +396,7 @@ def test_023__set_int(typo) -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: typo  # type: ignore
+        FOO: typo  # pyright: ignore[reportInvalidTypeForm]
 
     os.environ["FOO"] = "123 456 789 123"
     config = from_environment_as_dataclass(Config)
@@ -429,7 +429,7 @@ def test_025__dict_str_int(typo) -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: typo  # type: ignore
+        FOO: typo  # pyright: ignore[reportInvalidTypeForm]
 
     os.environ["FOO"] = "foo=1 bar=2 baz=3"
     config = from_environment_as_dataclass(Config)
@@ -462,7 +462,7 @@ def test_027__frozen_int(typo) -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: typo  # type: ignore
+        FOO: typo  # pyright: ignore[reportInvalidTypeForm]
 
     os.environ["FOO"] = "123 456 789 123"
     config = from_environment_as_dataclass(Config)
@@ -571,7 +571,7 @@ else:
         Union[bool, None],
         Union[None, bool],
     ]
-    + extra_params_060,  # type: ignore
+    + extra_params_060,
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_060__optional_bool(typo) -> None:
@@ -579,7 +579,7 @@ def test_060__optional_bool(typo) -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: typo  # type: ignore
+        FOO: typo  # pyright: ignore[reportInvalidTypeForm]
 
     os.environ["FOO"] = "T"
     config = from_environment_as_dataclass(Config)
@@ -603,7 +603,7 @@ else:
         Union[Dict[str, int], None],
         Union[None, Dict[str, int]],
     ]
-    + extra_params_061,  # type: ignore
+    + extra_params_061,
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_061__optional_dict_str_int(typo) -> None:
@@ -611,7 +611,7 @@ def test_061__optional_dict_str_int(typo) -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: typo  # type: ignore
+        FOO: typo  # pyright: ignore[reportInvalidTypeForm]
 
     os.environ["FOO"] = "foo=1 bar=2 baz=3"
     config = from_environment_as_dataclass(Config)
@@ -635,7 +635,7 @@ else:
         Union[dict, None],
         Union[None, dict],
     ]
-    + extra_params_062,  # type: ignore
+    + extra_params_062,
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_062__optional_dict(typo) -> None:
@@ -643,7 +643,7 @@ def test_062__optional_dict(typo) -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: typo  # type: ignore
+        FOO: typo  # pyright: ignore[reportInvalidTypeForm]
 
     os.environ["FOO"] = "foo=1 bar=2 baz=3"
     config = from_environment_as_dataclass(Config)

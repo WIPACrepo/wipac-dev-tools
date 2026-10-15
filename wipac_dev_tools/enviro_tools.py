@@ -474,7 +474,7 @@ def _validate_is_non_instantiated_dataclass(dclass: Type[DataclassT]) -> None:
 
 def _cast_to_dataclass(dclass: Type[DataclassT], env_var_attrs: sdict) -> DataclassT:
     try:
-        return cast(DataclassT, dclass(**env_var_attrs))
+        return dclass(**env_var_attrs)
     except TypeError as e:
         m = re.fullmatch(
             r".*__init__\(\) missing \d+ required positional argument(?P<s>s?): (?P<args>.+)",
