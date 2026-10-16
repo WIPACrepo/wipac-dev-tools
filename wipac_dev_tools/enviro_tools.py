@@ -6,16 +6,12 @@ import os
 import re
 import sys
 import types
+from collections.abc import Mapping, Sequence
 from typing import (
-    Any,
-    Dict,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
     TYPE_CHECKING,
-    Tuple,
-    Type,
+    Any,
+    Final,
+    Literal,
     TypeVar,
     Union,
     _SpecialForm,
@@ -23,15 +19,13 @@ from typing import (
     no_type_check,
 )
 
-from typing_extensions import Final
-
 from . import logging_tools
 from .strtobool import strtobool
 
 try:
-    from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]  # noqa: I001
+    from typing import _GenericAlias as GenericAlias  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]
 except ImportError:
-    from typing import GenericAlias  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]  # noqa: I001
+    from typing import GenericAlias  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]
 
 # fmt: off
 if TYPE_CHECKING:  # _typeshed only exists at runtime
@@ -43,9 +37,9 @@ else:
 
 
 RetVal = Union[str, int, float, bool]
-OptionalDict = Mapping[str, Optional[RetVal]]
+OptionalDict = Mapping[str, RetVal | None]
 KeySpec = Union[str, Sequence[str], OptionalDict]
-sdict = Dict[str, Any]
+sdict = dict[str, Any]
 
 
 # ---------------------------------------------------------------------------------------
@@ -141,7 +135,7 @@ def from_environment(keys: KeySpec) -> dict[str, RetVal]:
         elif config[key] is None:
             raise OSError(f"Missing environment variable '{key}'")
 
-    return cast(Dict[str, RetVal], config)
+    return cast(dict[str, RetVal], config)
 
 
 # ---------------------------------------------------------------------------------------
@@ -152,7 +146,7 @@ class TypeCaster:
 
     def __init__(
         self,
-        collection_sep: Optional[str],
+        collection_sep: str | None,
         dict_kv_joiner: str,
     ):
         self._validate_delimiters(collection_sep, dict_kv_joiner)
@@ -161,7 +155,7 @@ class TypeCaster:
 
     @staticmethod
     def _validate_delimiters(
-        collection_sep: Optional[str], dict_kv_joiner: str
+        collection_sep: str | None, dict_kv_joiner: str
     ) -> None:
         if (
             (dict_kv_joiner == collection_sep)
@@ -179,7 +173,7 @@ class TypeCaster:
         self,
         val: str,
         typ: type,
-        typ_args: Optional[Tuple[type, ...]],
+        typ_args: tuple[type, ...] | None,
     ) -> Any:
         """Collect the typecast value."""
 
@@ -218,11 +212,11 @@ class TypeCaster:
 
 
 def from_environment_as_dataclass(
-    dclass: Type[DataclassT],
-    collection_sep: Optional[str] = None,
+    dclass: type[DataclassT],
+    collection_sep: str | None = None,
     dict_kv_joiner: str = "=",
-    log_vars: Optional[logging_tools.LoggerLevel] = "WARNING",
-    obfuscate_log_vars: Optional[Union[bool, list[str]]] = True,
+    log_vars: logging_tools.LoggerLevel | None = "WARNING",
+    obfuscate_log_vars: bool | list[str] | None = True,
 ) -> DataclassT:
     """Obtain configuration values from the OS environment formatted in a
     dataclass.
@@ -407,7 +401,7 @@ class TypeHintDeconstructor:
     @staticmethod
     def deconstruct_from_dc_field(
         field: dataclasses.Field,
-    ) -> Tuple[type, Optional[Tuple[type, ...]]]:
+    ) -> tuple[type, tuple[type, ...] | None]:
         """Take a type hint and return its type and its arguments' types."""
         TypeHintDeconstructor._check_invalid_typehints(field.type, tuple(), field)
 
@@ -467,12 +461,12 @@ class TypeHintDeconstructor:
         return typ_origin, typ_args
 
 
-def _validate_is_non_instantiated_dataclass(dclass: Type[DataclassT]) -> None:
+def _validate_is_non_instantiated_dataclass(dclass: type[DataclassT]) -> None:
     if not (dataclasses.is_dataclass(dclass) and isinstance(dclass, type)):
         raise TypeError(f"Expected (non-instantiated) dataclass: 'dclass' ({dclass})")
 
 
-def _cast_to_dataclass(dclass: Type[DataclassT], env_var_attrs: sdict) -> DataclassT:
+def _cast_to_dataclass(dclass: type[DataclassT], env_var_attrs: sdict) -> DataclassT:
     try:
         return dclass(**env_var_attrs)
     except TypeError as e:
@@ -489,8 +483,8 @@ def _cast_to_dataclass(dclass: Type[DataclassT], env_var_attrs: sdict) -> Datacl
 
 
 def _from_environment_as_dataclass(
-    dclass: Type[DataclassT],
-    collection_sep: Optional[str],
+    dclass: type[DataclassT],
+    collection_sep: str | None,
     dict_kv_joiner: str,
 ) -> DataclassT:
     # check args

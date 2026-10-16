@@ -8,6 +8,7 @@ from itertools import chain
 from typing import Any
 
 import pytest
+
 from wipac_dev_tools import logging_tools
 
 # pylint:disable=missing-class-docstring,disallowed-name,invalid-name
@@ -49,7 +50,6 @@ def test_00(
     crazycase)."""
     present_third_party_name = f"third-party-{logger_name}"
     logging.getLogger(present_third_party_name)  # this creates the logger
-    #
     future_third_party_name = f"future-third-party-{logger_name}"
 
     logging_tools.set_level(
@@ -70,7 +70,6 @@ def test_00(
             f"here's a third party logger ({(uuid.uuid4().hex)[:4]})"
         )
         logging.getLogger(present_third_party_name).info(present_third_party_msg)
-        #
         future_third_party_msg = f"FUTURE 3RD PARTY ({(uuid.uuid4().hex)[:4]})"
         logging.getLogger(future_third_party_name).warning(future_third_party_msg)
 

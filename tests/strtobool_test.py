@@ -4,6 +4,7 @@
 from random import choice
 
 import pytest
+
 from wipac_dev_tools import strtobool
 
 

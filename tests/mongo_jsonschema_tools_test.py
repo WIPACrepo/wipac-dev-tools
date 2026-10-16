@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import jsonschema
 import pytest
+
 from wipac_dev_tools.mongo_jsonschema_tools import (
     JSON,
     DocumentNotFoundException,

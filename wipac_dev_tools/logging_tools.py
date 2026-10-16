@@ -5,7 +5,7 @@ import dataclasses
 import logging
 import time
 from collections.abc import Collection
-from typing import Callable, Dict, List, Optional, TYPE_CHECKING, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypeVar, Union
 
 from typing_extensions import Literal
 
@@ -231,16 +231,12 @@ def set_level(
 
     _configure_levels(
         first_party_level=level.upper(),  # type: ignore
-        #
-        first_parties=list(
+        first_parties=[
             _logger_to_name(lg)  # type: ignore[arg-type]
             for lg in _to_list(first_party_loggers)
-        ),
-        #
+        ],
         third_party_level=third_party_level.upper(),  # type: ignore
-        #
         future_third_parties=_to_list(future_third_parties),
-        #
         specialty_loggers=(
             {_logger_to_name(k): v for k, v in specialty_loggers.items()}
             if specialty_loggers
@@ -260,13 +256,13 @@ def _configure_levels(
     logging.getLogger().setLevel(first_party_level)
     logging.getLogger().info(f"Root Logger: '' ({first_party_level})")
 
-    all_known_base_loggers = set(
+    all_known_base_loggers = {
         lg.split(".", maxsplit=1)[0]
         for lg in first_parties
         + list(logging.root.manager.loggerDict)
         + future_third_parties
         + list(specialty_loggers.keys())
-    )
+    }
 
     # base-loggers (including third-parties)
     # Ex: some_logger=A.B.C -> base_logger=A -> set A,

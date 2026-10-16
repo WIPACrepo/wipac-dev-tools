@@ -150,7 +150,7 @@ def test_2000_dockerhub_request_info_strips_v_and_returns_json(
     """request_info should strip 'v' prefix and return payload JSON."""
     payload = {"name": "4.1.5", "last_updated": "2025-09-01T12:34:56Z"}
 
-    def fake_get(url: str) -> _DummyResp:  # noqa: ANN001
+    def fake_get(url: str) -> _DummyResp:
         assert url.endswith("/4.1.5")
         return _DummyResp(200, payload)
 
@@ -169,7 +169,7 @@ def test_2010_dockerhub_request_info_http_error_raises(
 ) -> None:
     """request_info should raise ImageNotFoundException on HTTP error."""
 
-    def fake_get(url: str) -> _DummyResp:  # noqa: ANN001
+    def fake_get(url: str) -> _DummyResp:
         return _DummyResp(404, {"detail": "not found"})
 
     monkeypatch.setattr(

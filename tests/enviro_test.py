@@ -8,12 +8,11 @@ import shutil
 import sys
 import tempfile
 import unittest
-from typing import Any, Dict, FrozenSet, List, Literal, Optional, Set, Union
+from typing import Any, Final, Literal, Optional, Union
 
 import pytest
-from typing_extensions import Final
 
-from wipac_dev_tools import (  # noqa
+from wipac_dev_tools import (
     from_environment,
     from_environment_as_dataclass,
 )
@@ -184,9 +183,9 @@ def test__real_life_example() -> None:
         FPATH: pathlib.Path
         PORT: int
         HOST: str
-        MSGS_PER_CLIENTS: Dict[str, int]
+        MSGS_PER_CLIENTS: dict[str, int]
         USE_EVEN: EvenState
-        RETRIES: Optional[int] = None
+        RETRIES: int | None = None
         TIMEOUT: int = 30
 
         def __post_init__(self) -> None:
@@ -353,7 +352,7 @@ def test_020__list() -> None:
 @pytest.mark.parametrize(
     "typo",
     [
-        List[int],
+        list[int],
         list[int],
     ],
 )
@@ -386,7 +385,7 @@ def test_022__set() -> None:
 @pytest.mark.parametrize(
     "typo",
     [
-        Set[int],
+        set[int],
         set[int],
     ],
 )
@@ -419,7 +418,7 @@ def test_024__dict() -> None:
 @pytest.mark.parametrize(
     "typo",
     [
-        Dict[str, int],
+        dict[str, int],
         dict[str, int],
     ],
 )
@@ -452,7 +451,7 @@ def test_026__frozen_set() -> None:
 @pytest.mark.parametrize(
     "typo",
     [
-        FrozenSet[int],
+        frozenset[int],
         frozenset[int],
     ],
 )
@@ -502,7 +501,7 @@ def test_029__dict_class_int() -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Dict[OneArgClass, int]
+        FOO: dict[OneArgClass, int]
 
     os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
     config = from_environment_as_dataclass(
@@ -547,7 +546,7 @@ def test_051__final_dict_str_int() -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Final[Dict[str, int]]  # type: ignore[misc]
+        FOO: Final[dict[str, int]]  # type: ignore[misc]
 
     os.environ["FOO"] = "foo=1 bar=2 baz=3"
     config = from_environment_as_dataclass(Config)
@@ -589,8 +588,8 @@ def test_060__optional_bool(typo) -> None:
 if sys.version_info >= (3, 10):
     # this trips up the py <3.9 interpreter
     extra_params_061 = [
-        Dict[str, int] | None,
-        None | Dict[str, int],
+        dict[str, int] | None,
+        None | dict[str, int],
     ]
 else:
     extra_params_061 = []
@@ -599,9 +598,9 @@ else:
 @pytest.mark.parametrize(
     "typo",
     [
-        Optional[Dict[str, int]],
-        Union[Dict[str, int], None],
-        Union[None, Dict[str, int]],
+        Optional[dict[str, int]],
+        Union[dict[str, int], None],
+        Union[None, dict[str, int]],
     ]
     + extra_params_061,
 )
@@ -734,7 +733,7 @@ def test_104_error__bytes() -> None:
     # using a bytes, this is similar to any multi-arg built-in type
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: bytes = bytes()
+        FOO: bytes = b""
 
     os.environ["FOO"] = "foo bar baz"
     with pytest.raises(TypeError):
@@ -748,7 +747,7 @@ def test_105_error__overly_nested_type_alias() -> None:
     # using a bytes, this is similar to any multi-arg built-in type
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: List[Dict[str, int]]
+        FOO: list[dict[str, int]]
 
     os.environ["FOO"] = "doesn't matter, this won't get read before error"
     with pytest.raises(ValueError) as cm:
@@ -767,7 +766,7 @@ def test_106__dict_delims() -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Dict[str, int]
+        FOO: dict[str, int]
 
     os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
     with pytest.raises(RuntimeError) as cm:
@@ -784,7 +783,7 @@ def test_107__dict_delims() -> None:
 
     @dc.dataclass(frozen=True)
     class Config:
-        FOO: Dict[str, int]
+        FOO: dict[str, int]
 
     os.environ["FOO"] = "this-is-my-extra-cool-string = 2"
     with pytest.raises(RuntimeError) as cm:
