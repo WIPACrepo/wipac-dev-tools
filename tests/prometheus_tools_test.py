@@ -1,8 +1,15 @@
-from pprint import pprint
+import asyncio
 import time
+from pprint import pprint
 
 import pytest
-from prometheus_client import REGISTRY, GC_COLLECTOR, PLATFORM_COLLECTOR, PROCESS_COLLECTOR
+from prometheus_client import (
+    GC_COLLECTOR,
+    PLATFORM_COLLECTOR,
+    PROCESS_COLLECTOR,
+    REGISTRY,
+)
+
 from wipac_dev_tools import prometheus_tools as prometheus
 
 # disable these for testing
@@ -187,7 +194,7 @@ async def test_prom_timer_async():
 
         @prometheus.AsyncPromTimer(lambda self: self.prom.histogram('ggg'))
         async def test_timer(self):
-            time.sleep(.1)
+            await asyncio.sleep(.1)
 
     await A().test_timer()
 

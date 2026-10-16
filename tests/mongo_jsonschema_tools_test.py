@@ -5,7 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import jsonschema
 import pytest
+
 from wipac_dev_tools.mongo_jsonschema_tools import (
+    JSON,
     DocumentNotFoundException,
     IllegalDotsNotationActionException,
     MongoJSONSchemaValidatedCollection,
@@ -115,7 +117,7 @@ def test_0002__convert_with_dots_and_partial_succeeds(bio_schema):
 
 def test_0003__convert_with_additional_properties_and_partial():
     """Test conversion allows additionalProperties in partial update."""
-    schema = {
+    schema: JSON = {
         "type": "object",
         "properties": {},
         "additionalProperties": True,
@@ -131,7 +133,7 @@ def test_0003__convert_with_additional_properties_and_partial():
 
 def test_0004__convert_with_nested_additional_properties_blocked__but_ok():
     """Test partial update fails if nested object blocks additionalProperties."""
-    schema = {
+    schema: JSON = {
         "type": "object",
         "properties": {
             "meta": {
@@ -605,14 +607,14 @@ async def test_1000__insert_one_calls_validate_and_collection(
 ):
     """Test insert_one calls validation and insert_one."""
     doc = {"name": "Alice", "age": 30}
-    bio_coll._validate = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
-    bio_coll._collection.insert_one = AsyncMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._validate = MagicMock()  # type: ignore[method-assign]
+    bio_coll._collection.insert_one = AsyncMock()  # type: ignore[method-assign]
 
     result = await bio_coll.insert_one(doc.copy())
 
     # check calls & result
-    bio_coll._validate.assert_called_once_with(doc)  # ty:ignore[unresolved-attribute]
-    bio_coll._collection.insert_one.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+    bio_coll._validate.assert_called_once_with(doc)
+    bio_coll._collection.insert_one.assert_called_once_with(
         doc
     )
     assert result == doc
@@ -631,15 +633,15 @@ async def test_1100__insert_many_calls_validate_and_collection(
         {"name": "Alice", "age": 30},
         {"name": "Bob", "age": 25},
     ]
-    bio_coll._validate = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
-    bio_coll._collection.insert_many = AsyncMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._validate = MagicMock()  # type: ignore[method-assign]
+    bio_coll._collection.insert_many = AsyncMock()  # type: ignore[method-assign]
 
     result = await bio_coll.insert_many([doc.copy() for doc in docs])
 
     # check calls & result
     assert result == docs
-    assert bio_coll._validate.call_count == 2  # ty:ignore[unresolved-attribute]
-    bio_coll._collection.insert_many.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+    assert bio_coll._validate.call_count == 2
+    bio_coll._collection.insert_many.assert_called_once_with(
         docs
     )
 
@@ -653,14 +655,14 @@ async def test_1200__find_one_removes_id_and_returns(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one removes _id and returns result."""
-    bio_coll._collection.find_one = AsyncMock(  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.find_one = AsyncMock(  # type: ignore[method-assign]
         return_value={"_id": "id", "name": "Alice", "age": 30}
     )
 
     result = await bio_coll.find_one({"name": "Alice"})
 
     # check calls & result
-    bio_coll._collection.find_one.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+    bio_coll._collection.find_one.assert_called_once_with(
         {"name": "Alice"}
     )
     assert result == {"name": "Alice", "age": 30}
@@ -671,7 +673,7 @@ async def test_1201__find_one_not_found_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one raises DocumentNotFoundException when no document found."""
-    bio_coll._collection.find_one = AsyncMock(return_value=None)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.find_one = AsyncMock(return_value=None)  # type: ignore[method-assign]
 
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.find_one({"name": "Missing"})
@@ -686,14 +688,14 @@ async def test_1250__find_one_field_returns_value(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one_field returns the value of the requested field."""
-    bio_coll.find_one = AsyncMock(  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll.find_one = AsyncMock(  # type: ignore[method-assign]
         return_value={"name": "Alice", "age": 30}
     )
 
     result = await bio_coll.find_one_field({"name": "Alice"}, "age")
 
     # check calls & result -- projection should be set to {field: 1}
-    bio_coll.find_one.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+    bio_coll.find_one.assert_called_once_with(
         {"name": "Alice"}, projection={"age": 1}
     )
     assert result == 30
@@ -704,13 +706,13 @@ async def test_1251__find_one_field_dotted_key_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one_field raises ValueError for dotted (nested) field paths."""
-    bio_coll.find_one = AsyncMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll.find_one = AsyncMock()  # type: ignore[method-assign]
 
     with pytest.raises(UnsupportedMongoActionError):
         await bio_coll.find_one_field({"name": "Alice"}, "address.city")
 
     # the wrapper should not be invoked at all when the input is malformed
-    bio_coll.find_one.assert_not_called()  # ty:ignore[unresolved-attribute]
+    bio_coll.find_one.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -718,7 +720,7 @@ async def test_1252__find_one_field_not_found_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one_field propagates DocumentNotFoundException from find_one."""
-    bio_coll.find_one = AsyncMock(side_effect=DocumentNotFoundException)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll.find_one = AsyncMock(side_effect=DocumentNotFoundException)  # type: ignore[method-assign]
 
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.find_one_field({"name": "Missing"}, "age")
@@ -735,19 +737,19 @@ async def test_1300__find_one_and_update_calls_validate_and_collection(
     """Test find_one_and_update calls validation and returns updated doc."""
     update = {"$set": {"age": 35}}
     result_doc = {"_id": "x", "name": "Updated", "age": 35}
-    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
-    bio_coll._collection.find_one_and_update = AsyncMock(return_value=result_doc)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
+    bio_coll._collection.find_one_and_update = AsyncMock(return_value=result_doc)  # type: ignore[method-assign]
 
     result = await bio_coll.find_one_and_update({"name": "Alice"}, update)
 
     # check calls & result
-    bio_coll._validate_mongo_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+    bio_coll._validate_mongo_update.assert_called_once_with(
         update
     )
-    bio_coll._collection.find_one_and_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+    bio_coll._collection.find_one_and_update.assert_called_once_with(
         {"name": "Alice"},
         update,
-        return_document=bio_coll._collection.find_one_and_update.call_args.kwargs[  # ty:ignore[unresolved-attribute]
+        return_document=bio_coll._collection.find_one_and_update.call_args.kwargs[
             "return_document"
         ],
     )
@@ -759,8 +761,8 @@ async def test_1301__find_one_and_update_not_found_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test find_one_and_update raises DocumentNotFoundException if not found."""
-    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
-    bio_coll._collection.find_one_and_update = AsyncMock(return_value=None)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
+    bio_coll._collection.find_one_and_update = AsyncMock(return_value=None)  # type: ignore[method-assign]
 
     with pytest.raises(DocumentNotFoundException):
         await bio_coll.find_one_and_update({"name": "Missing"}, {"$set": {"age": 35}})
@@ -776,16 +778,16 @@ async def test_1400__update_many_calls_validate_and_collection(
 ):
     """Test update_many calls validation and returns modified count."""
     mock_res = MagicMock(matched_count=1, modified_count=3)
-    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
-    bio_coll._collection.update_many = AsyncMock(return_value=mock_res)  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
+    bio_coll._collection.update_many = AsyncMock(return_value=mock_res)  # type: ignore[method-assign]
 
     count = await bio_coll.update_many({"active": True}, {"$set": {"age": 40}})
 
     # check calls & result
-    bio_coll._validate_mongo_update.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+    bio_coll._validate_mongo_update.assert_called_once_with(
         {"$set": {"age": 40}}
     )
-    bio_coll._collection.update_many.assert_called_once_with(  # ty:ignore[unresolved-attribute]
+    bio_coll._collection.update_many.assert_called_once_with(
         {"active": True}, {"$set": {"age": 40}}
     )
     assert count == 3
@@ -796,8 +798,8 @@ async def test_1401__update_many_not_found_raises(
     bio_coll: MongoJSONSchemaValidatedCollection,
 ):
     """Test update_many raises DocumentNotFoundException if no documents matched."""
-    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
-    bio_coll._collection.update_many = AsyncMock(  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._validate_mongo_update = MagicMock()  # type: ignore[method-assign]
+    bio_coll._collection.update_many = AsyncMock(  # type: ignore[method-assign] 
         return_value=MagicMock(matched_count=0)
     )
 
@@ -894,7 +896,7 @@ async def test_1700__aggregate_one_returns_first_doc(
 
     # PyMongo async-style: aggregate is awaited and returns the async iterator
     agg_mock = AsyncMock(return_value=async_gen())
-    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]
 
     pipeline = [{"$match": {}}]  # type: ignore[var-annotated]
     result = await bio_coll.aggregate_one(pipeline.copy())
@@ -916,7 +918,7 @@ async def test_1701__aggregate_one_not_found_raises(
 
     # PyMongo async-style: aggregate is awaited and returns the async iterator
     agg_mock = AsyncMock(return_value=async_gen())
-    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]  # ty:ignore[invalid-assignment]
+    bio_coll._collection.aggregate = agg_mock  # type: ignore[method-assign]
 
     pipeline = [{"$match": {"val": "none"}}]
     with pytest.raises(DocumentNotFoundException):

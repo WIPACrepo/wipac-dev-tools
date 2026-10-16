@@ -4,7 +4,6 @@ import asyncio
 import itertools
 import logging
 import time
-from typing import Union
 
 
 class IntervalTimer:
@@ -17,7 +16,7 @@ class IntervalTimer:
     def __init__(
         self,
         seconds: float,
-        logger: Union[logging.Logger, str, None],
+        logger: logging.Logger | str | None,
     ) -> None:
         self.seconds = seconds
         self._last_time = time.monotonic()

@@ -4,7 +4,7 @@ import logging
 import os
 import random
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +25,7 @@ def log_cvmfs_dir(d: Path) -> None:
     entries = [(p, p.stat().st_mtime) for p in d.iterdir()]
 
     for p, mtime in sorted(entries, key=lambda x: x[1], reverse=True):
-        iso = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+        iso = datetime.fromtimestamp(mtime, tz=UTC).isoformat()
         LOGGER.debug(f"{mtime=} ({iso}) {p.name}")
 
 
@@ -150,7 +150,7 @@ def test_2000_dockerhub_request_info_strips_v_and_returns_json(
     """request_info should strip 'v' prefix and return payload JSON."""
     payload = {"name": "4.1.5", "last_updated": "2025-09-01T12:34:56Z"}
 
-    def fake_get(url: str) -> _DummyResp:  # noqa: ANN001
+    def fake_get(url: str) -> _DummyResp:
         assert url.endswith("/4.1.5")
         return _DummyResp(200, payload)
 
@@ -169,7 +169,7 @@ def test_2010_dockerhub_request_info_http_error_raises(
 ) -> None:
     """request_info should raise ImageNotFoundException on HTTP error."""
 
-    def fake_get(url: str) -> _DummyResp:  # noqa: ANN001
+    def fake_get(url: str) -> _DummyResp:
         return _DummyResp(404, {"detail": "not found"})
 
     monkeypatch.setattr(
@@ -192,6 +192,6 @@ def test_2020_parse_image_ts_parses_last_updated() -> None:
         12,
         34,
         56,
-        tzinfo=timezone.utc,
+        tzinfo=UTC,
     ).timestamp()
     assert abs(ts - expected) < 1e-6

@@ -4,7 +4,6 @@ import pytest
 
 from wipac_dev_tools.string_tools import regex_named_groups_to_template
 
-
 # ---------------------------------------------------------------------------
 # Core behavior: named groups become {name}
 # ---------------------------------------------------------------------------

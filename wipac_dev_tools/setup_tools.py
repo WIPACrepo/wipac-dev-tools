@@ -5,9 +5,9 @@ import os
 import pprint
 import re
 import sys
-from typing import List, Optional, Tuple, TypedDict
+from typing import TypedDict
 
-PythonVersion = Tuple[int, int]
+PythonVersion = tuple[int, int]
 
 
 class SetupShopKwargs(TypedDict):
@@ -20,11 +20,11 @@ class SetupShopKwargs(TypedDict):
     description: str
     long_description: str
     long_description_content_type: str
-    keywords: List[str]
-    classifiers: List[str]
+    keywords: list[str]
+    classifiers: list[str]
     license: str
-    packages: List[str]
-    install_requires: List[str]
+    packages: list[str]
+    install_requires: list[str]
 
 
 class SetupShop:
@@ -64,10 +64,10 @@ class SetupShop:
         self,
         package_name: str,
         abspath_to_root: str,
-        py_min_max: Tuple[PythonVersion, PythonVersion],
+        py_min_max: tuple[PythonVersion, PythonVersion],
         description: str,
         allow_git_urls: bool = True,
-        pinned_packages: Optional[List[str]] = None,
+        pinned_packages: list[str] | None = None,
     ):
         print(  # DEPRECATION WARNING
             "\033[93m"
@@ -131,8 +131,8 @@ class SetupShop:
 
     @staticmethod
     def _get_py_min_max(
-        py_min_max: Tuple[PythonVersion, PythonVersion]
-    ) -> Tuple[PythonVersion, PythonVersion]:
+        py_min_max: tuple[PythonVersion, PythonVersion]
+    ) -> tuple[PythonVersion, PythonVersion]:
         """Check that the given `get_py_min_max` is valid, then return."""
         if (
             len(py_min_max) != 2
@@ -203,8 +203,8 @@ class SetupShop:
 
     @staticmethod
     def _get_install_requires(
-        here: str, name: str, allow_git_urls: bool, pinned_packages: List[str]
-    ) -> Tuple[List[str], str]:
+        here: str, name: str, allow_git_urls: bool, pinned_packages: list[str]
+    ) -> tuple[list[str], str]:
         """Get the `install_requires` list & the path to requirements.txt."""
         reqs_path = SetupShop._find_file(here, name, "requirements.txt")
 
@@ -243,7 +243,7 @@ class SetupShop:
         return [convert(m) for m in open(reqs_path).read().splitlines()], reqs_path
 
     @staticmethod
-    def _get_py_classifiers(py_min: PythonVersion, py_max: PythonVersion) -> List[str]:
+    def _get_py_classifiers(py_min: PythonVersion, py_max: PythonVersion) -> list[str]:
         """Get auto-detected `Programming Language :: Python :: *` list.
 
         NOTE: Will not work after the '3.* -> 4.0'-transition.
@@ -285,7 +285,7 @@ class SetupShop:
             )
 
     @staticmethod
-    def _get_packages(name: str, subpackages: Optional[List[str]]) -> List[str]:
+    def _get_packages(name: str, subpackages: list[str] | None) -> list[str]:
         """Return an aggregated list of packages.
 
         Optionally, include the given sub-packages now fully-prefixed
@@ -305,8 +305,8 @@ class SetupShop:
 
     def get_kwargs(
         self,
-        other_classifiers: Optional[List[str]] = None,
-        subpackages: Optional[List[str]] = None,
+        other_classifiers: list[str] | None = None,
+        subpackages: list[str] | None = None,
     ) -> SetupShopKwargs:
         """Return a dict of auto-created arguments for `setuptools.setup()`.
 

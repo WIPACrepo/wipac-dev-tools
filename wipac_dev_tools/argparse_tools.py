@@ -2,7 +2,7 @@
 
 import argparse
 from pathlib import Path
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -22,12 +22,12 @@ def validate_arg(val: T, test: bool, exc: Exception) -> T:
     # the exception is caught and a nicely formatted error message is displayed.
     # No other exception types are handled.
     if not isinstance(exc, argparse.ArgumentTypeError):
-        raise argparse.ArgumentTypeError(f"{repr(exc)} [{val}]")
+        raise argparse.ArgumentTypeError(f"{exc!r} [{val}]")
 
     raise exc
 
 
-def create_dir(val: str) -> Optional[Path]:
+def create_dir(val: str) -> Path | None:
     """Create the given directory, if needed.
 
     Create parent directories, if needed.

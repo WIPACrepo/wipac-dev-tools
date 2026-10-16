@@ -61,9 +61,7 @@ def do_pop_id(no_id: bool, projection: dict[str, int] | list[str] | None) -> boo
 
     If "_id" is included by the projection, it is not popped. Else, look at `no_id`.
     """
-    if isinstance(projection, dict) and projection.get("_id"):  # {_id: 1} vs. {_id: 0}
-        return False
-    elif isinstance(projection, list) and "_id" in projection:  # ["_id"]
+    if isinstance(projection, dict) and projection.get("_id") or isinstance(projection, list) and "_id" in projection:  # {_id: 1} vs. {_id: 0}
         return False
     else:
         return no_id
@@ -142,19 +140,7 @@ class MongoJSONSchemaValidatedCollection:
             if operator in [
                 "$set",  # Ex -- $set: {foo: bar, bat: 123}
                 "$setOnInsert",  # Ex -- same as $set, but only if doc is new (upsert)
-            ]:
-                self._validate(update[operator], allow_partial_update=True)
-            #
-            # SCALAR OPERATORS
-            #   *** A WARNING ON THE LIMITATIONS OF JSONSCHEMA INTEGRATION ***
-            #       If your schema uses minimum and/or maximum constraints:
-            #         - the update-operator is validated, this may be
-            #             out-of-range (false negative)
-            #         - the new resulting DB value may be out-of-range,
-            #             and will go unvalidated (written data not checked)
-            #       Recommendation: Do not use minimum/maximum for any
-            #         mutable document fields.
-            elif operator in [
+            ] or operator in [
                 "$min",  # Ex -- $min: {lowScore: 112} (mongo updates if 112 < db value)
                 "$max",  # Ex -- $max: {highScore: 881} (mongo updates if 881 > db value)
                 "$inc",  # Ex -- $inc: {next_attempt: 5, i: 1}
@@ -451,7 +437,7 @@ class MongoJSONSchemaValidatedCollection:
 
 def _has_dotted_keys(dicto: MongoDoc) -> bool:
     """Return True iff any top-level key in `dicto` contains a dot."""
-    return any("." in k for k in dicto.keys())
+    return any("." in k for k in dicto)
 
 
 def _convert_mongo_to_jsonschema(
