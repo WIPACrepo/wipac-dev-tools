@@ -87,4 +87,4 @@ packages = [
 fallback_version = "CANNOT_BUILD_WITHOUT_GIT_DIR" # used when SCM metadata is missing (no '.git/') — if '.git/' exists but does not contain tags, a commit-based version (like '0.1.dev1+g79c9b4b') will be used instead.
 
 [tool.ruff.lint]
-ignore = ["B019", "C408", "FURB129", "PT", "SIM115", "TRY", "UP"]
+ignore = ["B019", "C408", "FURB129", "PT", "SIM115", "TRY"]

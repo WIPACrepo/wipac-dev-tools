@@ -2,7 +2,7 @@
 
 import argparse
 from pathlib import Path
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -27,7 +27,7 @@ def validate_arg(val: T, test: bool, exc: Exception) -> T:
     raise exc
 
 
-def create_dir(val: str) -> Optional[Path]:
+def create_dir(val: str) -> Path | None:
     """Create the given directory, if needed.
 
     Create parent directories, if needed.

@@ -4,7 +4,7 @@ import logging
 import os
 import random
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +25,7 @@ def log_cvmfs_dir(d: Path) -> None:
     entries = [(p, p.stat().st_mtime) for p in d.iterdir()]
 
     for p, mtime in sorted(entries, key=lambda x: x[1], reverse=True):
-        iso = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+        iso = datetime.fromtimestamp(mtime, tz=UTC).isoformat()
         LOGGER.debug(f"{mtime=} ({iso}) {p.name}")
 
 
@@ -192,6 +192,6 @@ def test_2020_parse_image_ts_parses_last_updated() -> None:
         12,
         34,
         56,
-        tzinfo=timezone.utc,
+        tzinfo=UTC,
     ).timestamp()
     assert abs(ts - expected) < 1e-6

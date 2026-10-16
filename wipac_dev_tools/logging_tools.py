@@ -4,10 +4,8 @@ import argparse
 import dataclasses
 import logging
 import time
-from collections.abc import Collection
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypeVar, Union
-
-from typing_extensions import Literal
+from collections.abc import Callable, Collection
+from typing import TYPE_CHECKING, Literal, TypeVar
 
 from .data_safety_tools import obfuscate_value_if_sensitive
 
@@ -21,7 +19,7 @@ else:
 
 T = TypeVar("T")
 
-LogggerObjectOrName = Union[str, logging.Logger]
+LogggerObjectOrName = str | logging.Logger
 
 _WDT_HANDLER = "wipacdevtools-root"
 
@@ -47,7 +45,7 @@ LoggerLevel = Literal[
 
 
 def get_logger_fn(
-    logger: Union[None, str, logging.Logger], level: LoggerLevel
+    logger: None | str | logging.Logger, level: LoggerLevel
 ) -> Callable[[str], None]:
     """Get the logger function from `logger` and `level`."""
     if not logger:
@@ -65,7 +63,7 @@ def get_logger_fn(
 
 def log_argparse_args(
     args: argparse.Namespace,
-    logger: Union[None, str, logging.Logger] = None,
+    logger: None | str | logging.Logger = None,
     level: LoggerLevel = "WARNING",
 ) -> argparse.Namespace:
     """Log the argparse args and their values at the given level.
@@ -94,7 +92,7 @@ def log_dataclass(
     logger: LogggerObjectOrName,
     level: LoggerLevel,
     prefix: str = "",
-    obfuscate_sensitive_substrings: Union[bool, Collection[str]] = False,
+    obfuscate_sensitive_substrings: bool | Collection[str] = False,
 ) -> DataclassT:
     """Log a dataclass instance's fields and members.
 
@@ -121,7 +119,7 @@ def log_dataclass(
     return dclass
 
 
-def _to_list(pseudo_list: Union[None, T, List[T]]) -> List[T]:
+def _to_list(pseudo_list: None | T | list[T]) -> list[T]:
     if not pseudo_list:
         return []
     elif not isinstance(pseudo_list, list):
@@ -166,14 +164,12 @@ class WIPACDevToolsFormatter(logging.Formatter):
 
 def set_level(
     level: LoggerLevel,
-    first_party_loggers: Union[
-        None, LogggerObjectOrName, List[LogggerObjectOrName]
-    ] = None,
+    first_party_loggers: None | LogggerObjectOrName | list[LogggerObjectOrName] = None,
     third_party_level: LoggerLevel = "WARNING",
-    future_third_parties: Union[None, str, List[str]] = None,
-    specialty_loggers: Optional[Dict[LogggerObjectOrName, LoggerLevel]] = None,
+    future_third_parties: None | str | list[str] = None,
+    specialty_loggers: dict[LogggerObjectOrName, LoggerLevel] | None = None,
     use_coloredlogs: bool = False,
-    formatter: Union[WIPACDevToolsFormatter, logging.Formatter, None] = None,
+    formatter: WIPACDevToolsFormatter | logging.Formatter | None = None,
     utc: bool = False,
 ) -> None:
     """Set the level of loggers of various precedence.
@@ -247,10 +243,10 @@ def set_level(
 
 def _configure_levels(
     first_party_level: LoggerLevel,
-    first_parties: List[str],
+    first_parties: list[str],
     third_party_level: LoggerLevel,
-    future_third_parties: List[str],
-    specialty_loggers: Dict[str, LoggerLevel],
+    future_third_parties: list[str],
+    specialty_loggers: dict[str, LoggerLevel],
 ) -> None:
     # set root -> first_party_level
     logging.getLogger().setLevel(first_party_level)

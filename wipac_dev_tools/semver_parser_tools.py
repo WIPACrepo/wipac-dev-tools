@@ -4,7 +4,6 @@ import logging
 import re
 import time
 from pathlib import Path
-from typing import List, Tuple
 
 import requests
 from dateutil import parser
@@ -51,7 +50,7 @@ def strip_v_prefix(docker_tag: str) -> str:
 ########################################################################################
 
 
-def get_latest_py3_release() -> Tuple[int, int]:
+def get_latest_py3_release() -> tuple[int, int]:
     """Return the latest python3 release version (supported by GitHub) as
     tuple."""
     url = "https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json"
@@ -114,7 +113,7 @@ def list_all_majmin_versions(
     major: int,
     semver_range: str,
     max_minor: int = 99,
-) -> List[Tuple[int, int]]:
+) -> list[tuple[int, int]]:
     """Get a list of the matching major-minor versions for the semver range.
 
     Example:

@@ -2,8 +2,8 @@
 
 import logging
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Union
 
 import requests
 from dateutil import parser as dateutil_parser
@@ -21,7 +21,7 @@ LOGGER = logging.getLogger(__name__)
 class ImageNotFoundException(Exception):
     """Raised when an image (tag) cannot be found."""
 
-    def __init__(self, image: Union[str, Path]):
+    def __init__(self, image: str | Path):
         super().__init__(f"Image '{image}' cannot be found.")
 
 

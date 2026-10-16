@@ -36,9 +36,9 @@ else:
 # fmt: on
 
 
-RetVal = Union[str, int, float, bool]
+RetVal = str | int | float | bool
 OptionalDict = Mapping[str, RetVal | None]
-KeySpec = Union[str, Sequence[str], OptionalDict]
+KeySpec = str | Sequence[str] | OptionalDict
 sdict = dict[str, Any]
 
 

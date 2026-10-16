@@ -5,10 +5,9 @@ import json
 import os
 import pathlib
 import shutil
-import sys
 import tempfile
 import unittest
-from typing import Any, Final, Literal, Optional, Union
+from typing import Any, Final, Literal
 
 import pytest
 
@@ -553,24 +552,12 @@ def test_051__final_dict_str_int() -> None:
     assert config.FOO == {"bar": 2, "baz": 3, "foo": 1}
 
 
-if sys.version_info >= (3, 10):
-    # this trips up the py <3.9 interpreter
-    extra_params_060 = [
-        bool | None,
-        None | bool,
-    ]
-else:
-    extra_params_060 = []  # type: ignore[var-annotated]
-
-
 @pytest.mark.parametrize(
     "typo",
     [
-        Optional[bool],
-        Union[bool, None],
-        Union[None, bool],
-    ]
-    + extra_params_060,
+        bool | None,
+        None | bool,
+    ],
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_060__optional_bool(typo) -> None:
@@ -585,24 +572,12 @@ def test_060__optional_bool(typo) -> None:
     assert config.FOO is True
 
 
-if sys.version_info >= (3, 10):
-    # this trips up the py <3.9 interpreter
-    extra_params_061 = [
-        dict[str, int] | None,
-        None | dict[str, int],
-    ]
-else:
-    extra_params_061 = []
-
-
 @pytest.mark.parametrize(
     "typo",
     [
-        Optional[dict[str, int]],
-        Union[dict[str, int], None],
-        Union[None, dict[str, int]],
-    ]
-    + extra_params_061,
+        dict[str, int] | None,
+        None | dict[str, int],
+    ],
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_061__optional_dict_str_int(typo) -> None:
@@ -617,24 +592,12 @@ def test_061__optional_dict_str_int(typo) -> None:
     assert config.FOO == {"bar": 2, "baz": 3, "foo": 1}
 
 
-if sys.version_info >= (3, 10):
-    # this trips up the py <3.9 interpreter
-    extra_params_062 = [
-        dict | None,
-        None | dict,
-    ]
-else:
-    extra_params_062 = []
-
-
 @pytest.mark.parametrize(
     "typo",
     [
-        Optional[dict],
-        Union[dict, None],
-        Union[None, dict],
-    ]
-    + extra_params_062,
+        dict | None,
+        None | dict,
+    ],
 )
 @pytest.mark.usefixtures("isolated_env")
 def test_062__optional_dict(typo) -> None:

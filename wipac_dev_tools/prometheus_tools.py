@@ -2,9 +2,9 @@
 
 from collections.abc import Callable, Coroutine
 from functools import partialmethod, wraps
-from typing import Any, ClassVar, Union
+from typing import Any, ClassVar, Concatenate
 
-from typing_extensions import Concatenate, ParamSpec, TypeVar
+from typing_extensions import ParamSpec, TypeVar
 
 # 'prometheus' imports
 try:
@@ -85,15 +85,15 @@ class GlobalLabels:
         c3.inc()
         # will have labels for instance, part, and extra
     """
-    def __init__(self, labels: Union[dict, None] = None):
+    def __init__(self, labels: dict | None = None):
         self.common_labels = labels if labels else {}
 
     def _wrap(
         self,
         cls: Callable[..., Any],
         name: str,
-        documentation: Union[str, None] = None,
-        labels: Union[dict, list, None] = None,
+        documentation: str | None = None,
+        labels: dict | list | None = None,
         finalize: bool = True,
         **kwargs,
     ) -> Any:
@@ -126,7 +126,7 @@ class GlobalLabels:
 
 PromWrapperSelfType = Any
 
-PromWrapperMetricType = Union[Counter, Gauge, Summary, Histogram, Info, Enum]
+PromWrapperMetricType = Counter | Gauge | Summary | Histogram | Info | Enum
 
 
 def PromWrapper(prom_metric_fn: Callable[[PromWrapperSelfType], PromWrapperMetricType]):
